@@ -1,0 +1,120 @@
+.onboarding-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* height: 100vh; */
+}
+
+.onboarding-content {
+  background-color: white;
+  padding: 20px; /* Adjusted padding to avoid overflow */
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 761px; /* Fixed width */
+  height: 604px; /* Fixed height */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center everything vertically */
+  align-items: center; /* Center everything horizontally */
+  overflow: hidden; /* Prevents content from overflowing */
+}
+
+.gif-container {
+  margin-bottom: 20px;
+  display: flex; /* Use flexbox to center the GIF */
+  justify-content: center; /* Centers horizontally */
+  align-items: center; /* Centers vertically */
+  width: 100%;
+}
+
+.onboarding-gif {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 300px; /* Limits the height of the gif to fit within the box */
+  object-fit: contain; /* Ensures the GIF maintains its aspect ratio */
+}
+
+.page-title {
+  font-size: 28px;
+  color: #111827;
+  margin-bottom: 16px;
+  overflow-wrap: break-word; /* Prevents title from overflowing */
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 24px;
+  overflow-wrap: break-word; /* Prevents subtitle from overflowing */
+}
+
+.actions {
+  display: flex;
+  justify-content: center; /* Center the buttons */
+  gap: 16px;
+  margin-top: 24px; /* Adjust margin to create space between buttons */
+}
+
+.btn-dashboard,
+.btn-create-customer {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0; /* Prevent buttons from shrinking */
+}
+
+.btn-dashboard {
+  background: #4b86f0;
+  color: white;
+}
+
+.btn-create-customer {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-dashboard:hover,
+.btn-create-customer:hover {
+  opacity: 0.9;
+}
+
+.edit-actions {
+  margin-top: 24px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-update {
+  background: #111827;
+  color: #fff;
+  padding: 12px 32px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 4px;
+  min-width: 220px;
+}
+
+.btn-update:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.update-message {
+  margin-top: 16px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.update-message.info {
+  color: #2563eb;
+}
+
+.update-message.error {
+  color: #dc2626;
+}

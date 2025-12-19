@@ -1,0 +1,233 @@
+/* General container styles */
+.company-container {
+  padding: 32px;
+  min-height: 100vh;
+  background: #f7f8fc;
+}
+
+.page-title {
+  font-size: 28px;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.link {
+  color: #3599FE;
+}
+
+.color {
+  color: red;
+}
+
+.error {
+  font-size: 12px;
+  color: rgb(173, 5, 5);
+}
+
+.form-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  padding: 24px;
+  margin-bottom: 40px;
+  border-radius: 12px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #151d48;
+  margin-bottom: 12px;
+}
+
+.section-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+/* Form Grid (Updated for responsive layout) */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* Form Field */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.form-field.full-width {
+  grid-column: span 3;  /* Full width field */
+}
+
+/* Labels */
+.form-field label {
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #374151;
+}
+
+.form-field.long-label label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 38px;
+  line-height: 1.2;
+}
+
+.form-field.long-label label .link {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* Inputs and Selects */
+.form-field input,
+.form-field select {
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.form-field.toggle-container {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.form-field.toggle-container > label:first-child {
+  margin-bottom: 0;
+  flex: 1 1 auto;
+}
+
+.form-field.toggle-container .link {
+  display: inline;
+}
+
+.form-field.toggle-container .switch {
+  flex-shrink: 0;
+}
+
+/* Switch styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #4b86f0;
+}
+
+input:checked + .slider:before {
+  transform: translateX(14px);
+}
+
+/* Action buttons (Save & Cancel) */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.btn-cancel,
+.btn-save {
+  padding: 9px 22px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-cancel {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-save {
+  background: #3599FF;
+  color: white;
+}
+
+.btn-cancel:hover,
+.btn-save:hover {
+  opacity: 0.9;
+}
+
+@media screen and (max-width: 1440px) {
+  .company-container {
+    padding: 24px 16px 16px;
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .company-container {
+    padding: 20px 12px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-section {
+    padding: 18px;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .btn-cancel,
+  .btn-save {
+    width: 100%;
+    text-align: center;
+  }
+}

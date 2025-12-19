@@ -1,0 +1,77 @@
+<div class="dashboard-container">
+  <h1 class="page-title">Dashboard</h1>
+
+  <div *ngIf="loadingSummary" class="dashboard-loader">
+    <app-loader [visible]="loadingSummary"></app-loader>
+  </div>
+
+  <ng-container *ngIf="!loadingSummary">
+    <!-- Cards Grid -->
+    <div class="cards-grid">
+      <div class="card">
+        <p class="card-title">Total Receivables</p>
+        <p class="card-value">
+          {{ dashboardData.totalReceivables | currency }}
+        </p>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Current Receivables</p>
+        <p class="card-value">
+          {{ dashboardData.currentReceivables | currency }}
+        </p>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Promise To Pay</p>
+        <p class="card-value">
+          {{ dashboardData.currentPromiseToPay | currency }}
+        </p>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Payment Received</p>
+        <p class="card-value">
+          {{ dashboardData.totalPaymentReceived | currency }}
+        </p>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Collected Today</p>
+        <p class="card-value">
+          {{ dashboardData.todayPaymentReceived | currency }}
+        </p>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Number of Invoices</p>
+        <p class="card-value">
+          {{ dashboardData.totalInvoices }}
+        </p>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Pending Invoices</p>
+        <p class="card-value">
+          {{ dashboardData.pendingInvoices }}
+        </p>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Total Customers</p>
+        <p class="card-value">
+          {{ dashboardData.totalCustomers }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-container">
+      <h2 class="chart-title">Receivables Balance ƒ?" Last 6 months</h2>
+
+      <div class="chart-wrapper">
+        <canvas #chartCanvas *ngIf="isBrowser"></canvas>
+      </div>
+    </div>
+  </ng-container>
+</div>
