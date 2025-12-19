@@ -1,0 +1,368 @@
+<div class="customer-page">
+  <section class="customer-hero">
+    <div class="customer-identity">
+      <p class="customer-id">#{{ customerData?.customerId || '---' }}</p>
+      <h2 class="customer-name">
+        {{ customerData?.customerName || 'Loading...' }}
+        <span class="customer-pill">{{ customerData?.customerType || 'Unknown' }}</span>
+      </h2>
+      <p class="customer-email">{{ customerData?.email || 'No email available' }}</p>
+
+      <div class="customer-location" *ngIf="customerData?.address">
+        <span class="location-dot"></span>
+        {{ customerData?.address?.addressLine1 || '-' }}, {{ customerData?.address?.city || '-' }},
+        {{ customerData?.address?.stateProvince || '-' }}
+        {{ customerData?.address?.postalCode || '-' }}
+      </div>
+    </div>
+
+    <div class="customer-stats">
+      <div class="stat-card">
+        <p class="stat-label">Invoices</p>
+        <p class="stat-value">{{ invoicesData.length }}</p>
+        <span class="stat-hint">records</span>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Promises</p>
+        <p class="stat-value">{{ customerPromises.length }}</p>
+        <span class="stat-hint">open commitments</span>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Status</p>
+        <p class="stat-chip" [class.active]="customerData && !customerData.deleted">
+          {{ customerData?.deleted ? 'Inactive' : 'Active' }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TABS ================= -->
+  <div class="tabs-container">
+    <!-- MOBILE DROPDOWN -->
+    <div class="tabs-dropdown">
+      <select [(ngModel)]="activeTab">
+        <option value="basic">Basic Information</option>
+        <option value="address">Address</option>
+        <option value="processing">Processing</option>
+        <option value="application">Application</option>
+        <option value="statement">Statement</option>
+        <option value="eft">EFT</option>
+        <option value="vat">VAT</option>
+        <option value="dunning">Dunning / Credit</option>
+        <option value="promise">Promise to Pay</option>
+      </select>
+    </div>
+
+    <!-- DESKTOP TABS -->
+    <div class="tabs-header">
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'basic'"
+        (click)="activeTab = 'basic'"
+      >
+        Basic Information
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'address'"
+        (click)="activeTab = 'address'"
+      >
+        Address
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'processing'"
+        (click)="activeTab = 'processing'"
+      >
+        Processing
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'application'"
+        (click)="activeTab = 'application'"
+      >
+        Application
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'statement'"
+        (click)="activeTab = 'statement'"
+      >
+        Statement
+      </button>
+      <button class="tab-button" [class.active]="activeTab === 'eft'" (click)="activeTab = 'eft'">
+        EFT
+      </button>
+      <button class="tab-button" [class.active]="activeTab === 'vat'" (click)="activeTab = 'vat'">
+        VAT
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'dunning'"
+        (click)="activeTab = 'dunning'"
+      >
+        Dunning/Credit
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'promise'"
+        (click)="activeTab = 'promise'"
+      >
+        Promise to Pay
+      </button>
+    </div>
+
+    <!-- ================= TAB CONTENT ================= -->
+
+    <!-- BASIC -->
+    <!-- BASIC -->
+    <div class="tab-content" *ngIf="activeTab === 'basic'">
+      <div class="info-card">
+        <h3 class="section-title">Contact Information</h3>
+        <div class="info-row">
+          <span class="info-row-label">Customer</span>
+          <span class="info-row-value">{{ customerData?.customerName || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Customer ID</span>
+          <span class="info-row-value">{{ customerData?.customerId || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Email</span>
+          <span class="info-row-value">{{ customerData?.email || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Customer Type</span>
+          <span class="info-row-value">{{ customerData?.customerType || '-' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADDRESS -->
+    <div class="tab-content" *ngIf="activeTab === 'address'">
+      <div class="info-card">
+        <h3 class="section-title">Address Information</h3>
+        <div class="info-row">
+          <span class="info-row-label">Address Line 1</span>
+          <span class="info-row-value">{{ customerData?.address?.addressLine1 || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">City</span>
+          <span class="info-row-value">{{ customerData?.address?.city || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">State/Province</span>
+          <span class="info-row-value">{{ customerData?.address?.stateProvince || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Postal Code</span>
+          <span class="info-row-value">{{ customerData?.address?.postalCode || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Country</span>
+          <span class="info-row-value">{{ customerData?.address?.country || '-' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROCESSING -->
+    <div class="tab-content" *ngIf="activeTab === 'processing'">
+      <div class="info-card">
+        <h3 class="section-title">Processing</h3>
+        <pre *ngIf="customerData?.processing; else noProcessing">{{
+          customerData?.processing | json
+        }}</pre>
+        <ng-template #noProcessing>
+          <p class="placeholder-text">No processing data available.</p>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- APPLICATION -->
+    <div class="tab-content" *ngIf="activeTab === 'application'">
+      <ng-container *ngIf="customerData?.cashApplication as application; else noApplication">
+        <div class="info-card">
+          <h3 class="section-title">Application</h3>
+          <div class="info-row">
+            <span class="info-row-label">Apply Payments</span>
+            <span class="info-row-value">{{ application.applyPayments ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Auto Apply Payments</span>
+            <span class="info-row-value">{{ application.autoApplyPayments ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Ship Credit Check</span>
+            <span class="info-row-value">{{ application.shipCreditCheck ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Tolerance %</span>
+            <span class="info-row-value">{{ application.tolerancePercentage ?? '-' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Tolerance Amount</span>
+            <span class="info-row-value">{{ application.toleranceAmount ?? '-' }}</span>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noApplication>
+        <div class="info-card">
+          <p class="placeholder-text">No application data available.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- STATEMENT -->
+    <div class="tab-content" *ngIf="activeTab === 'statement'">
+      <ng-container *ngIf="customerData?.statement as statement; else noStatement">
+        <div class="info-card">
+          <h3 class="section-title">Statement</h3>
+          <div class="info-row">
+            <span class="info-row-label">Send Statements</span>
+            <span class="info-row-value">{{ statement.sendStatements ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Auto Apply Payments</span>
+            <span class="info-row-value">{{ statement.autoApplyPayments ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Tolerance %</span>
+            <span class="info-row-value">{{ statement.tolerancePercentage ?? '-' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Minimum Amount</span>
+            <span class="info-row-value">{{ statement.minimumAmount ?? '-' }}</span>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noStatement>
+        <div class="info-card">
+          <p class="placeholder-text">No statement available.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- EFT -->
+    <div class="tab-content" *ngIf="activeTab === 'eft'">
+      <div class="info-card">
+        <h3 class="section-title">EFT Information</h3>
+        <div class="info-row">
+          <span class="info-row-label">Bank Name</span>
+          <span class="info-row-value">{{ customerData?.eft?.bankName || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">IBAN</span>
+          <span class="info-row-value">{{ customerData?.eft?.ibanAccountNumber || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">BIC</span>
+          <span class="info-row-value">{{ customerData?.eft?.bankIdentifierCode || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">ACH Enabled</span>
+          <span class="info-row-value">{{
+            customerData?.eft?.enableAchPayments ? 'Yes' : 'No'
+          }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VAT -->
+    <div class="tab-content" *ngIf="activeTab === 'vat'">
+      <div class="info-card">
+        <h3 class="section-title">VAT Information</h3>
+        <div class="info-row">
+          <span class="info-row-label">Tax Agency</span>
+          <span class="info-row-value">{{ customerData?.vat?.taxAgencyName || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Tax ID</span>
+          <span class="info-row-value">{{
+            customerData?.vat?.taxIdentificationNumber || '-'
+          }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">VAT Enabled</span>
+          <span class="info-row-value">{{ customerData?.vat?.enableVatCodes ? 'Yes' : 'No' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DUNNING -->
+    <div class="tab-content" *ngIf="activeTab === 'dunning'">
+      <div class="info-card">
+        <h3 class="section-title">Dunning & Credit</h3>
+        <div class="info-row">
+          <span class="info-row-label">Credit Limit</span>
+          <span class="info-row-value">{{ customerData?.dunning?.creditLimit || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Dunning Level</span>
+          <span class="info-row-value">{{ customerData?.dunning?.dunningLevel || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Level 1</span>
+          <span class="info-row-value">{{ customerData?.dunning?.level1 || '-' }} days</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Level 2</span>
+          <span class="info-row-value">{{ customerData?.dunning?.level2 || '-' }} days</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Level 3</span>
+          <span class="info-row-value">{{ customerData?.dunning?.level3 || '-' }} days</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Level 4</span>
+          <span class="info-row-value">{{ customerData?.dunning?.level4 || '-' }} days</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Past Due</span>
+          <span class="info-row-value">{{ customerData?.dunning?.pastDue || '-' }} days</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Credit Hold</span>
+          <span class="info-row-value">{{
+            customerData?.dunning?.placeOnCreditHold ? 'Yes' : 'No'
+          }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROMISE -->
+    <div class="tab-content" *ngIf="activeTab === 'promise'">
+      <div *ngIf="customerPromises.length; else noPromise">
+        <div class="promise-table-wrapper">
+          <table class="promise-table">
+            <thead>
+              <tr>
+                <th>AMOUNT</th>
+                <th>PROMISE DATE</th>
+                <th>STATUS</th>
+                <th>NOTES</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let promise of customerPromises">
+                <td>${{ promise.amountPromised | number }}</td>
+                <td>{{ promise.promiseDate | date }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getStatusClass(promise.status)">
+                    {{ getStatusLabel(promise.status) }}
+                  </span>
+                </td>
+                <td>{{ promise.notes || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <ng-template #noPromise>
+        <div class="info-card">
+          <p class="placeholder-text">No promise to pay records.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>

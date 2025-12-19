@@ -1,0 +1,115 @@
+<div class="invoice-container">
+  <!-- Header -->
+  <div class="header-row">
+    <h1 class="page-title">Invoices</h1>
+    <button class="btn-new" routerLink="create">
+      <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
+      New Invoice
+    </button>
+  </div>
+
+  <!-- Search -->
+  <div class="search-card">
+    <div class="search-card-header">
+      <label class="search-card-label">Customer Name</label>
+    </div>
+    <div class="search-card-body">
+      <div class="search-input">
+        <span class="search-icon">
+          <img src="/search.svg" alt="Search Icon" />
+        </span>
+        <input
+          type="text"
+          [(ngModel)]="searchName"
+          placeholder="Enter customer name"
+          (input)="onSearchChange()"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LOADER (FULL WIDTH) ===== -->
+  <div *ngIf="loading" class="loader-wrapper">
+    <app-loader [visible]="loading"></app-loader>
+  </div>
+
+  <!-- ===== TABLE (WHEN NOT LOADING) ===== -->
+  <div class="backgrount-table" *ngIf="!loading">
+    <table class="invoice-table">
+      <thead class="head">
+        <tr>
+          <th>INVOICE</th>
+          <th>CUSTOMER</th>
+          <th>DATE</th>
+          <th>DUE DATE</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <!-- EMPTY STATE -->
+        <tr *ngIf="invoices.length === 0">
+          <td colspan="5" style="text-align: center; padding: 20px">No invoices found.</td>
+        </tr>
+
+        <!-- DATA ROWS -->
+        <tr
+          *ngFor="let inv of invoices; let i = index"
+          class="invoice-row"
+          (click)="openInvoice(inv.id)"
+        >
+          <td class="invoice-number">{{ inv.invoiceNumber }}</td>
+          <td>
+            <div class="customer-info">
+              <div
+                class="customer-initial"
+                [ngStyle]="{
+                  backgroundColor: getInitialColor(i).background,
+                  color: getInitialColor(i).color
+                }"
+              >
+                {{ inv.customer.customerName[0] }}
+              </div>
+              <span class="customer-name">{{ inv.customer.customerName }}</span>
+            </div>
+          </td>
+          <td>{{ formatDate(inv.invoiceDate) }}</td>
+          <td>{{ formatDate(inv.dueDate) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination - Below Table -->
+    <div class="pagination-wrapper" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ currentPage * pageSize + 1 }} to
+        {{ Math.min((currentPage + 1) * pageSize, allInvoices.length) }} of
+        {{ allInvoices.length }} results
+      </div>
+
+      <div class="pagination-controls">
+        <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
+          <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+        </button>
+
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number-btn"
+          [class.active]="page === currentPage + 1"
+          [class.ellipsis]="page === -1"
+          (click)="page !== -1 && goToPage(page - 1)"
+          [disabled]="page === -1"
+        >
+          {{ page === -1 ? '...' : page }}
+        </button>
+
+        <button
+          class="page-nav-btn"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages - 1"
+        >
+          <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

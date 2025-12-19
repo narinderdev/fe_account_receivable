@@ -1,0 +1,34 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #f2f3f8;
+}
+
+.app-shell app-sidebar {
+  flex: 0 0 256px;
+  max-width: 256px;
+}
+
+.shell-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  min-height: 0;
+  background: #F8FAFC;
+}
+
+@media (max-width: 1024px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-shell app-sidebar {
+    flex: 0 0 auto;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .shell-content {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,341 @@
+/* Page container */
+.invoice-container {
+  padding: 32px;
+  min-height: 100vh;
+}
+
+/* Header row */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.page-title {
+  font-size: 24px;
+  color: #111827;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Primary button */
+.btn-new {
+  background: #3b82f6;
+  color: white;
+  padding: 8px 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-new:hover {
+  background: #3a6ec7;
+}
+
+.btn-icon {
+  width: 25px;
+  height: 25px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.search-card {
+  background: #fff;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.search-card-header {
+  padding: 18px 20px 0;
+}
+
+.search-card-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.search-card-body {
+  padding: 0 20px 20px;
+}
+
+.search-input {
+  position: relative;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  padding-left: 42px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.search-input:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #fff;
+}
+
+.search-input input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: #0f172a;
+  outline: none;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.invoice-number {
+  color: #3b82f6 !important;
+}
+
+.search-icon img {
+  width: 22px;
+  height: 22px;
+}
+
+@media (min-width: 1024px) {
+  .search-card-body {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .search-input {
+    max-width: 448px;
+  }
+}
+
+/* Table card wrapper */
+.backgrount-table {
+  background: white;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+/* Table */
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+  font-size: 16px;
+  color: #111827;
+}
+
+/* Header */
+.invoice-table thead {
+  background: #f9fafb;
+}
+
+.invoice-table th {
+  text-align: left;
+  padding: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+/* Body */
+.invoice-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  font-size: 14px;
+}
+
+/* Row hover */
+.invoice-table tbody tr:hover {
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+/* Customer Initials Circle */
+.customer-info {
+  display: flex;
+  align-items: center;
+}
+
+.customer-initial {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.customer-name {
+  color: #111827;
+}
+
+/* Pagination Wrapper */
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Pagination Info */
+.pagination-info {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Navigation Buttons (Arrows) */
+.page-nav-btn {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 36px;
+  height: 36px;
+  transition: all 0.2s;
+}
+
+.page-nav-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.page-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Page Number Buttons */
+.page-number-btn {
+  background: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 6px 12px;
+  min-width: 36px;
+  height: 36px;
+  transition: all 0.2s;
+}
+
+.page-number-btn:hover:not(.active):not(.ellipsis) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.page-number-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.page-number-btn.ellipsis {
+  border: none;
+  cursor: default;
+  color: #9ca3af;
+}
+
+/* Pagination icon (arrows) */
+.pagination-icon {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* Loader */
+.loader-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .invoice-container {
+    padding: 24px 16px;
+  }
+
+  .pagination-wrapper {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .pagination-controls {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-box input {
+    width: 100%;
+  }
+
+  .pagination-info {
+    font-size: 12px;
+  }
+
+  .page-number-btn,
+  .page-nav-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 4px 8px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .invoice-container {
+    padding: 20px 12px;
+  }
+
+  .btn-new {
+    width: 100%;
+  }
+
+  .pagination-wrapper {
+    gap: 12px;
+  }
+}

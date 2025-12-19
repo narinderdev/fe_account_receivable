@@ -1,0 +1,110 @@
+<!-- Global Loader -->
+<app-loader [visible]="loading && !isDeleteModalOpen"></app-loader>
+
+<div class="customers-container">
+  <div class="customers-actions">
+    <h1 class="customers-title">Company</h1>
+    <button class="add-customer-btn" routerLink="add">+ Add Company</button>
+  </div>
+
+  <div class="customers-table-wrapper">
+    <div class="table-scroll">
+      <table class="customers-table">
+        <thead>
+          <tr>
+            <th>Legal Name</th>
+            <th>Company Code</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody *ngIf="loading">
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 40px">
+              <app-loader [visible]="loading"></app-loader>
+            </td>
+          </tr>
+        </tbody>
+
+        <tbody *ngIf="!loading" class="text-data">
+          <tr *ngFor="let c of companies; let i = index">
+            <td>
+              <div class="company-info">
+                <div
+                  class="company-initial"
+                  [ngStyle]="{
+                    backgroundColor: getInitialColor(i).background,
+                    color: getInitialColor(i).color
+                  }"
+                >
+                  {{ c?.legalName?.[0] || '?' }}
+                </div>
+                <span class="company-name">{{ c.legalName }}</span>
+              </div>
+            </td>
+            <td>{{ c.companyCode }}</td>
+            <td>{{ c.companyAddress.primaryContactEmail }}</td>
+
+            <td>
+              {{ c.companyAddress.addressLine1 }}, {{ c.companyAddress.city }},
+              {{ c.companyAddress.stateProvince }}, {{ c.companyAddress.postalCode }},
+              {{ c.companyAddress.addressCountry }}
+            </td>
+
+            <td class="actions">
+              <span class="btn-right"
+                ><img src="/editIcn.svg" class="action-icon" (click)="editCompany(c.id)"
+              /></span>
+              <span
+                ><img
+                  src="/deleteIcn.svg"
+                  class="action-icon delete"
+                  (click)="openDeleteModal(c.id)"
+              /></span>
+            </td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="!loading && !companies.length">
+          <tr>
+            <td colspan="5" class="no-data-row">No companies added yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="totalPages > 1 && !loading">
+    <button class="page-btn" (click)="prevPage()" [disabled]="currentPage === 0">Previous</button>
+
+    <span class="page-info"> Page {{ currentPage + 1 }} of {{ totalPages }} </span>
+
+    <button class="page-btn" (click)="nextPage()" [disabled]="currentPage === totalPages - 1">
+      Next
+    </button>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" *ngIf="isDeleteModalOpen">
+  <div class="modal">
+    <h3>Delete Company</h3>
+    <p>Are you sure you want to delete this company?</p>
+
+    <div class="modal-actions">
+      <button class="cancelBtn" (click)="closeDeleteModal()">Cancel</button>
+
+      <button class="deleteBtn" (click)="confirmDelete()" [disabled]="deleting">
+        <ng-container *ngIf="!deleting">Delete</ng-container>
+
+        <ng-container *ngIf="deleting">
+          <app-spinner></app-spinner>
+        </ng-container>
+      </button>
+    </div>
+  </div>
+</div>
+
+<router-outlet></router-outlet>

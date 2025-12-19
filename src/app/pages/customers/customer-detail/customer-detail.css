@@ -1,0 +1,297 @@
+.customer-page {
+  padding: 32px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* ===================== TABS CONTAINER ===================== */
+.tabs-container {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Desktop Tabs */
+.tabs-header {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 24px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 16px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab-button:hover {
+  color: #111827;
+}
+
+.tab-button.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+/* Mobile Dropdown */
+.tabs-dropdown {
+  display: none;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tabs-dropdown select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tabs-dropdown select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ===================== TAB CONTENT ===================== */
+.tab-content {
+  padding: 32px 24px;
+}
+
+/* ===================== INFO CARD (FULL WIDTH) ===================== */
+.info-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  padding: 20px 24px;
+  background: #fafafa;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 16px;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 400;
+  flex-shrink: 0;
+  min-width: 140px;
+}
+
+.info-row-value {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+}
+
+/* ===================== PLACEHOLDER TEXT ===================== */
+.placeholder-text {
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* ===================== PROMISE TABLE ===================== */
+.promise-table-wrapper {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.promise-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.promise-table thead {
+  background: #f9fafb;
+}
+
+.promise-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.promise-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  color: #374151;
+}
+
+.promise-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.promise-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* ===================== JSON DISPLAY ===================== */
+pre {
+  background: #1f2937;
+  color: #f3f4f6;
+  padding: 20px;
+  margin: 0;
+  font-size: 13px;
+  overflow-x: auto;
+  font-family: 'Courier New', monospace;
+  line-height: 1.6;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 768px) {
+  .customer-page {
+    padding: 20px 16px;
+  }
+
+  .tabs-header {
+    display: none;
+  }
+
+  .tabs-dropdown {
+    display: block;
+  }
+
+  .tab-content {
+    padding: 24px 16px;
+  }
+
+  .section-title {
+    padding: 16px 20px;
+  }
+
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 14px 20px;
+  }
+
+  .info-row-label {
+    min-width: auto;
+  }
+
+  .info-row-value {
+    text-align: left;
+  }
+
+  .promise-table th,
+  .promise-table td {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .promise-table-wrapper {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .customer-page {
+    padding: 16px 12px;
+  }
+
+  .tab-content {
+    padding: 20px 12px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    padding: 14px 16px;
+  }
+
+  .info-row {
+    padding: 12px 16px;
+  }
+
+  .promise-table th,
+  .promise-table td {
+    padding: 8px 10px;
+  }
+}
+
+/* ===================== HIDE CUSTOMER HERO ===================== */
+.customer-hero {
+  display: none;
+}
+
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-due-today {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.status-broken {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.status-completed {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.status-default {
+  background: #f3f4f6;
+  color: #6b7280;
+}

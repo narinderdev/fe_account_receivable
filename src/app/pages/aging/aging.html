@@ -1,0 +1,77 @@
+<div class="aging-container">
+  <h2 class="title">Customer Aging</h2>
+
+  <!-- FILTER BAR -->
+  <div class="filters-row">
+    <select [(ngModel)]="selectedCustomer" (change)="onCustomerChange()">
+      <option *ngFor="let c of customers" [value]="c.value">
+        {{ c.label }}
+      </option>
+    </select>
+
+    <select [(ngModel)]="selectedStatus" (change)="onStatusChange()">
+      <option *ngFor="let s of statuses" [value]="s.value">
+        {{ s.label }}
+      </option>
+    </select>
+
+    <button class="btn-generate" (click)="generatePdf()">Generate PDF</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-box" id="agingTable">
+    <table>
+      <thead>
+        <tr>
+          <th>CUSTOMER</th>
+          <th>TOTAL DUE</th>
+          <th>CURRENT</th>
+          <th>1-30 DAYS</th>
+          <th>31-60 DAYS</th>
+          <th>>90 DAYS</th>
+        </tr>
+      </thead>
+
+      <!-- Loader -->
+      <tbody *ngIf="loading">
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 40px">
+            <app-loader [visible]="loading"></app-loader>
+          </td>
+        </tr>
+      </tbody>
+
+      <!-- DATA -->
+      <tbody *ngIf="!loading && agingData.length > 0">
+        <tr *ngFor="let row of agingData">
+          <td>
+            <div class="customer-info">
+              <div
+                class="customer-initial"
+                [ngStyle]="{
+                  backgroundColor: getInitialColor(row.customer).background,
+                  color: getInitialColor(row.customer).color
+                }"
+              >
+                {{ row.customer[0] }}
+              </div>
+              <span class="customer-name">{{ row.customer }}</span>
+            </div>
+          </td>
+          <td>{{ row.totalDue | currency }}</td>
+          <td>{{ row.current | currency }}</td>
+          <td>{{ row.days1to30 | currency }}</td>
+          <td>{{ row.days31to60 | currency }}</td>
+          <td>{{ row.days90plus | currency }}</td>
+        </tr>
+      </tbody>
+
+      <!-- EMPTY STATE -->
+      <tbody *ngIf="!loading && agingData.length === 0">
+        <tr>
+          <td colspan="6" class="no-data">No records found</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

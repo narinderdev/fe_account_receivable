@@ -1,0 +1,168 @@
+<div class="company-container">
+  <div class="form-card">
+    <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="form-layout">
+      <div class="form-body">
+        <!-- HEAD OFFICE ADDRESS -->
+        <h2 class="section-title">Head Office Address</h2>
+        <p class="section-description">Your primary billing and correspondence address</p>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Address Line 1 <span class="color">*</span></label>
+            <input type="text" formControlName="addressLine1" />
+            <div class="error" *ngIf="submitted && addressForm.get('addressLine1')?.errors">
+              <small *ngIf="addressForm.get('addressLine1')?.hasError('required')"
+                >Address Line 1 is required</small
+              >
+              <small *ngIf="addressForm.get('addressLine1')?.hasError('wordLimit')"
+                >Max 100 words allowed</small
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>City <span class="color">*</span></label>
+            <input type="text" formControlName="city" (input)="onCityInput()" />
+            <div class="error" *ngIf="submitted && addressForm.get('city')?.errors">
+              <small *ngIf="addressForm.get('city')?.hasError('required')">City is required</small>
+              <small *ngIf="addressForm.get('city')?.hasError('pattern')">Digits not allowed</small>
+              <small *ngIf="addressForm.get('city')?.hasError('wordLimit')"
+                >Max 100 words allowed</small
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>State / Province <span class="color">*</span></label>
+            <input type="text" formControlName="stateProvince" (input)="onStateInput()" />
+            <div class="error" *ngIf="submitted && addressForm.get('stateProvince')?.errors">
+              <small *ngIf="addressForm.get('stateProvince')?.hasError('required')"
+                >State/Province is required</small
+              >
+              <small *ngIf="addressForm.get('stateProvince')?.hasError('pattern')"
+                >Digits not allowed</small
+              >
+              <small *ngIf="addressForm.get('stateProvince')?.hasError('wordLimit')"
+                >Max 100 words allowed</small
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Postal Code <span class="color">*</span></label>
+            <input type="text" formControlName="postalCode" (input)="onPostalInput()" />
+            <div class="error" *ngIf="submitted && addressForm.get('postalCode')?.errors">
+              <small *ngIf="addressForm.get('postalCode')?.hasError('required')"
+                >Postal Code is required</small
+              >
+              <small *ngIf="addressForm.get('postalCode')?.hasError('pattern')"
+                >Only digits allowed</small
+              >
+              <small *ngIf="addressForm.get('postalCode')?.hasError('maxlength')"
+                >Max 6 digits allowed</small
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Country <span class="color">*</span></label>
+            <select formControlName="addressCountry">
+              <option value="">Choose</option>
+              <option>USA</option>
+              <option>UK</option>
+            </select>
+            <div class="error" *ngIf="submitted && addressForm.get('addressCountry')?.errors">
+              <small *ngIf="addressForm.get('addressCountry')?.hasError('required')"
+                >Country is required</small
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- PRIMARY CONTACT -->
+        <h2 class="section-title">Primary Contact Details</h2>
+        <p class="section-description">AR communication and statement delivery contact.</p>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Contact Name <span class="color">*</span></label>
+            <input type="text" formControlName="primaryContactName" />
+            <div class="error" *ngIf="submitted && addressForm.get('primaryContactName')?.errors">
+              <small *ngIf="addressForm.get('primaryContactName')?.hasError('required')"
+                >Contact name is required</small
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Contact Email <span class="color">*</span></label>
+            <input type="email" formControlName="primaryContactEmail" (input)="onEmailInput()" />
+            <div class="error" *ngIf="submitted && addressForm.get('primaryContactEmail')?.errors">
+              <small *ngIf="addressForm.get('primaryContactEmail')?.hasError('required')"
+                >Email is required</small
+              >
+              <small *ngIf="addressForm.get('primaryContactEmail')?.hasError('pattern')"
+                >Enter a valid email</small
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Contact Phone <span class="color">*</span></label>
+            <input type="text" formControlName="primaryContactPhone" (input)="onPhoneInput()" />
+            <div class="error" *ngIf="submitted && addressForm.get('primaryContactPhone')?.errors">
+              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('required')"
+                >Phone is required</small
+              >
+              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('pattern')"
+                >Only digits allowed</small
+              >
+              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('maxlength')"
+                >Max 10 digits allowed</small
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Website (Optional)</label>
+            <input type="text" formControlName="website" />
+          </div>
+
+          <div class="form-field">
+            <label>Country <span class="color">*</span></label>
+            <select formControlName="primaryContactCountry">
+              <option value="">Choose</option>
+              <option>USA</option>
+              <option>UK</option>
+            </select>
+            <div class="error" *ngIf="submitted && addressForm.get('primaryContactCountry')?.errors">
+              <small *ngIf="addressForm.get('primaryContactCountry')?.hasError('required')"
+                >Country is required</small
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <div class="actions">
+          <button
+            class="btn-cancel"
+            [routerLink]="
+              isEditMode
+                ? ['/admin/company/edit', companyId, 'step-1']
+                : ['/admin/company/add/step-1']
+            "
+          >
+            Back
+          </button>
+
+          <button class="btn-save" type="submit" [disabled]="isSaving">
+            <app-spinner *ngIf="isSaving"></app-spinner>
+            <span *ngIf="!isSaving">Continue</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

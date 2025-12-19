@@ -1,0 +1,250 @@
+<div class="collections-container">
+  <!-- TOP ROW -->
+  <div class="top-row">
+    <h2 class="page-title">Collections</h2>
+    <div class="action-buttons">
+      <button class="btn-secondary" (click)="logCall()">Log Call</button>
+      <button class="btn-primary" (click)="newReminder()">New Reminder</button>
+      <button class="btn-primary" (click)="openPromisePopup()">New Promise</button>
+    </div>
+  </div>
+
+  <div class="company-overdue-group">
+    <div class="company-field">
+      <label>Select Company</label>
+      <select class="company-dropdown" [(ngModel)]="selectedCompanyId" (change)="onCompanyChange()">
+        <option value="">Select Company</option>
+        <option *ngFor="let company of companies" [value]="company.id">
+          {{ company.legalName || company.tradeName }}
+        </option>
+      </select>
+    </div>
+
+    <div class="overdue-box">
+      <label>Company Overdue</label>
+      <div class="amount">
+        <ng-container *ngIf="!loadingCompanyOverdue; else companyOverdueLoading">
+          ${{ companyOverdueAmount | number }}
+        </ng-container>
+        <ng-template #companyOverdueLoading>
+          <span class="overdue-loading-text">Fetching...</span>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <!-- <button class="tab" [class.active]="activeTab === 'credits'" (click)="setTab('credits')">
+      Credits to Apply
+    </button> -->
+
+    <button class="tab" [class.active]="activeTab === 'promise'" (click)="setTab('promise')">
+      Promise to Pay
+    </button>
+
+    <button class="tab" [class.active]="activeTab === 'reminders'" (click)="setTab('reminders')">
+      Reminders
+    </button>
+  </div>
+
+  <!-- <div class="card" *ngIf="activeTab === 'credits'">
+    <h3>Credits to Apply</h3>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Total Due</th>
+            <th>Last Activity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of creditsToApply">
+            <td>{{ c.customer }}</td>
+            <td>${{ c.totalDue | number }}</td>
+            <td>{{ c.lastActivity }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div> -->
+
+  <div class="card" *ngIf="activeTab === 'promise'">
+    <!-- <h3>Promise to Pay</h3> -->
+
+    <div *ngIf="loadingPromiseToPay" class="promise-loader">
+      <app-spinner></app-spinner>
+    </div>
+
+    <ng-container *ngIf="!loadingPromiseToPay">
+      <div *ngIf="promiseToPayList.length === 0" class="empty-text">
+        No promises to pay have been logged.
+      </div>
+
+      <div class="table-scroll" *ngIf="promiseToPayList.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <!-- <th>Invoice #</th> -->
+              <th>Amount</th>
+              <th>Promise Date</th>
+              <th>Status</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let p of promiseToPayList; let i = index">
+              <td>
+                <div class="customer-info">
+                  <div
+                    class="customer-initial"
+                    [ngStyle]="{
+                      backgroundColor: getInitialColor(i).background,
+                      color: getInitialColor(i).color
+                    }"
+                  >
+                    {{ p?.customerName?.[0] || '?' }}
+                  </div>
+                  <span class="customer-name">{{ p.customerName }}</span>
+                </div>
+              </td>
+              <td>
+                <strong>${{ p.amountPromised | number : '1.2-2' }}</strong>
+              </td>
+              <td>{{ p.promiseDate | date : 'MMM d, y' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(p.status)">
+                  {{ getStatusLabel(p.status) }}
+                </span>
+              </td>
+              <td>{{ p.notes || '--' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="card" *ngIf="activeTab === 'reminders'">
+    <!-- <h3>Follow-Up Reminders</h3> -->
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Due Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of followUpReminders">
+            <td>{{ r.customer }}</td>
+            <td>{{ r.dueDate }}</td>
+            <td class="highlight">{{ r.action }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showPromisePopup">
+    <div class="promise-modal">
+      <!-- HEADER -->
+      <div class="modal-header">
+        <h2 class="modal-title">Create Promise to Pay</h2>
+        <button class="btn-close" (click)="closePromisePopup()">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- BODY -->
+      <div class="modal-body">
+        <div class="form-row">
+          <!-- CUSTOMER -->
+          <div class="form-field">
+            <label>Customer <span class="color">*</span></label>
+            <select [(ngModel)]="selectedCustomerId" (change)="onCustomerChange()">
+              <option value="">Select customer</option>
+              <option *ngFor="let c of customers" [value]="c.id">
+                {{ c.customerName }}
+              </option>
+            </select>
+            <p class="error" *ngIf="submitted && !selectedCustomerId">Customer is required</p>
+          </div>
+
+          <!-- OVERDUE AMOUNT -->
+          <div class="form-field">
+            <label>Overdue Amount <span class="color">*</span></label>
+            <div class="overdue-display">
+              <ng-container *ngIf="!loadingOverdue">
+                ${{ overdueAmount | number : '1.2-2' }}
+              </ng-container>
+              <ng-container *ngIf="loadingOverdue">
+                <app-spinner></app-spinner>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- AMOUNT -->
+          <div class="form-field">
+            <label>Promise Amount <span class="color">*</span></label>
+            <input type="number" [(ngModel)]="amountPromised" placeholder="0.00" step="0.01" />
+            <p class="error" *ngIf="submitted && amountPromised === null">Amount is required</p>
+            <p class="error" *ngIf="submitted && (amountPromised ?? 0) <= 0">
+              Amount must be greater than 0
+            </p>
+            <p class="error" *ngIf="submitted && (amountPromised ?? 0) > overdueAmount">
+              Amount cannot exceed overdue
+            </p>
+          </div>
+
+          <!-- PAYMENT DATE -->
+          <div class="form-field">
+            <label>Payment Date <span class="color">*</span></label>
+            <input type="date" [(ngModel)]="promiseDate" />
+            <p class="error" *ngIf="submitted && !promiseDate">Payment date is required</p>
+          </div>
+        </div>
+
+        <!-- REMARKS -->
+        <div class="form-field full-width">
+          <label>Remarks (Optional)</label>
+          <textarea
+            placeholder="Add any notes about this promise..."
+            [(ngModel)]="notes"
+            rows="4"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closePromisePopup()">Cancel</button>
+        <button class="btn-save" [disabled]="savingPromise" (click)="savePromise()">
+          <app-spinner *ngIf="savingPromise"></app-spinner>
+          <span *ngIf="!savingPromise">Save Promise</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

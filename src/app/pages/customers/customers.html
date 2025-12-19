@@ -1,0 +1,189 @@
+<div class="customers-container">
+  <div class="customers-actions">
+    <h1 class="customers-title">Customers</h1>
+    <div class="button-gap">
+      <button class="import-customer-btn" (click)="openImportModal()">Import Customer List</button>
+
+      <button class="add-customer-btn" routerLink="add">
+        <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
+        Add Customer
+      </button>
+    </div>
+  </div>
+
+  <div class="search-card">
+    <div class="search-card-header">
+      <label class="search-card-label">Customer Name</label>
+    </div>
+    <div class="search-card-body">
+      <div class="search-input">
+        <span class="search-icon">
+          <img src="/search.svg" alt="Search Icon" />
+        </span>
+        <input type="text" placeholder="Enter customer name" />
+      </div>
+    </div>
+  </div>
+
+  <div class="customers-table-wrapper">
+    <table class="customers-table">
+      <thead>
+        <tr>
+          <th>Customer Name</th>
+          <th>Customer ID</th>
+          <th>Email</th>
+          <th>Address</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <!-- Loader while data is fetching -->
+      <tbody *ngIf="loading">
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 40px">
+            <app-loader [visible]="loading"></app-loader>
+          </td>
+        </tr>
+      </tbody>
+
+      <!-- Table Data -->
+      <tbody *ngIf="!loading && customers.length">
+        <tr
+          *ngFor="let c of customers; let i = index"
+          class="text-data"
+          (click)="viewCustomerInvoices(c.id)"
+        >
+          <td>
+            <div class="customer-info">
+              <div
+                class="customer-initial"
+                [ngStyle]="{
+                  backgroundColor: getInitialColor(i).background,
+                  color: getInitialColor(i).color
+                }"
+              >
+                {{ c?.customerName?.[0] || '?' }}
+              </div>
+              <span class="customer-name">{{ c.customerName }}</span>
+            </div>
+          </td>
+
+          <td>{{ c.customerId }}</td>
+
+          <td>{{ c.email }}</td>
+
+          <td>
+            <span *ngIf="c.address" class="green">
+              {{ c.address.addressLine1 }}, {{ c.address.city }}, {{ c.address.stateProvince }},
+              {{ c.address.country }} -
+              {{ c.address.postalCode }}
+            </span>
+
+            <span *ngIf="!c.address" class="red">--</span>
+          </td>
+
+          <td class="actions">
+            <span class="actions-gap">
+              <img
+                src="/editIcn.svg"
+                class="action-icon"
+                (click)="editCustomer(c.id); $event.stopPropagation()"
+            /></span>
+            <span>
+              <img
+                src="/deleteIcn.svg"
+                class="action-icon delete"
+                (click)="openDeleteModal(c.id); $event.stopPropagation()"
+            /></span>
+          </td>
+        </tr>
+      </tbody>
+
+      <tbody *ngIf="!loading && !customers.length">
+        <tr>
+          <td colspan="5" class="no-data-row">No customers added yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  <div class="pagination-container" *ngIf="totalPages > 1 && !loading">
+    <button class="page-btn" (click)="prevPage()" [disabled]="currentPage === 0">Previous</button>
+
+    <span class="page-info"> Page {{ currentPage + 1 }} of {{ totalPages }} </span>
+
+    <button class="page-btn" (click)="nextPage()" [disabled]="currentPage === totalPages - 1">
+      Next
+    </button>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" *ngIf="isDeleteModalOpen">
+  <div class="modal">
+    <h3>Delete Customer</h3>
+    <p>Are you sure you want to delete this customer?</p>
+
+    <div class="modal-actions">
+      <button class="cancelBtn" (click)="closeDeleteModal()">Cancel</button>
+
+      <button class="deleteBtn" (click)="confirmDelete()" [disabled]="deleting">
+        <ng-container *ngIf="!deleting">Delete</ng-container>
+
+        <ng-container *ngIf="deleting">
+          <app-spinner></app-spinner>
+        </ng-container>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Import CSV Modal -->
+<div class="modal-overlay" *ngIf="isImportModalOpen">
+  <div class="modal import-modal">
+    <h3>Import Customer List</h3>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="companySelect">Select Company</label>
+        <select
+          id="companySelect"
+          [(ngModel)]="selectedCompanyId"
+          class="company-select"
+          [disabled]="loadingCompanies"
+        >
+          <option [value]="null" disabled selected>Choose a company</option>
+          <option *ngFor="let company of companies" [value]="company.id">
+            {{ company.legalName || company.tradeName }}
+          </option>
+        </select>
+        <p *ngIf="loadingCompanies" class="loading-text">Loading companies...</p>
+      </div>
+
+      <!-- Hidden file input -->
+      <input
+        type="file"
+        #csvInput
+        accept=".csv"
+        style="display: none"
+        (change)="handleCsvUpload($event)"
+      />
+
+      <button
+        class="upload-btn"
+        (click)="csvInput.click()"
+        [disabled]="!selectedCompanyId || uploadingCsv || loadingCompanies"
+      >
+        <ng-container *ngIf="!uploadingCsv">Upload CSV</ng-container>
+        <ng-container *ngIf="uploadingCsv">
+          <app-spinner></app-spinner>
+        </ng-container>
+      </button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="cancelBtn" (click)="closeImportModal()">Cancel</button>
+    </div>
+  </div>
+</div>

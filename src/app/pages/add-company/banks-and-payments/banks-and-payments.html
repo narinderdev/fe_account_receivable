@@ -1,0 +1,101 @@
+<div class="company-container">
+  <div class="form-card">
+    <form [formGroup]="paymentForm" (ngSubmit)="saveBankPayment()" class="form-layout">
+      <div class="form-body">
+        <h2 class="section-title">Bank Accounts</h2>
+        <p class="section-description">Enter bank details for receiving payments.</p>
+
+        <div class="form-grid bank-grid">
+          <div class="form-field">
+            <label>Bank Name <span class="required">*</span></label>
+            <input type="text" formControlName="bankName" placeholder="Enter bank name" />
+            <div class="error" *ngIf="submitted && paymentForm.controls['bankName'].errors">
+              Bank name is required.
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Account Number <span class="required">*</span></label>
+            <input type="text" formControlName="accountNumber" placeholder="Enter account number" />
+            <div class="error" *ngIf="submitted && paymentForm.controls['accountNumber'].errors">
+              Account number is required.
+            </div>
+          </div>
+        </div>
+
+        <!-- PAYMENT METHODS -->
+        <h2 class="section-title">Accepted Payment Methods</h2>
+        <p class="section-description">Select the payment methods you will accept.</p>
+
+        <div class="payment-methods">
+          <label class="payment-checkbox">
+            <input type="checkbox" formControlName="acceptCheck" />
+            <span class="checkbox-custom"></span>
+            Check
+          </label>
+
+          <label class="payment-checkbox">
+            <input type="checkbox" formControlName="acceptCreditCard" />
+            <span class="checkbox-custom"></span>
+            Credit Card
+          </label>
+
+          <label class="payment-checkbox">
+            <input type="checkbox" formControlName="acceptBankTransfer" />
+            <span class="checkbox-custom"></span>
+            Bank Transfer
+          </label>
+
+          <label class="payment-checkbox">
+            <input type="checkbox" formControlName="acceptCash" />
+            <span class="checkbox-custom"></span>
+            Cash
+          </label>
+        </div>
+
+        <div class="error" *ngIf="submitted && paymentForm.errors?.['noPaymentSelected']">
+          Please select at least one payment method.
+        </div>
+
+        <!-- REMITTANCE INSTRUCTIONS -->
+        <h2 class="section-title">Remittance Instructions</h2>
+        <p class="section-description">Enter any instructions for payment remittance.</p>
+
+        <div class="form-grid">
+          <textarea
+            rows="3"
+            formControlName="remittanceInstructions"
+            placeholder="Enter instructions here..."
+          ></textarea>
+
+          <div
+            class="error"
+            *ngIf="submitted && paymentForm.controls['remittanceInstructions'].errors"
+          >
+            Remittance instructions are required.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <div class="actions">
+          <button
+            class="btn-cancel"
+            [routerLink]="
+              isEditMode
+                ? ['/admin/company/edit', companyId, 'step-3']
+                : ['/admin/company/add/step-3']
+            "
+          >
+            Back
+          </button>
+
+          <button class="btn-save" type="submit" [disabled]="isSaving">
+            <app-spinner *ngIf="isSaving"></app-spinner>
+            <span *ngIf="!isSaving">Continue</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

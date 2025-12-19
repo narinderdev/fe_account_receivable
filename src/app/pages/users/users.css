@@ -1,0 +1,349 @@
+/* .company-container {
+  padding: 32px;
+} */
+
+.page-title {
+  font-size: 28px;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.form-section {
+  background: white;
+  padding: 24px;
+  margin-bottom: 40px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #151d48;
+  margin-bottom: 12px;
+}
+
+.section-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  padding-right: 40px;
+}
+
+/* User Table Styles */
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.user-table th,
+.user-table td {
+  padding: 12px;
+  text-align: left;
+}
+
+.user-table th {
+  background: #f9fafb;
+  color: #111827;
+  font-weight: bold;
+}
+
+.user-table tr:nth-child(odd) td {
+  background-color: #fdfdfd;
+}
+
+.user-table tr:nth-child(even) td {
+  background-color: #ffffff;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-initial {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-name {
+  color: #111827;
+  font-weight: 500;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-open {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.status-partial {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.status-paid {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-default {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.invite-user-btn {
+  background: #3b82f6;
+  padding: 10px 20px;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+/* Action Buttons */
+.btn-cancel,
+.btn-save {
+  padding: 9px 24px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-cancel {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-save {
+  background: #4b86f0;
+  color: white;
+}
+
+.btn-cancel:hover,
+.btn-save:hover {
+  opacity: 0.9;
+}
+
+/* Edit Roles Button */
+.btn-edit-roles {
+  background: white;
+  color: #3599ff;
+  padding: 4px 20px;
+  border: 1px solid #3599ff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-edit-roles:hover {
+  opacity: 0.9;
+}
+
+.btn-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-right: 40px;
+}
+
+/* ======== MODAL ======== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  background: #fff;
+  padding: 32px;
+  width: 520px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  margin: 4px 0 0;
+  font-size: 22px;
+  color: #111827;
+}
+
+.modal-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0;
+}
+
+.modal-subtitle {
+  margin: 8px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.close-btn {
+  border: none;
+  background: #f3f4f6;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-form-field {
+  margin-bottom: 18px;
+}
+
+/* Label */
+.modal-form-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Ensures ALL inputs & selects are same width */
+.modal-form-field input,
+.modal-form-field select,
+.modal-form-field textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+/* Error text */
+.error {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.helper-text {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 6px;
+}
+
+/* Modal Buttons */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.sendBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #3599ff;
+  color: white;
+  padding: 9px 30px;
+  font-size: 13px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sendBtn span {
+  color: inherit;
+  font-weight: 600;
+}
+
+.sendBtn app-spinner {
+  width: 16px;
+  height: 16px;
+}
+
+.cancelBtn {
+  background: #6b7280;
+  color: white;
+  padding: 9px 30px;
+  font-size: 13px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sendBtn:hover,
+.cancelBtn:hover {
+  opacity: 0.9;
+}
+
+/* ================================================================
+   ADDED: COMPANY DROPDOWN STYLES
+   (ONLY NEW CODE BELOW — NOTHING ABOVE WAS MODIFIED)
+================================================================ */
+
+.company-select-wrapper {
+  margin-bottom: 20px;
+}
+
+.company-select {
+  width: 260px;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+}

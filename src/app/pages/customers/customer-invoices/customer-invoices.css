@@ -1,0 +1,73 @@
+.customer-invoices-container {
+  padding: 20px;
+}
+
+/* Header Title */
+.customer-invoices-container h2 {
+  margin-bottom: 18px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Simple clean table */
+.invoice-table {
+  width: 100%;
+  /* background: #f8f9fc; */
+}
+
+.invoice-table thead {
+  background: #f3f4f7;
+}
+
+.invoice-table th {
+  text-align: left;
+  padding: 14px 10px;
+  font-size: 13px;
+  color: #6b6f76;
+  font-weight: 600;
+  border-bottom: 1px solid #e1e4ea;
+}
+
+/* Body rows */
+.invoice-table tbody tr td {
+  padding: 14px 10px;
+  font-size: 14px;
+  color: #1c1e21;
+  border-bottom: 1px solid #eceef3;
+}
+
+/* Two-line layout inside a column */
+.line-1 {
+  font-weight: 600;
+}
+
+.line-2 {
+  color: #6b6f76;
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+/* Status badge */
+.status {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  color: #fff;
+}
+
+.status.active {
+  background-color: #28a745;
+}
+
+.status.inactive {
+  background-color: #dc3545;
+}
+
+.no-invoices {
+  text-align: center;
+  padding: 30px;
+  font-size: 16px;
+  color: #777;
+}

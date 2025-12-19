@@ -1,0 +1,63 @@
+<div class="payments-page">
+  <div class="button-receive">
+    <h1 class="page-title">Payments</h1>
+    <button class="action-button" routerLink="receive-payment">Receive Payments</button>
+  </div>
+
+  <!-- FULL SCREEN LOADER -->
+  <div *ngIf="loading" class="loader-wrapper">
+    <app-loader [visible]="loading"></app-loader>
+  </div>
+
+  <!-- TABLE CONTENT -->
+  <div class="payments-card" *ngIf="!loading">
+    <table class="payments-table">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Status</th>
+          <th>Applied Amount</th>
+          <th>Payment Method</th>
+          <th>Payment Date</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <!-- EMPTY STATE -->
+        <tr *ngIf="payments.length === 0" class="no-data-row">
+          <td colspan="5">No payments found.</td>
+        </tr>
+
+        <!-- PAYMENT ROWS -->
+        <tr
+          *ngFor="let payment of payments; let i = index"
+          (click)="openPaymentDetails(payment.id)"
+        >
+          <td>
+            <div class="customer-info">
+              <div
+                class="customer-initial"
+                [ngStyle]="{
+                  backgroundColor: getInitialColor(i).background,
+                  color: getInitialColor(i).color
+                }"
+              >
+                {{ getCustomerInitial(payment) }}
+              </div>
+              <span class="customer-name">{{ getCustomerName(payment) }}</span>
+            </div>
+          </td>
+
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(payment)">
+              {{ getInvoiceStatus(payment) }}
+            </span>
+          </td>
+          <td>{{ getAppliedAmount(payment) | currency }}</td>
+          <td>{{ payment.paymentMethod || '--' }}</td>
+          <td>{{ payment.paymentDate | date : 'mediumDate' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

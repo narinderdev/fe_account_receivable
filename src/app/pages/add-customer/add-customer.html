@@ -1,0 +1,778 @@
+<div class="new-customer-container">
+  <h1 class="page-title">{{ pageTitle }}</h1>
+
+  <div class="tabs-container">
+    <div class="tabs-dropdown">
+      <select [value]="activeTab" (change)="onTabSelect($event)">
+        <option *ngFor="let tab of tabItems" [value]="tab.key" [disabled]="!canAccessTab(tab.key)">
+          {{ tab.label }}
+        </option>
+      </select>
+    </div>
+
+    <div class="tabs-header">
+      <button
+        *ngFor="let tab of tabItems"
+        class="tab-button"
+        [class.active]="isActive(tab.key)"
+        [disabled]="!canAccessTab(tab.key)"
+        (click)="goToTab(tab.key)"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
+    <div class="tab-panels">
+      <div class="tab-content" *ngIf="isActive('main')">
+        <h2 class="section-title">Basic Information</h2>
+
+        <form [formGroup]="mainForm" (ngSubmit)="(false)" (submit)="(false)">
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Select Company <span class="color">*</span></label>
+
+              <select formControlName="companyId">
+                <option value="" disabled selected>Select a company</option>
+                <option *ngFor="let c of companies" [value]="c.id">
+                  {{ c.legalName }}
+                </option>
+              </select>
+
+              <div
+                class="error"
+                *ngIf="submitted && mainForm.controls['companyId'].hasError('required')"
+              >
+                Company is required.
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Customer Name <span class="color">*</span></label>
+              <input type="text" formControlName="customerName" placeholder="Enter customer name" />
+              <div class="error" *ngIf="submitted && mainForm.controls['customerName'].errors">
+                <span *ngIf="mainForm.controls['customerName'].hasError('required')">
+                  Customer Name is required.
+                </span>
+
+                <span *ngIf="mainForm.controls['customerName'].hasError('minlength')">
+                  Customer Name must be at least 2 letters.
+                </span>
+
+                <span *ngIf="mainForm.controls['customerName'].hasError('pattern')">
+                  Only letters and spaces are allowed.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Customer Type <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="customerType"
+                placeholder="e.g., Retail, Wholesale"
+              />
+              <div class="error" *ngIf="submitted && mainForm.controls['customerType'].errors">
+                <span *ngIf="mainForm.controls['customerType'].hasError('required')">
+                  Customer Type is required.
+                </span>
+
+                <span *ngIf="mainForm.controls['customerType'].hasError('pattern')">
+                  Only letters and spaces are allowed.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Email <span class="color">*</span></label>
+              <input type="email" formControlName="email" placeholder="customer@example.com" />
+              <div class="error" *ngIf="submitted && mainForm.controls['email'].errors">
+                <span *ngIf="mainForm.controls['email'].hasError('required')">
+                  Email is required.
+                </span>
+
+                <span *ngIf="mainForm.controls['email'].hasError('pattern')">
+                  Invalid email format.
+                </span>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="tab-content" *ngIf="isActive('address')">
+        <h2 class="section-title">Billing Address</h2>
+
+        <form [formGroup]="addressForm" (ngSubmit)="(false)" (submit)="(false)">
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Address Line 1 <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="addressLine1"
+                placeholder="Street address, P.O. box"
+              />
+              <div
+                class="error"
+                *ngIf="
+                  addressSubmitted && addressForm.controls['addressLine1'].hasError('required')
+                "
+              >
+                Address Line 1 is required.
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>City <span class="color">*</span></label>
+              <input type="text" formControlName="city" placeholder="Enter city" />
+              <div
+                class="error"
+                *ngIf="addressSubmitted && addressForm.controls['city'].hasError('required')"
+              >
+                City is required.
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>State / Province <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="stateProvince"
+                placeholder="Enter state or province"
+              />
+              <div
+                class="error"
+                *ngIf="
+                  addressSubmitted && addressForm.controls['stateProvince'].hasError('required')
+                "
+              >
+                State / Province is required.
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Postal Code <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="postalCode"
+                (input)="limitPostalCode($event)"
+                placeholder="123456"
+              />
+
+              <div
+                class="error"
+                *ngIf="addressSubmitted && addressForm.controls['postalCode'].errors"
+              >
+                <span *ngIf="addressForm.controls['postalCode'].hasError('required')">
+                  Postal Code is required.
+                </span>
+
+                <span *ngIf="addressForm.controls['postalCode'].hasError('pattern')">
+                  Postal Code must be digits only (max 6).
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Country <span class="color">*</span></label>
+              <select formControlName="country">
+                <option value="" disabled selected>Select country</option>
+                <option>USA</option>
+                <option>Canada</option>
+                <option>UK</option>
+              </select>
+              <div
+                class="error"
+                *ngIf="addressSubmitted && addressForm.controls['country'].hasError('required')"
+              >
+                Country is required.
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- PROCESSING TAB -->
+      <!-- <div *ngIf="isActive('processing')">
+     
+        <h2 class="section-title">Balance Summary</h2>
+
+        <div class="summary-grid">
+          <div class="summary-item">
+            <p class="summary-title">Total Balance</p>
+            <p class="summary-value">$4,500.00</p>
+          </div>
+
+          <div class="summary-item">
+            <p class="summary-title">Amount / Balance</p>
+            <p class="summary-value">$10,000.00</p>
+          </div>
+
+          <div class="summary-item">
+            <p class="summary-title">Overdue Days</p>
+            <p class="summary-value">106</p>
+          </div>
+        </div>
+
+        <div class="subtabs">
+          <button class="subtab active">Overview</button>
+          <button class="subtab">Invoices</button>
+          <button class="subtab">Payments</button>
+          <button class="subtab">Aging</button>
+          <button class="subtab">Notes</button>
+          <button class="subtab">Documents</button>
+        </div>
+
+        <table class="processing-table">
+          <thead>
+            <tr>
+              <th>Invoice</th>
+              <th>Date / Due Date</th>
+              <th>Amount / Balance</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>#INV-001</td>
+              <td>01/15/2024</td>
+              <td>$100,000</td>
+              <td>Partial</td>
+            </tr>
+
+            <tr>
+              <td>#INV-002</td>
+              <td>01/15/2024</td>
+              <td>$100,000</td>
+              <td>Past Due</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 class="section-title">Timeline</h2>
+
+        <div class="timeline-wrapper">
+          <div class="timeline-item">
+            <p class="timeline-date">TODAY</p>
+            <p class="timeline-time">11:30 AM</p>
+            <p class="timeline-text">
+              John Doe recorded a call. Followed up regarding outstanding payment, Customer promised
+              to clear payment by next Friday.
+            </p>
+          </div>
+
+          <div class="timeline-item">
+            <p class="timeline-date">Apr 30</p>
+            <p class="timeline-time">9:00 AM</p>
+            <p class="timeline-text">
+              <strong>Jane Smith left a note:</strong><br />
+              Customer indicated there was an issue with invoice #INV-002.
+            </p>
+          </div>
+        </div>
+
+        <textarea class="note-input" placeholder="Add a note..."></textarea>
+      </div> -->
+
+      <!-- APPLICATION TAB -->
+      <!-- <div *ngIf="isActive('application')">
+        <h2 class="section-title">Application</h2>
+
+        <form [formGroup]="applicationForm" (ngSubmit)="(false)" (submit)="(false)">
+
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" formControlName="applyPayments" />
+              Apply Payments
+            </label>
+
+            <label class="checkbox-item">
+              <input type="checkbox" formControlName="autoApplyPayments" />
+              Auto Apply Payments
+            </label>
+
+            <label class="checkbox-item">
+              <input type="checkbox" formControlName="shipCreditCheck" />
+              Ship Credit Check
+            </label>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Tolerance (%) <span class="color">*</span></label>
+              <input type="number" formControlName="tolerancePercentage" placeholder="0-100" />
+              <div
+                class="error"
+                *ngIf="applicationSubmitted && applicationForm.controls['tolerancePercentage'].errors"
+              >
+                <span *ngIf="applicationForm.controls['tolerancePercentage'].hasError('required')">
+                  Tolerance (%) is required.
+                </span>
+                <span *ngIf="applicationForm.controls['tolerancePercentage'].hasError('min')">
+                  Tolerance (%) must be at least 0.
+                </span>
+                <span *ngIf="applicationForm.controls['tolerancePercentage'].hasError('max')">
+                  Tolerance (%) cannot be more than 100.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Tolerance Amount <span class="color">*</span></label>
+              <input type="number" formControlName="toleranceAmount" placeholder="Enter amount" />
+              <div
+                class="error"
+                *ngIf="applicationSubmitted && applicationForm.controls['toleranceAmount'].errors"
+              >
+                <span *ngIf="applicationForm.controls['toleranceAmount'].hasError('required')">
+                  Tolerance Amount is required.
+                </span>
+                <span *ngIf="applicationForm.controls['toleranceAmount'].hasError('min')">
+                  Tolerance Amount must be at least 0.
+                </span>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div> -->
+
+      <!-- STATEMENT TAB -->
+      <!-- <div *ngIf="isActive('statement')">
+        <h2 class="section-title">Statement</h2>
+
+        <form [formGroup]="statementForm" (ngSubmit)="(false)" (submit)="(false)">
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" formControlName="sendStatements" />
+              Send Statement
+            </label>
+
+            <label class="checkbox-item">
+              <input type="checkbox" formControlName="autoApplyPayments" />
+              Asito Apply Payments
+            </label>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Tolerance (%) <span class="color">*</span></label>
+              <input type="number" formControlName="tolerancePercentage" placeholder="0-100" />
+              <div
+                class="error"
+                *ngIf="statementSubmitted && statementForm.controls['tolerancePercentage'].errors"
+              >
+                <span *ngIf="statementForm.controls['tolerancePercentage'].hasError('required')">
+                  Tolerance (%) is required.
+                </span>
+                <span *ngIf="statementForm.controls['tolerancePercentage'].hasError('min')">
+                  Tolerance (%) must be at least 0.
+                </span>
+                <span *ngIf="statementForm.controls['tolerancePercentage'].hasError('max')">
+                  Tolerance (%) cannot be more than 100.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Minimum Amount <span class="color">*</span></label>
+              <input type="number" formControlName="minimumAmount" placeholder="Enter minimum amount" />
+              <div
+                class="error"
+                *ngIf="statementSubmitted && statementForm.controls['minimumAmount'].errors"
+              >
+                <span *ngIf="statementForm.controls['minimumAmount'].hasError('required')">
+                  Minimum Amount is required.
+                </span>
+                <span *ngIf="statementForm.controls['minimumAmount'].hasError('min')">
+                  Minimum Amount must be at least 0.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <br /><br />
+
+          <h2 class="section-title">Send Statement</h2>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Send Statement</label>
+              <select>
+                <option value="" disabled selected>Select method</option>
+                <option>Email</option>
+                <option>Print</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label>Cycle Code</label>
+              <select>
+                <option value="" disabled selected>Select cycle</option>
+                <option>Monthly</option>
+                <option>Quarterly</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label>Print or Email</label>
+              <select>
+                <option value="" disabled selected>Select option</option>
+                <option>Email</option>
+                <option>Print</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label>Minimum Amount</label>
+              <input type="text" placeholder="Enter minimum amount" />
+            </div>
+          </div>
+        </form>
+      </div> -->
+
+      <div class="tab-content" *ngIf="isActive('eft')">
+        <h2 class="section-title">Bank Information</h2>
+
+        <form [formGroup]="eftForm" (ngSubmit)="(false)" (submit)="(false)">
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Bank Name <span class="color">*</span></label>
+              <input type="text" formControlName="bankName" placeholder="Enter bank name" />
+              <div class="error" *ngIf="eftSubmitted && eftForm.controls['bankName'].errors">
+                <span *ngIf="eftForm.controls['bankName'].hasError('required')">
+                  Bank Name is required.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>IBAN / Account Number <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="ibanAccountNumber"
+                placeholder="Enter IBAN or account number"
+              />
+              <div
+                class="error"
+                *ngIf="eftSubmitted && eftForm.controls['ibanAccountNumber'].errors"
+              >
+                <span *ngIf="eftForm.controls['ibanAccountNumber'].hasError('required')">
+                  IBAN / Account Number is required.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Bank Identifier Code <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="bankIdentifierCode"
+                placeholder="Enter BIC/SWIFT code"
+              />
+              <div
+                class="error"
+                *ngIf="eftSubmitted && eftForm.controls['bankIdentifierCode'].errors"
+              >
+                <span *ngIf="eftForm.controls['bankIdentifierCode'].hasError('required')">
+                  Bank Identifier Code is required.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <br />
+
+          <h2 class="section-title">ACH Mandate</h2>
+
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" formControlName="enableAchPayments" />
+              Enable ACH payments
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <span>Allow this customer to pay invoices via direct debit</span>
+
+            <label class="switch">
+              <input type="checkbox" formControlName="allowDirectDebit" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="tab-content" *ngIf="isActive('vat')">
+        <h2 class="section-title">VAT Information</h2>
+
+        <form [formGroup]="vatForm" (ngSubmit)="(false)" (submit)="(false)">
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Tax Identification Number <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="taxIdentificationNumber"
+                placeholder="Enter TIN"
+              />
+              <div
+                class="error"
+                *ngIf="vatSubmitted && vatForm.controls['taxIdentificationNumber'].errors"
+              >
+                <span *ngIf="vatForm.controls['taxIdentificationNumber'].hasError('required')">
+                  Tax Identification Number is required.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Tax Agency Name <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="taxAgencyName"
+                placeholder="Enter tax agency name"
+              />
+              <div class="error" *ngIf="vatSubmitted && vatForm.controls['taxAgencyName'].errors">
+                <span *ngIf="vatForm.controls['taxAgencyName'].hasError('required')">
+                  Tax Agency Name is required.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <br />
+
+          <h2 class="section-title">Customer VAT Codes</h2>
+
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" formControlName="enableVatCodes" />
+              Enable VAT codes for this customer
+            </label>
+          </div>
+
+          <div class="form-field vat-dropdown">
+            <label>VAT Code</label>
+            <select formControlName="vatCode">
+              <option value="" disabled selected>Select VAT code</option>
+              <option value="Standard Rate (20%)">Standard Rate (20%)</option>
+              <option value="Reduced Rate (5%)">Reduced Rate (5%)</option>
+              <option value="Zero Rate (0%)">Zero Rate (0%)</option>
+              <option value="Exempt">Exempt</option>
+              <option value="Outside Scope">Outside Scope</option>
+            </select>
+          </div>
+        </form>
+      </div>
+
+      <div class="tab-content" *ngIf="isActive('dunning')">
+        <h2 class="section-title">Credit Settings</h2>
+
+        <form [formGroup]="dunningForm" (ngSubmit)="(false)" (submit)="(false)">
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" formControlName="placeOnCreditHold" />
+              Place this customer on credit hold
+            </label>
+          </div>
+
+          <div class="form-field credit-limit-field">
+            <label>Credit Limit <span class="color">*</span></label>
+            <input type="number" formControlName="creditLimit" placeholder="5000.00" />
+            <div
+              class="error"
+              *ngIf="dunningSubmitted && dunningForm.controls['creditLimit'].errors"
+            >
+              <span *ngIf="dunningForm.controls['creditLimit'].hasError('required')">
+                Credit Limit is required.
+              </span>
+              <span *ngIf="dunningForm.controls['creditLimit'].hasError('min')">
+                Credit Limit must be positive.
+              </span>
+            </div>
+          </div>
+
+          <br />
+
+          <h2 class="section-title">Dunning Settings</h2>
+
+          <div class="form-field small-dropdown">
+            <label>Dunning Level <span class="color">*</span></label>
+            <select formControlName="dunningLevel">
+              <option value="" disabled selected>Select dunning level</option>
+              <option value="Level 1">Level 1</option>
+              <option value="Level 2">Level 2</option>
+              <option value="Level 3">Level 3</option>
+              <option value="Level 4">Level 4</option>
+            </select>
+            <div
+              class="error"
+              *ngIf="dunningSubmitted && dunningForm.controls['dunningLevel'].errors"
+            >
+              <span *ngIf="dunningForm.controls['dunningLevel'].hasError('required')">
+                Dunning Level is required.
+              </span>
+            </div>
+          </div>
+
+          <br />
+
+          <h2 class="section-title">Reminder Schedule</h2>
+
+          <div class="reminder-grid">
+            <div class="form-field">
+              <label>Past Due <a class="link">(Send after)</a> <span class="color">*</span></label>
+              <select formControlName="pastDue">
+                <option value="" disabled selected>Select days</option>
+                <option value="7">7 days</option>
+                <option value="10">10 days</option>
+                <option value="15">15 days</option>
+                <option value="30">30 days</option>
+              </select>
+              <div class="error" *ngIf="dunningSubmitted && dunningForm.controls['pastDue'].errors">
+                <span *ngIf="dunningForm.controls['pastDue'].hasError('required')">
+                  Past Due is required.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Level 1 <a class="link">(Send after)</a> <span class="color">*</span></label>
+              <select formControlName="level1">
+                <option value="" disabled selected>Select days</option>
+                <option value="10">10 days</option>
+                <option value="14">14 days</option>
+                <option value="20">20 days</option>
+              </select>
+              <div class="error" *ngIf="dunningSubmitted && dunningForm.controls['level1'].errors">
+                <span *ngIf="dunningForm.controls['level1'].hasError('required')">
+                  Level 1 is required.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Level 2 <a class="link">(Send after)</a> <span class="color">*</span></label>
+              <select formControlName="level2">
+                <option value="" disabled selected>Select days</option>
+                <option value="20">20 days</option>
+                <option value="30">30 days</option>
+                <option value="35">35 days</option>
+              </select>
+              <div class="error" *ngIf="dunningSubmitted && dunningForm.controls['level2'].errors">
+                <span *ngIf="dunningForm.controls['level2'].hasError('required')">
+                  Level 2 is required.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Level 3 <a class="link">(Send after)</a> <span class="color">*</span></label>
+              <select formControlName="level3">
+                <option value="" disabled selected>Select days</option>
+                <option value="25">25 days</option>
+                <option value="28">28 days</option>
+                <option value="30">30 days</option>
+              </select>
+              <div class="error" *ngIf="dunningSubmitted && dunningForm.controls['level3'].errors">
+                <span *ngIf="dunningForm.controls['level3'].hasError('required')">
+                  Level 3 is required.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Level 4 <a class="link">(Send after)</a> <span class="color">*</span></label>
+              <select formControlName="level4">
+                <option value="" disabled selected>Select days</option>
+                <option value="40">40 days</option>
+                <option value="45">45 days</option>
+                <option value="50">50 days</option>
+              </select>
+              <div class="error" *ngIf="dunningSubmitted && dunningForm.controls['level4'].errors">
+                <span *ngIf="dunningForm.controls['level4'].hasError('required')">
+                  Level 4 is required.
+                </span>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="tab-footer">
+      <div class="actions">
+        <button class="btn-cancel" routerLink="/admin/customers">Cancel</button>
+
+        <ng-container *ngIf="!isEditMode">
+          <button
+            *ngIf="isActive('main')"
+            class="btn-continue"
+            (click)="saveMainData()"
+            [disabled]="isSavingMain"
+          >
+            <ng-container *ngIf="!isSavingMain; else spinMain">Save Main</ng-container>
+            <ng-template #spinMain><app-spinner></app-spinner></ng-template>
+          </button>
+
+          <button
+            *ngIf="isActive('address')"
+            class="btn-continue"
+            (click)="saveAddressData()"
+            [disabled]="isSavingAddress"
+          >
+            <ng-container *ngIf="!isSavingAddress; else spinAddress">Save Address</ng-container>
+            <ng-template #spinAddress><app-spinner></app-spinner></ng-template>
+          </button>
+
+          <button
+            *ngIf="isActive('eft')"
+            class="btn-continue"
+            (click)="saveEftData()"
+            [disabled]="isSavingEft"
+          >
+            <ng-container *ngIf="!isSavingEft; else spinEft">Save EFT</ng-container>
+            <ng-template #spinEft><app-spinner></app-spinner></ng-template>
+          </button>
+
+          <button
+            *ngIf="isActive('vat')"
+            class="btn-continue"
+            (click)="saveVatData()"
+            [disabled]="isSavingVat"
+          >
+            <ng-container *ngIf="!isSavingVat; else spinVat">Save VAT</ng-container>
+            <ng-template #spinVat><app-spinner></app-spinner></ng-template>
+          </button>
+
+          <button
+            *ngIf="isActive('dunning')"
+            class="btn-continue"
+            (click)="saveDunningData()"
+            [disabled]="isSavingDunning"
+          >
+            <ng-container *ngIf="!isSavingDunning; else spinDunning">Save Dunning</ng-container>
+            <ng-template #spinDunning><app-spinner></app-spinner></ng-template>
+          </button>
+        </ng-container>
+
+        <ng-container *ngIf="isEditMode">
+          <button
+            *ngIf="isActive('dunning')"
+            class="btn-continue"
+            type="button"
+            (click)="updateCustomer()"
+            [disabled]="isUpdatingCustomer"
+          >
+            <ng-container *ngIf="!isUpdatingCustomer; else spinUpdating">
+              Update Customer
+            </ng-container>
+
+            <ng-template #spinUpdating>
+              <app-spinner></app-spinner>
+            </ng-template>
+          </button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,30 @@
+<div class="tabs-container">
+  <div class="tabs-dropdown">
+    <select (change)="goTo($any($event.target).value)">
+      <option
+        *ngFor="let tab of tabs"
+        [value]="tab.key"
+        [disabled]="!canAccessTab(tab.key)"
+        [selected]="isActive(tab.key)"
+      >
+        {{ tab.label }}
+      </option>
+    </select>
+  </div>
+
+  <div class="tabs-header">
+    <button
+      *ngFor="let tab of tabs"
+      class="tab-button"
+      [class.active]="isActive(tab.key)"
+      [disabled]="!canAccessTab(tab.key)"
+      (click)="goTo(tab.key)"
+    >
+      {{ tab.label }}
+    </button>
+  </div>
+
+  <div class="tab-panels">
+    <router-outlet></router-outlet>
+  </div>
+</div>

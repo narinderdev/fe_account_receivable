@@ -1,0 +1,50 @@
+<h1 class="page-title">Opening Balances</h1>
+<p class="subtitle">ONBOARDING - STEP 5 OF 5</p>
+
+<div class="company-container">
+  <div class="form-section">
+    <h2 class="section-title">Opening Balances</h2>
+    <p class="section-description">
+      Import a file with your outstanding receivables as of your transition date.
+    </p>
+
+    <!-- Download Template -->
+    <div class="download-template">
+      <button class="btn-template">Download Template</button>
+    </div>
+
+    <!-- Upload File Section -->
+    <div class="upload-file-section">
+      <h3 class="upload-title">Upload File</h3>
+
+      <div class="upload-file-box">
+        <input 
+          type="file"
+          id="file-upload"
+          (change)="onFileSelected($event)"
+          accept=".csv"
+        />
+
+        <label for="file-upload" class="file-label">
+          <span class="file-name">{{ fileName || 'Upload CSV File' }}</span>
+        </label>
+      </div>
+
+      <!-- Validation Error -->
+      <div *ngIf="fileError" class="error">
+        {{ fileError }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="actions">
+    <button class="btn-cancel" (click)="onCancel()" routerLink="/admin/company/add/step-4">
+      Back
+    </button>
+
+    <button class="btn-save" (click)="onSubmit()">
+      Import Opening Balances
+    </button>
+  </div>
+</div>

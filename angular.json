@@ -18,21 +18,12 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
-            ],
-            "styles": [
-              "src/styles.css"
-            ],
-            "server": "src/main.server.ts",
-            "outputMode": "server",
-            "ssr": {
-              "entry": "src/server.ts"
-            }
+            "assets": [{ "glob": "**/*", "input": "public" }],
+            "styles": ["src/styles.css"],
+            "outputMode": "static",
+            "ssr": false
           },
+
           "configurations": {
             "production": {
               "budgets": [
@@ -59,6 +50,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": ["94f240dff6da.ngrok-free.app"]
+          },
           "configurations": {
             "production": {
               "buildTarget": "account_receivable:build:production"

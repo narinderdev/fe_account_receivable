@@ -1,0 +1,47 @@
+<div class="customer-invoices-container">
+  <!-- <h2>Invoices for Customer</h2> -->
+
+  <app-loader [visible]="loading"></app-loader>
+  <div class="">
+    <table class="invoice-table" *ngIf="!loading && invoices.length > 0">
+      <thead>
+        <tr>
+          <th>Invoice Number</th>
+          <th>Date</th>
+          <th>Due Date</th>
+          <th>Total Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let inv of invoices" (click)="openInvoiceDetail(inv.id)" class="row-click">
+          <td>{{ inv.invoiceNumber || '--' }}</td>
+
+          <td>{{ inv.invoiceDate || '--' }}</td>
+
+          <td>{{ inv.dueDate || '--' }}</td>
+          <td>
+            <ng-container
+              *ngIf="inv.totalAmount !== null && inv.totalAmount !== undefined; else noAmount"
+            >
+              {{ inv.totalAmount | currency }}
+            </ng-container>
+            <ng-template #noAmount>--</ng-template>
+          </td>
+
+          <!-- Status -->
+          <td>
+            <span class="status active" *ngIf="inv.active === true">Active</span>
+            <span class="status inactive" *ngIf="inv.active === false">Inactive</span>
+            <span *ngIf="inv.active === null || inv.active === undefined">--</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="!loading && invoices.length === 0" class="no-invoices">
+    No invoices found for this customer.
+  </div>
+</div>

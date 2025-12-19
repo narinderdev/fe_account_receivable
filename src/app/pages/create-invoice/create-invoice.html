@@ -1,0 +1,182 @@
+<div class="invoice-create-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1 class="page-title">Create Invoice</h1>
+    <div class="header-actions">
+      <button class="btn-cancel" routerLink="/admin/invoices">Cancel</button>
+      <button class="btn-save-send" type="button" (click)="submitInvoice()" [disabled]="loading">
+        <app-spinner *ngIf="loading"></app-spinner>
+        <span *ngIf="!loading">Save & Send</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Form -->
+  <div class="form-content">
+    <div class="card">
+      <div class="card-header">
+        <img src="/assets/info.svg" alt="Info Icon" class="info-icon" />
+        <h2 class="card-title">Invoice Details</h2>
+      </div>
+
+      <div class="card-body">
+        <div class="form-row">
+          <!-- Customer -->
+          <div class="form-field">
+            <label>Customer</label>
+            <select [(ngModel)]="invoice.customerId">
+              <option value="">Select Customer</option>
+              <option *ngFor="let c of customers" [value]="c.id">
+                {{ c.customerName }}
+              </option>
+            </select>
+            <p class="error" *ngIf="formSubmitted && !invoice.customerId">Customer is required.</p>
+          </div>
+
+          <!-- Invoice Date -->
+          <div class="form-field">
+            <label>Invoice Date</label>
+            <input type="date" [(ngModel)]="invoice.invoiceDate" />
+            <p class="error" *ngIf="formSubmitted && !invoice.invoiceDate">
+              Invoice date is required.
+            </p>
+          </div>
+
+          <!-- Due Date -->
+          <div class="form-field">
+            <label>Due Date</label>
+            <input type="date" [(ngModel)]="invoice.dueDate" />
+            <p class="error" *ngIf="formSubmitted && !invoice.dueDate">Due date is required.</p>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- Invoice Number -->
+          <div class="form-field invoice-number-field">
+            <div class="invoice-label-row">
+              <label>Invoice Number</label>
+              <label class="auto-label">
+                <input type="checkbox" [(ngModel)]="invoice.isGenerated" />
+                <span>Auto-generate</span>
+              </label>
+            </div>
+
+            <div class="invoice-number-wrapper">
+              <span class="prefix">INV-</span>
+              <input
+                type="text"
+                [(ngModel)]="invoice.invoiceNumber"
+                [disabled]="invoice.isGenerated"
+                maxlength="4"
+                placeholder="1234"
+              />
+            </div>
+
+            <p
+              class="error"
+              *ngIf="formSubmitted && !invoice.isGenerated && !invoice.invoiceNumber"
+            >
+              Invoice number is required if auto-generate is not selected.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items Card -->
+    <div class="card">
+      <div class="card-header">
+        <img src="/assets/cart.svg" alt="Info Icon" class="info-icon" />
+        <h2 class="card-title">Items</h2>
+      </div>
+
+      <div class="card-body">
+        <!-- Items Table Header -->
+        <div class="items-table-header">
+          <div class="col-item">Item</div>
+          <div class="col-description">Description</div>
+          <div class="col-quantity">Quantity</div>
+          <div class="col-rate">Rate</div>
+          <div class="col-tax">Tax (%)</div>
+          <div class="col-action"></div>
+        </div>
+
+        <!-- Item Rows -->
+        <div class="item-row" *ngFor="let item of invoice.items; let i = index">
+          <div class="col-item">
+            <input type="text" [(ngModel)]="item.itemName" placeholder="Item name" />
+          </div>
+
+          <div class="col-description">
+            <input type="text" [(ngModel)]="item.description" placeholder="Item description" />
+          </div>
+
+          <div class="col-quantity">
+            <input type="number" [(ngModel)]="item.quantity" />
+          </div>
+
+          <div class="col-rate">
+            <input type="number" [(ngModel)]="item.rate" />
+          </div>
+
+          <div class="col-tax">
+            <input type="number" [(ngModel)]="item.tax" max="50" />
+          </div>
+
+          <div class="col-action">
+            <button *ngIf="invoice.items.length > 1" class="btn-remove" (click)="removeItemRow(i)">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.76L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452ZM10.01 8.971a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.346-9Zm5.48.058a.75.75 0 1 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button class="btn-add-item" (click)="addItemRow()">
+          <img src="/assets/plusIcn.svg" alt="Info Icon" class="add-icon" />
+          Add New Item
+        </button>
+      </div>
+    </div>
+
+    <!-- Notes & Totals Section -->
+    <div class="bottom-section">
+      <!-- Notes -->
+      <div class="notes-section">
+        <label>Notes</label>
+        <textarea
+          class="notes-textarea"
+          placeholder="Add any additional notes or payment terms..."
+          [(ngModel)]="invoice.note"
+        ></textarea>
+        <p class="error" *ngIf="formSubmitted && !invoice.note">Note is required.</p>
+      </div>
+
+      <!-- Totals -->
+      <div class="totals-section">
+        <div class="totals-card">
+          <div class="total-row">
+            <span class="label">Subtotal</span>
+            <span class="value">{{ subtotal | currency }}</span>
+          </div>
+          <div class="total-row">
+            <span class="label">Tax</span>
+            <span class="value">{{ taxAmount | currency }}</span>
+          </div>
+          <div class="total-row">
+            <span class="label">Discount</span>
+            <span class="value">$0.00</span>
+          </div>
+          <div class="total-row total-final">
+            <span class="label">Total Due</span>
+            <span class="value">{{ totalAmount | currency }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

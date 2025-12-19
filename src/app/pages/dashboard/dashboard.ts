@@ -12,12 +12,11 @@ import {
 import { CurrencyPipe, NgIf, isPlatformBrowser } from '@angular/common';
 import Chart from 'chart.js/auto';
 import { DashboardService } from '../../services/dashboard-service';
-import { Loader } from '../../shared/loader/loader';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NgIf, CurrencyPipe, Loader],
+  imports: [NgIf, CurrencyPipe],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css'],
 })
@@ -26,7 +25,6 @@ export class Dashboard implements OnInit, AfterViewInit {
 
   isBrowser = false;
   chart!: Chart;
-  loadingSummary = false;
 
   dashboardData = {
     totalReceivables: 0,
@@ -66,9 +64,6 @@ export class Dashboard implements OnInit, AfterViewInit {
      API CALL
   ========================= */
   loadDashboardSummary(): void {
-    this.loadingSummary = true;
-    this.cdr.detectChanges();
-
     this.dashboardService.getDashboardCardData().subscribe({
       next: (res) => {
         const data = res?.data;
@@ -86,13 +81,10 @@ export class Dashboard implements OnInit, AfterViewInit {
           };
         }
 
-        this.loadingSummary = false;
-        this.cdr.detectChanges(); // ✅ important
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Dashboard summary error:', err);
-        this.loadingSummary = false;
-        this.cdr.detectChanges();
       },
     });
   }
@@ -111,23 +103,86 @@ export class Dashboard implements OnInit, AfterViewInit {
         datasets: [
           {
             data: [80, 200, 150, 70, 40, 90],
-            borderColor: '#3599FF',
-            backgroundColor: 'transparent',
+            borderColor: '#3b82f6',
+            backgroundColor: (context: any) => {
+              const ctx = context.chart.ctx;
+              const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+              gradient.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
+              gradient.addColorStop(1, 'rgba(59, 130, 246, 0.01)');
+              return gradient;
+            },
             borderWidth: 3,
             tension: 0.4,
-            pointRadius: 4,
-            pointBackgroundColor: '#3599FF',
-            fill: false,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointHoverBackgroundColor: '#3b82f6',
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 2,
+            fill: true,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            backgroundColor: '#1f2937',
+            titleColor: '#ffffff',
+            bodyColor: '#ffffff',
+            padding: 12,
+            borderColor: '#374151',
+            borderWidth: 1,
+            displayColors: false,
+            callbacks: {
+              label: (context) => {
+                const value = context.parsed.y;
+                return value !== null ? `$${value.toFixed(2)}` : '$0.00';
+              },
+            },
+          },
+        },
         scales: {
-          y: { grid: { color: '#E5E7EB' } },
-          x: { grid: { display: false } },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: '#e5e7eb',
+            },
+            ticks: {
+              color: '#6b7280',
+              font: {
+                size: 12,
+              },
+              callback: (value) => `$${value}`,
+            },
+            border: {
+              display: false,
+            },
+          },
+          x: {
+            grid: {
+              display: false,
+            },
+            ticks: {
+              color: '#6b7280',
+              font: {
+                size: 12,
+              },
+            },
+            border: {
+              display: false,
+            },
+          },
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index',
         },
       },
     });

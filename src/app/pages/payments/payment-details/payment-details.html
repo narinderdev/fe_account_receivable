@@ -1,0 +1,75 @@
+<div class="payment-details-page">
+  <div class="header-row">
+    <h1>Payment Details</h1>
+
+    <div class="header-buttons">
+      <button class="btn-secondary" routerLink="/admin/payments">Go To Payments</button>
+      <button class="btn-primary" (click)="downloadPDF()">Download PDF</button>
+    </div>
+  </div>
+
+  <!-- PDF CONTENT WRAPPER -->
+  <div id="paymentPDF">
+    <!-- Summary Card -->
+    <div class="summary-card">
+      <div class="company-name">{{ customerName }}</div>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <label>Payment Date</label>
+          <div class="value">{{ paymentDate }}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="summary-item">
+          <label>Amount Received</label>
+          <div class="value">{{ paymentAmount | currency }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice Box -->
+    <div class="invoice-box">
+      <table class="invoice-table">
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Due Date</th>
+            <th>Total Amount</th>
+            <th>Open Amount</th>
+            <th>Applied Amount</th>
+            <th>Balance Due</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let invoice of invoices">
+            <td>
+              <a [routerLink]="['/admin/invoices/detail', invoice.invoice.id]" class="invoice-link">
+                {{ invoice.invoice.invoiceNumber }}
+              </a>
+            </td>
+
+            <td>{{ invoice.invoice.dueDate }}</td>
+            <td>{{ invoice.invoice.totalAmount | currency }}</td>
+            <td>{{ invoice.openAmount | currency }}</td>
+            <td>{{ invoice.appliedAmount | currency }}</td>
+            <td>{{ invoice.invoice.balanceDue | currency }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Timeline + Notes -->
+    <div class="timeline-container">
+      <h3>Timeline</h3>
+
+      <p class="timeline-text">Payment received on {{ paymentDate }}</p>
+
+      <div class="notes-box">
+        {{ notes }}
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,112 @@
+<div class="roles-container">
+  <div class="roles-header">
+    <div>
+      <h2 class="section-title">User Roles</h2>
+    </div>
+    <button class="btn-add" (click)="openModal()">Add Role</button>
+  </div>
+
+  <app-spinner *ngIf="isLoading"></app-spinner>
+
+  <!-- ROLES TABLE -->
+  <table class="role-table" *ngIf="!isLoading && roles.length > 0">
+    <thead>
+      <tr>
+        <th>Role Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let r of roles">
+        <td>{{ r.name }}</td>
+        <td>{{ r.description }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p *ngIf="!isLoading && roles.length === 0" class="section-description">
+    No roles found.
+  </p>
+</div>
+
+<!-- ADD ROLE MODAL -->
+<div class="modal-backdrop" *ngIf="isModalOpen">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3>Add Role</h3>
+      </div>
+      <button class="close-btn" type="button" aria-label="Close" (click)="closeModal()">&times;</button>
+    </div>
+
+    <form [formGroup]="addRoleForm" (ngSubmit)="saveRole()" class="modal-body">
+      <div class="form-field">
+        <label>Name</label>
+        <input type="text" formControlName="name" placeholder="e.g. Collections Manager" />
+        <div class="error" *ngIf="submitted && addRoleForm.controls['name'].errors">Required</div>
+      </div>
+
+      <div class="form-field">
+        <label>Description</label>
+        <textarea formControlName="description" placeholder="Describe what this role can do"></textarea>
+        <div class="error" *ngIf="submitted && addRoleForm.controls['description'].errors">
+          Required
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>Permissions</label>
+        <div class="permissions-panel">
+          <div class="permission-tabs">
+            <button
+              type="button"
+              class="permission-tab"
+              *ngFor="let tab of permissionTabs"
+              [class.active]="tab.key === activePermissionTab"
+              (click)="setActiveTab(tab.key)"
+            >
+              <span>{{ tab.label }}</span>
+              <span class="tab-count" *ngIf="getPermissionsForTab(tab.key).length">
+                {{ getPermissionsForTab(tab.key).length }}
+              </span>
+            </button>
+          </div>
+
+          <div class="permission-content">
+            <div class="permission-list" *ngIf="getPermissionsForTab(activePermissionTab).length; else noPerms">
+              <label class="permission-option" *ngFor="let perm of getPermissionsForTab(activePermissionTab)">
+                <input
+                  type="checkbox"
+                  [checked]="isPermissionSelected(perm)"
+                  (change)="togglePermissionSelection(perm)"
+                />
+                <div class="permission-text">
+                  <span class="perm-name">{{ permissionLabel(perm) }}</span>
+                  <span class="perm-code">{{ perm }}</span>
+                </div>
+              </label>
+            </div>
+            <ng-template #noPerms>
+              <p class="no-permissions">No permissions available for this section.</p>
+            </ng-template>
+          </div>
+        </div>
+        <div class="selected-permissions" *ngIf="selectedPermissionLabels().length > 0">
+          <span class="chip" *ngFor="let label of selectedPermissionLabels()">{{ label }}</span>
+        </div>
+        <!-- <p class="helper-text" *ngIf="selectedPermissionLabels().length === 0">
+          Choose at least one permission to define access.
+        </p> -->
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary" [disabled]="isSaving">
+          <app-spinner *ngIf="isSaving"></app-spinner>
+          <span *ngIf="!isSaving">Create Role</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

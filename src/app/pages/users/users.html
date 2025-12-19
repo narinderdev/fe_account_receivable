@@ -1,0 +1,134 @@
+<div class="company-container">
+  <div class="form-section">
+    <h2 class="section-title">Select Company</h2>
+
+    <div class="company-select-wrapper">
+      <select class="company-select" [(ngModel)]="companyId" (change)="onCompanyChange()">
+        <option value="">-- Select Company --</option>
+        <option *ngFor="let c of companies" [value]="c.id">
+          {{ c.legalName }}
+        </option>
+      </select>
+    </div>
+
+    <p class="section-description" *ngIf="!companyId">
+      Please select a company to view & invite users.
+    </p>
+
+    <div class="actions" *ngIf="companyId">
+      <h2 class="section-title">Invite Users</h2>
+      <div class="invite-user">
+        <button class="invite-user-btn" (click)="openModal()">Invite User</button>
+      </div>
+    </div>
+
+    <p class="section-description" *ngIf="companyId">
+      Send email invitations to users you want to add to this company.
+    </p>
+
+    <table class="user-table" *ngIf="companyId && users.length > 0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let u of users; let i = index">
+          <td>
+            <div class="user-info">
+              <div
+                class="user-initial"
+                [ngStyle]="{
+                  backgroundColor: getInitialColor(i).background,
+                  color: getInitialColor(i).color
+                }"
+              >
+                {{ getUserInitial(u) }}
+              </div>
+              <span class="user-name">{{ getUserName(u) }}</span>
+            </div>
+          </td>
+          <td>{{ u.email }}</td>
+          <td>{{ getUserRole(u) }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(u)">
+              {{ getUserStatus(u) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="companyId && users.length === 0" class="section-description">
+      No users found for this company.
+    </p>
+  </div>
+
+  <div *ngIf="isModalOpen" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Invite User</h3>
+          <p class="modal-subtitle">Send an email invitation to give this person access.</p>
+        </div>
+        <button type="button" class="close-btn" aria-label="Close" (click)="closeModal()">
+          &times;
+        </button>
+      </div>
+
+      <form [formGroup]="inviteForm" class="modal-body">
+        <div class="modal-form-field">
+          <label>First Name</label>
+          <input type="text" formControlName="firstName" placeholder="Jane" />
+          <div class="error" *ngIf="submitted && inviteForm.controls['firstName'].errors">
+            First Name is required.
+          </div>
+        </div>
+
+        <div class="modal-form-field">
+          <label>Last Name</label>
+          <input type="text" formControlName="lastName" placeholder="Doe" />
+          <div class="error" *ngIf="submitted && inviteForm.controls['lastName'].errors">
+            Last Name is required.
+          </div>
+        </div>
+
+        <div class="modal-form-field">
+          <label>Email</label>
+          <input type="email" formControlName="email" placeholder="jane@company.com" />
+          <div class="error" *ngIf="submitted && inviteForm.controls['email'].errors">
+            <span *ngIf="inviteForm.controls['email'].hasError('required')">
+              Email is required.
+            </span>
+            <span *ngIf="inviteForm.controls['email'].hasError('email')">
+              Invalid email format.
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-form-field">
+          <label>Role</label>
+          <select formControlName="roleIds">
+            <option value="">Select Role</option>
+            <option *ngFor="let r of roles" [value]="r.id">{{ r.name }}</option>
+          </select>
+          <div class="error" *ngIf="submitted && inviteForm.controls['roleIds'].errors">
+            Role is required.
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="cancelBtn" (click)="closeModal()">Cancel</button>
+          <button type="button" class="sendBtn" [disabled]="isSavingInvite" (click)="sendInvite()">
+            <app-spinner *ngIf="isSavingInvite"></app-spinner>
+            <span *ngIf="!isSavingInvite">Send Invite</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

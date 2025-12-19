@@ -1,0 +1,85 @@
+<div class="company-container">
+  <div class="form-card">
+    <form [formGroup]="basicForm" (ngSubmit)="saveAndContinue()" class="form-layout">
+      <div class="form-body">
+        <h2 class="section-title">Basic Information</h2>
+        <p class="section-description">These details appear on invoices and statements</p>
+
+        <div class="form-grid">
+          <!-- Legal Name -->
+          <div class="form-field">
+            <label>Legal Name <span class="color">*</span></label>
+            <input type="text" formControlName="legalName" />
+            <div class="error" *ngIf="submitted && basicForm.controls['legalName'].errors">
+              Legal Name is required.
+            </div>
+          </div>
+
+          <!-- Trade Name -->
+          <div class="form-field">
+            <label>Trade Name <span class="color">*</span></label>
+            <input type="text" formControlName="tradeName" />
+            <div class="error" *ngIf="submitted && basicForm.controls['tradeName'].errors">
+              Trade Name is required.
+            </div>
+          </div>
+
+          <!-- Company Code -->
+          <div class="form-field">
+            <label>Company Code <span class="color">*</span></label>
+            <input type="text" formControlName="companyCode" />
+            <div class="error" *ngIf="submitted && basicForm.controls['companyCode'].errors">
+              Company Code is required.
+            </div>
+          </div>
+
+          <!-- Country -->
+          <div class="form-field">
+            <label>Country <span class="color">*</span></label>
+            <select formControlName="country">
+              <option value="">Choose</option>
+              <option>USA</option>
+              <option>UK</option>
+            </select>
+            <div class="error" *ngIf="submitted && basicForm.controls['country'].errors">
+              Country is required.
+            </div>
+          </div>
+
+          <!-- Base Currency -->
+          <div class="form-field">
+            <label>Base Currency <span class="color">*</span></label>
+            <input type="text" formControlName="baseCurrency" />
+            <div class="error" *ngIf="submitted && basicForm.controls['baseCurrency'].errors">
+              Base Currency is required.
+            </div>
+          </div>
+
+          <!-- Time Zone -->
+          <div class="form-field">
+            <label>Time Zone <span class="color">*</span></label>
+            <select formControlName="timeZone">
+              <option value="">Choose Time Zone</option>
+              <option>UTC</option>
+              <option>America/New_York</option>
+              <option>Europe/London</option>
+            </select>
+            <div class="error" *ngIf="submitted && basicForm.controls['timeZone'].errors">
+              Time Zone is required.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAVE BUTTON -->
+      <div class="form-footer">
+        <div class="actions">
+          <button class="btn-save" type="submit" [disabled]="isSaving">
+            <app-spinner *ngIf="isSaving"></app-spinner>
+            <span *ngIf="!isSaving">Save & Continue</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

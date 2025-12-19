@@ -1,0 +1,194 @@
+<!-- <h1 class="page-title">Financial & AR Settings</h1>
+<p class="subtitle">ONBOARDING - STEP 2 OF 5</p> -->
+
+<div class="company-container">
+  <div class="form-card">
+    <form [formGroup]="financialForm" (ngSubmit)="saveFinancialSettings()" class="form-layout">
+      <div class="form-body">
+        <!-- BASIC INFORMATION -->
+        <h2 class="section-title">Basic Information</h2>
+
+        <div class="form-grid">
+          <!-- Fiscal Year Start -->
+          <div class="form-field">
+            <label>Fiscal Year Start Month <span class="color">*</span></label>
+            <select formControlName="fiscalYearStartMonth">
+              <option value="">Choose</option>
+              <option value="1">January</option>
+              <option value="4">April</option>
+              <option value="7">July</option>
+            </select>
+            <div
+              class="error"
+              *ngIf="submitted && financialForm.controls['fiscalYearStartMonth'].errors"
+            >
+              Fiscal year start is required.
+            </div>
+          </div>
+
+          <!-- Revenue Recognition -->
+          <div class="form-field">
+            <label>
+              Revenue Recognition Mode
+              <a class="link">(Advanced options can be enabled later)</a>
+            </label>
+            <select formControlName="revenueRecognitionMode">
+              <option value="">Choose</option>
+              <option value="On Invoice">On Invoice</option>
+              <option value="On Payment Received">On Payment Received</option>
+              <option value="Deferred/After Service Delivery">Deferred/After Service Delivery</option>
+              <option value="Straight Line/Over Time">Straight Line/Over Time</option>
+              <option value="Milestone Based">Milestone Based</option>
+            </select>
+            <div
+              class="error"
+              *ngIf="submitted && financialForm.controls['revenueRecognitionMode'].errors"
+            >
+              Revenue recognition mode is required.
+            </div>
+          </div>
+
+          <!-- Default Tax Handling -->
+          <div class="form-field">
+            <label>Default Tax Handling</label>
+            <select formControlName="defaultTaxHandling">
+              <option value="">Choose</option>
+              <option value="Line Item Level">Line Item Level</option>
+              <option value="Document Level">Document Level</option>
+              <option value="No Tax/Tax Exempt">No Tax/Tax Exempt</option>
+              <option value="Integrated Tax Engine">Integrated Tax Engine</option>
+            </select>
+            <div
+              class="error"
+              *ngIf="submitted && financialForm.controls['defaultTaxHandling'].errors"
+            >
+              Default tax handling is required.
+            </div>
+          </div>
+        </div>
+
+        <!-- PAYMENT TERMS -->
+        <h2 class="section-title">Default Payment Terms</h2>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Default Terms</label>
+            <select formControlName="defaultPaymentTerms">
+              <option value="">Choose</option>
+              <option value="Due on Receipt">Due on Receipt</option>
+              <option value="Net 30">Net 30</option>
+              <option value="Net 60">Net 60</option>
+              <option value="Net 90">Net 90</option>
+            </select>
+            <div
+              class="error"
+              *ngIf="submitted && financialForm.controls['defaultPaymentTerms'].errors"
+            >
+              Default payment terms are required.
+            </div>
+          </div>
+
+          <div class="form-field toggle-container">
+            <label>
+              Allow Other Terms
+              <a class="link">(If OFF, all invoices must use the default terms.)</a>
+            </label>
+
+            <label class="switch">
+              <input type="checkbox" formControlName="allowOtherTerms" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- AGING -->
+        <h2 class="section-title">Aging Bucket Configuration</h2>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Aging Bucket Config</label>
+            <select formControlName="agingBucketConfig">
+              <option value="">Choose</option>
+              <option value="0-30">0-30</option>
+              <option value="31-60">31-60</option>
+              <option value="61-90">61-90</option>
+            </select>
+            <div
+              class="error"
+              *ngIf="submitted && financialForm.controls['agingBucketConfig'].errors"
+            >
+              Aging bucket config is required.
+            </div>
+          </div>
+
+          <!-- Enable Dunning -->
+          <div class="form-field toggle-container">
+            <label>
+              Enable Automated Dunning Emails
+              <a class="link">(First reminder after this many days)</a>
+            </label>
+            <label class="switch">
+              <input type="checkbox" formControlName="enableAutomatedDunningEmails" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Default Credit Limit -->
+          <div class="form-field">
+            <label>Default Credit Limit</label>
+            <input type="number" formControlName="defaultCreditLimit" />
+            <div
+              class="error"
+              *ngIf="submitted && financialForm.controls['defaultCreditLimit'].errors"
+            >
+              Must be 0 or above.
+            </div>
+          </div>
+
+          <!-- Frequency -->
+          <div class="form-field">
+            <label>Dunning Frequency (Days)</label>
+            <input type="number" formControlName="dunningFrequencyDays" />
+            <div
+              class="error"
+              *ngIf="submitted && financialForm.controls['dunningFrequencyDays'].errors"
+            >
+              Enter valid number of days.
+            </div>
+          </div>
+
+          <!-- Enable Credit Limit Checking -->
+          <div class="form-field toggle-container">
+            <label>Enable Credit Limit Checking</label>
+            <label class="switch">
+              <input type="checkbox" formControlName="enableCreditLimitChecking" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- BUTTONS -->
+      <div class="form-footer">
+        <div class="actions">
+          <button
+            class="btn-cancel"
+            [routerLink]="
+              isEditMode
+                ? ['/admin/company/edit', companyId, 'step-1']
+                : ['/admin/company/add/step-1']
+            "
+          >
+            Back
+          </button>
+
+          <button class="btn-save" type="submit" [disabled]="isSaving">
+            <app-spinner *ngIf="isSaving"></app-spinner>
+
+            <span *ngIf="!isSaving">Continue</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

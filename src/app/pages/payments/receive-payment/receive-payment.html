@@ -1,0 +1,148 @@
+<div class="receive-page">
+  <h1 class="title">Receive Payment</h1>
+
+  <div class="content-card">
+    <!-- Payment Details -->
+    <h3 class="section-title">Payment Details</h3>
+
+    <div class="grid">
+      <!-- CUSTOMER DROPDOWN -->
+      <div class="form-group">
+        <label>Customer <span style="color: red">*</span></label>
+        <select
+          [(ngModel)]="selectedCustomerId"
+          (change)="onCustomerChange()"
+          [class.error-input]="showCustomerError"
+          name="customer"
+        >
+          <option [ngValue]="null">Select Customer</option>
+          <option *ngFor="let c of customers" [ngValue]="c.id">
+            {{ c.customerName }}
+          </option>
+        </select>
+        <div *ngIf="showCustomerError" class="error-message">Customer is required</div>
+      </div>
+
+      <!-- AMOUNT -->
+      <div class="form-group">
+        <label>Amount <span style="color: red">*</span></label>
+        <input
+          type="number"
+          [(ngModel)]="amount"
+          placeholder="Enter amount"
+          [class.error-input]="showAmountError"
+          (blur)="showAmountError = submitted && (!amount || amount <= 0)"
+          name="amount"
+          min="0.01"
+          step="0.01"
+        />
+        <div *ngIf="showAmountError" class="error-message">
+          Amount is required and must be greater than 0
+        </div>
+      </div>
+
+      <!-- PAYMENT METHOD -->
+      <div class="form-group">
+        <label>Payment Method <span style="color: red">*</span></label>
+        <select
+          [(ngModel)]="paymentMethod"
+          [class.error-input]="showPaymentMethodError"
+          (blur)="showPaymentMethodError = submitted && !paymentMethod"
+          name="paymentMethod"
+        >
+          <option value="">Select Method</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Cash">Cash</option>
+          <option value="UPI">UPI</option>
+        </select>
+        <div *ngIf="showPaymentMethodError" class="error-message">Payment method is required</div>
+      </div>
+
+      <!-- NOTES FIELD -->
+      <div class="form-group">
+        <label>Notes <span style="color: red">*</span></label>
+        <textarea
+          [(ngModel)]="notes"
+          placeholder="Enter notes"
+          [class.error-input]="showNotesError"
+          (blur)="showNotesError = submitted && !notes"
+          name="notes"
+          rows="2"
+        ></textarea>
+
+        <div *ngIf="showNotesError" class="error-message">Notes are required</div>
+      </div>
+    </div>
+
+    <!-- Invoice Table -->
+    <h3 class="section-title">Apply to Invoices <span style="color: red">*</span></h3>
+
+    <div class="table-scroll" *ngIf="invoices.length > 0">
+      <table class="invoice-table">
+        <thead>
+          <tr>
+            <th style="width: 50px"></th>
+            <th>Invoice</th>
+            <th>Due Date</th>
+            <th>Original Amount</th>
+            <th>Balance Due</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let inv of invoices">
+            <td>
+              <input
+                type="checkbox"
+                [checked]="inv.selected"
+                (change)="toggleInvoice(inv, $event)"
+                [id]="'invoice-' + inv.id"
+              />
+            </td>
+            <td class="invoice-link" [routerLink]="['/admin/invoices/detail', inv.id]">
+              {{ inv.invoiceNumber || inv.id }}
+            </td>
+
+            <td>{{ inv.dueDate }}</td>
+            <td>{{ inv.totalAmount | currency }}</td>
+            <td>{{ inv.balanceDue | currency }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="selectedCustomerId && invoices.length === 0" class="empty-state">
+      No unpaid invoices found for this customer.
+    </div>
+
+    <div *ngIf="!selectedCustomerId" class="empty-state">
+      Please select a customer to view their unpaid invoices.
+    </div>
+
+    <!-- Show error if no invoice selected -->
+    <div *ngIf="showInvoiceError" class="error-message" style="margin-top: 10px">
+      Please select at least one invoice to apply the payment
+    </div>
+
+    <!-- Summary Fields -->
+    <div class="summary-section" *ngIf="invoices.length > 0">
+      <div class="summary-row">
+        <span>Payment Amount</span>
+        <strong>{{ amount || 0 | currency }}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Unapplied Amount</span>
+        <strong [style.color]="unappliedAmount < 0 ? 'red' : 'inherit'">
+          {{ unappliedAmount | currency }}
+        </strong>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="action-buttons">
+      <button type="button" class="btn back" (click)="resetForm()">Cancel</button>
+      <button type="button" class="btn continue" (click)="onSubmit($event)">Save</button>
+    </div>
+  </div>
+</div>

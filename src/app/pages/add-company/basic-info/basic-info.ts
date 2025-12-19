@@ -5,7 +5,6 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { Spinner } from '../../../shared/spinner/spinner';
-import { ToastService } from '../../../shared/toast/toast-service';
 
 @Component({
   selector: 'app-basic-info',
@@ -28,8 +27,7 @@ export class BasicInfo implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private companyService: CompanyService,
     private router: Router,
-    private route: ActivatedRoute,
-    private toastService: ToastService
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
@@ -118,14 +116,10 @@ export class BasicInfo implements OnInit, OnDestroy {
 
         localStorage.setItem('companyId', id);
         localStorage.setItem('editingCompany', JSON.stringify(res.data));
-        this.toastService.show('Company added successfully.');
 
         this.router.navigate(['/admin/company/add/step-2'], { queryParams: { id } });
       },
-      error: () => {
-        this.isSaving = false;
-        this.toastService.show('Failed to add company.', 'error');
-      },
+      error: () => (this.isSaving = false),
     });
   }
 
@@ -134,18 +128,26 @@ export class BasicInfo implements OnInit, OnDestroy {
   // Save form to localStorage
   // ---------------------------------------------------
   storeEditChanges() {
+    this.persistEditChanges(true);
+    this.router.navigate([`/admin/company/edit/${this.companyId}/step-2`]);
+  }
+
+  private persistEditChanges(force = false) {
+    if (!this.isEditMode || !this.basicForm) return;
+    if (!force && !this.basicForm.dirty) return;
+
     const updated = {
-      ...this.companyData,
+      ...(this.companyData || {}),
       ...this.basicForm.value,
     };
 
     localStorage.setItem('editingCompany', JSON.stringify(updated));
     this.companyService.setEditingCompany(updated);
-
-    this.router.navigate([`/admin/company/edit/${this.companyId}/step-2`]);
+    this.companyData = updated;
   }
 
   ngOnDestroy() {
+    this.persistEditChanges();
     this.destroy$.next();
     this.destroy$.complete();
   }
