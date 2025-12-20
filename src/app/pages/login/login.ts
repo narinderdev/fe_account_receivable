@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoginService } from '../../services/login-service';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -16,13 +17,14 @@ import { Spinner } from '../../shared/spinner/spinner';
 export class Login {
   form: FormGroup;
   loading = false;
-  passwordVisible = false; // To control password visibility
+  passwordVisible = false;
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private loginService: LoginService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       email: [
@@ -36,9 +38,8 @@ export class Login {
     });
   }
 
-  // Toggle password visibility
   togglePasswordVisibility() {
-    this.passwordVisible = !this.passwordVisible; // Toggle password visibility state
+    this.passwordVisible = !this.passwordVisible;
   }
 
   submit() {
@@ -57,33 +58,46 @@ export class Login {
     };
 
     this.loading = true;
+    this.cdr.detectChanges(); // Ensure spinner shows immediately
 
-    this.loginService.login(payload).subscribe({
-      next: (response) => {
-        const message = response?.message || 'Login successful.';
-        this.toastr.success(message);
-        const user = response?.data;
-        if (user?.id) {
-          localStorage.setItem('signupUserId', String(user.id));
-        }
+    this.loginService
+      .login(payload)
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+          this.cdr.detectChanges(); // Ensure spinner stops immediately
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          const statusCode = response?.statusCode;
+          const message = response?.message || 'Login successful.';
 
-        localStorage.setItem('isLoggedIn', 'true');
+          if (statusCode === 200 || statusCode === 201) {
+            this.toastr.success(message);
+            const user = response?.data;
+            if (user?.id) {
+              localStorage.setItem('signupUserId', String(user.id));
+            }
 
-        const userCompanies = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
+            localStorage.setItem('isLoggedIn', 'true');
 
-        if (userCompanies.length > 0) {
-          this.router.navigate(['/admin/dashboard']);
-        } else {
-          this.router.navigate(['/admin/company/add/step-1']);
-        }
-        this.loading = false;
-      },
-      error: (err) => {
-        // Handle error as before
-        this.loading = false;
-        this.toastr.error('An error occurred. Please try again.');
-        console.error('Login error:', err);
-      },
-    });
+            const userCompanies = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
+
+            if (userCompanies.length > 0) {
+              this.router.navigate(['/admin/dashboard']);
+            } else {
+              this.router.navigate(['/admin/company/add/step-1']);
+            }
+          } else {
+            this.toastr.error(message || 'Login failed.');
+          }
+        },
+        error: (err) => {
+          const backendMessage = err?.error?.message || 'An error occurred. Please try again.';
+          this.toastr.error(backendMessage);
+          console.error('Login error:', err);
+        },
+      });
   }
 }
