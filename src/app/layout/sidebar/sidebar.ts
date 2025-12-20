@@ -34,7 +34,7 @@ export class Sidebar {
 
   signOut() {
     this.closeMobileMenu();
-    localStorage.removeItem('isLoggedIn');
+    localStorage.clear();
     this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 }
