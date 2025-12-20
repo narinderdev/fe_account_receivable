@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { InvoiceService } from '../../services/invoice-service';
@@ -7,6 +7,8 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 import { Invoice, InvoicePage } from '../../models/invoice.model';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-invoices',
@@ -15,7 +17,7 @@ import { Invoice, InvoicePage } from '../../models/invoice.model';
   templateUrl: './invoices.html',
   styleUrl: './invoices.css',
 })
-export class Invoices implements OnInit {
+export class Invoices implements OnInit, OnDestroy {
   invoices: Invoice[] = [];
   allInvoices: Invoice[] = [];
   searchName: string = '';
@@ -24,22 +26,47 @@ export class Invoices implements OnInit {
   pageSize = 10;
   totalPages = 0;
   Math = Math;
+  private destroy$ = new Subject<void>();
+  private activeCompanyId: number | null = null;
 
   constructor(
     private invoiceService: InvoiceService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private companySelection: CompanySelectionService
   ) {}
 
   ngOnInit() {
-    this.loadInvoices(this.currentPage);
+    this.companySelection.selectedCompanyId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((id) => {
+        const parsed = id ? Number(id) : NaN;
+        const nextId = Number.isFinite(parsed) ? parsed : null;
+
+        if (this.activeCompanyId === nextId) {
+          return;
+        }
+
+        this.activeCompanyId = nextId;
+
+        if (this.activeCompanyId) {
+          this.loadInvoices(this.activeCompanyId, this.currentPage);
+        } else {
+          this.invoices = [];
+          this.allInvoices = [];
+          this.totalPages = 0;
+          this.currentPage = 0;
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      });
   }
 
-  loadInvoices(page: number): void {
+  loadInvoices(companyId: number, page: number): void {
     this.loading = true;
     this.cdr.detectChanges();
 
-    this.invoiceService.getInvoices(page, this.pageSize).subscribe({
+    this.invoiceService.getInvoices(companyId, page, this.pageSize).subscribe({
       next: (res: InvoicePage) => {
         const pageData = res?.data;
 
@@ -121,20 +148,25 @@ export class Invoices implements OnInit {
   }
 
   goToPage(page: number): void {
-    if (page >= 0 && page < this.totalPages && page !== this.currentPage) {
-      this.loadInvoices(page);
+    if (
+      this.activeCompanyId &&
+      page >= 0 &&
+      page < this.totalPages &&
+      page !== this.currentPage
+    ) {
+      this.loadInvoices(this.activeCompanyId, page);
     }
   }
 
   nextPage() {
-    if (this.currentPage < this.totalPages - 1) {
-      this.loadInvoices(this.currentPage + 1);
+    if (this.activeCompanyId && this.currentPage < this.totalPages - 1) {
+      this.loadInvoices(this.activeCompanyId, this.currentPage + 1);
     }
   }
 
   prevPage() {
-    if (this.currentPage > 0) {
-      this.loadInvoices(this.currentPage - 1);
+    if (this.activeCompanyId && this.currentPage > 0) {
+      this.loadInvoices(this.activeCompanyId, this.currentPage - 1);
     }
   }
 
@@ -148,5 +180,10 @@ export class Invoices implements OnInit {
 
   openInvoice(invoiceId: number) {
     this.router.navigate(['/admin/invoices/detail', invoiceId]);
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

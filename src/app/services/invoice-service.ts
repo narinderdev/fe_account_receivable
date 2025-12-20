@@ -12,13 +12,13 @@ export class InvoiceService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  getInvoices(page = 0, size = 10): Observable<InvoicePage> {
+  getInvoices(companyId: number, page = 0, size = 10): Observable<InvoicePage> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
 
     return this.http.get<InvoicePage>(
-      `${this.baseUrl}/invoice?page=${page}&size=${size}`,
+      `${this.baseUrl}/invoice/unpaid/company/${companyId}?page=${page}&size=${size}`,
       { headers }
     );
   }
