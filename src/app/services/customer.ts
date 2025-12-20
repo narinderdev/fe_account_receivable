@@ -19,12 +19,12 @@ export class Customer {
     return Number.isFinite(parsed) ? parsed : null;
   }
 
-  getCustomers(page = 0, size = 10): Observable<any> {
+  getCustomers(companyId:number, page = 0, size = 10): Observable<any> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
 
-    return this.http.get(`${this.baseUrl}/customer?page=${page}&size=${size}`, { headers });
+    return this.http.get(`${this.baseUrl}/customer/company/${companyId}?page=${page}&size=${size}`, { headers });
   }
 
   createCustomer(companyId: number, data: any, userId?: number): Observable<any> {

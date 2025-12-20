@@ -1,11 +1,13 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Customer } from '../../../services/customer';
 import { ToastrService } from 'ngx-toastr';
 import { InvoiceService } from '../../../services/invoice-service';
 import { PaymentService } from '../../../services/payment-service';
+import { CompanySelectionService } from '../../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-receive-payment',
@@ -14,7 +16,7 @@ import { PaymentService } from '../../../services/payment-service';
   templateUrl: './receive-payment.html',
   styleUrl: './receive-payment.css',
 })
-export class ReceivePayment implements OnInit {
+export class ReceivePayment implements OnInit, OnDestroy {
   customers: any[] = [];
   selectedCustomerId: number | null = null;
   amount: number | null = null;
@@ -36,18 +38,44 @@ export class ReceivePayment implements OnInit {
     private toastr: ToastrService,
     private invoiceService: InvoiceService,
     private paymentService: PaymentService,
-    private router: Router
+    private router: Router,
+    private companySelection: CompanySelectionService
   ) {}
+
+  private destroy$ = new Subject<void>();
+  private activeCompanyId: number | null = null;
 
   ngOnInit() {
     console.log('Component initialized');
-    this.loadCustomers();
+    this.companySelection.selectedCompanyId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((id) => {
+        const parsed = id ? Number(id) : NaN;
+        const nextId = Number.isFinite(parsed) ? parsed : null;
+
+        if (this.activeCompanyId === nextId) {
+          return;
+        }
+
+        this.activeCompanyId = nextId;
+
+        if (this.activeCompanyId) {
+          this.loadCustomers(this.activeCompanyId);
+        } else {
+          this.customers = [];
+          this.selectedCustomerId = null;
+          this.invoices = [];
+          this.amount = null;
+          this.paymentMethod = '';
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   /** Load customers */
-  loadCustomers(): void {
+  loadCustomers(companyId: number): void {
     console.log('Loading customers...');
-    this.customerService.getCustomers(0, 100).subscribe({
+    this.customerService.getCustomers(companyId, 0, 100).subscribe({
       next: (res: any) => {
         this.customers = res?.data?.content || [];
         console.log('Customers loaded:', this.customers.length);
@@ -259,5 +287,10 @@ export class ReceivePayment implements OnInit {
   resetForm() {
     console.log('Cancel clicked - navigating to payments page');
     this.router.navigate(['/admin/payments']);
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

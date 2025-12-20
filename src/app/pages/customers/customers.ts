@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { Router, RouterLink, RouterModule } from '@angular/router';
 import { Customer } from '../../services/customer';
 import { CompanyService } from '../../services/company-service';
@@ -9,6 +9,8 @@ import { Spinner } from '../../shared/spinner/spinner';
 import { ToastrService } from 'ngx-toastr';
 import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
 import { CompanyEntity } from '../../models/company.model';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-customers',
@@ -17,7 +19,7 @@ import { CompanyEntity } from '../../models/company.model';
   templateUrl: './customers.html',
   styleUrls: ['./customers.css'],
 })
-export class Customers implements OnInit {
+export class Customers implements OnInit, OnDestroy {
   customers: CustomerEntity[] = [];
   loading = true;
 
@@ -40,24 +42,48 @@ export class Customers implements OnInit {
   currentPage = 0;
   totalPages = 0;
   pageSize = 6;
+  activeCompanyId: number | null = null;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private customerService: Customer,
     private companyService: CompanyService,
+    private companySelection: CompanySelectionService,
     private cdr: ChangeDetectorRef,
     private router: Router,
     private toastr: ToastrService
   ) {}
 
   ngOnInit() {
-    this.loadCustomers();
+    this.companySelection.selectedCompanyId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((id) => {
+        const parsed = id ? Number(id) : NaN;
+        const nextId = Number.isFinite(parsed) ? parsed : null;
+
+        if (this.activeCompanyId === nextId) {
+          return;
+        }
+
+        this.activeCompanyId = nextId;
+
+        if (this.activeCompanyId) {
+          this.loadCustomers(this.activeCompanyId);
+        } else {
+          this.customers = [];
+          this.totalPages = 0;
+          this.currentPage = 0;
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   /** Load paginated customers */
-  loadCustomers(page: number = 0) {
+  loadCustomers(companyId: number, page: number = 0) {
     this.loading = true;
 
-    this.customerService.getCustomers(page, this.pageSize).subscribe({
+    this.customerService.getCustomers(companyId, page, this.pageSize).subscribe({
       next: (res) => {
         const data = res?.data as PaginatedResponse<CustomerEntity>;
 
@@ -144,7 +170,9 @@ export class Customers implements OnInit {
         this.toastr.success('Customer CSV uploaded successfully!', 'Success');
 
         this.closeImportModal();
-        this.loadCustomers();
+        if (this.activeCompanyId) {
+          this.loadCustomers(this.activeCompanyId, this.currentPage);
+        }
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -159,14 +187,14 @@ export class Customers implements OnInit {
   /* ---------------- PAGINATION ---------------- */
 
   nextPage() {
-    if (this.currentPage < this.totalPages - 1) {
-      this.loadCustomers(this.currentPage + 1);
+    if (this.activeCompanyId && this.currentPage < this.totalPages - 1) {
+      this.loadCustomers(this.activeCompanyId, this.currentPage + 1);
     }
   }
 
   prevPage() {
-    if (this.currentPage > 0) {
-      this.loadCustomers(this.currentPage - 1);
+    if (this.activeCompanyId && this.currentPage > 0) {
+      this.loadCustomers(this.activeCompanyId, this.currentPage - 1);
     }
   }
 
@@ -195,7 +223,9 @@ export class Customers implements OnInit {
       next: () => {
         this.deleting = false;
         this.closeDeleteModal();
-        this.loadCustomers();
+        if (this.activeCompanyId) {
+          this.loadCustomers(this.activeCompanyId, this.currentPage);
+        }
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -223,5 +253,10 @@ export class Customers implements OnInit {
     // Use modulo to cycle through colors
     const colorIndex = index % palette.length;
     return palette[colorIndex];
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

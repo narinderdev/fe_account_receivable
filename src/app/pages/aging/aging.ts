@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgingService } from '../../services/aging-service';
@@ -6,6 +6,8 @@ import { Customer } from '../../services/customer';
 import { Loader } from '../../shared/loader/loader';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 
 interface AgingRow {
   customer: string;
@@ -23,7 +25,7 @@ interface AgingRow {
   templateUrl: './aging.html',
   styleUrls: ['./aging.css'],
 })
-export class Aging implements OnInit {
+export class Aging implements OnInit, OnDestroy {
   loading = false;
 
   customers: any[] = [{ label: 'All Customers', value: '' }];
@@ -38,14 +40,39 @@ export class Aging implements OnInit {
   selectedStatus = '';
   agingData: AgingRow[] = [];
 
+  private destroy$ = new Subject<void>();
+  private activeCompanyId: number | null = null;
+
   constructor(
     private agingService: AgingService,
     private customerService: Customer,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private companySelection: CompanySelectionService
   ) {}
 
   ngOnInit() {
-    this.loadCustomers();
+    this.companySelection.selectedCompanyId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((id) => {
+        const parsed = id ? Number(id) : NaN;
+        const nextId = Number.isFinite(parsed) ? parsed : null;
+
+        if (this.activeCompanyId === nextId) {
+          return;
+        }
+
+        this.activeCompanyId = nextId;
+
+        if (this.activeCompanyId) {
+          this.loadCustomers(this.activeCompanyId);
+        } else {
+          this.customers = [{ label: 'All Customers', value: '' }];
+          this.selectedCustomer = '';
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      });
+
     this.loadAgingData();
   }
 
@@ -70,11 +97,11 @@ export class Aging implements OnInit {
   }
 
   /** LOAD CUSTOMERS INTO DROPDOWN */
-  loadCustomers() {
+  loadCustomers(companyId: number) {
     this.loading = true;
     this.cdr.detectChanges();
 
-    this.customerService.getCustomers(0, 50).subscribe({
+    this.customerService.getCustomers(companyId, 0, 50).subscribe({
       next: (res: any) => {
         const content = res.data?.content || [];
 
@@ -199,5 +226,10 @@ export class Aging implements OnInit {
       days31to60: r.bucket31To60,
       days90plus: r.bucketGt90,
     }));
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

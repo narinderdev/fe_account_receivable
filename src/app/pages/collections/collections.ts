@@ -79,7 +79,6 @@ export class Collections implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.loadCustomers();
     this.watchCompanySelection();
     this.loadPromiseToPay();
   }
@@ -97,8 +96,14 @@ export class Collections implements OnInit, OnDestroy {
     }
   }
 
-  loadCustomers() {
-    this.collectionService.getPendingCustomer().subscribe({
+  loadCustomers(companyId: number) {
+    if (!companyId) {
+      this.customers = [];
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.collectionService.getPendingCustomer(companyId).subscribe({
       next: (res) => {
         this.customers = Array.isArray(res?.data) ? res.data : [];
         this.cdr.detectChanges();
@@ -125,9 +130,12 @@ export class Collections implements OnInit, OnDestroy {
 
         if (this.selectedCompanyId) {
           this.fetchCompanyOverdue(this.selectedCompanyId);
+          this.loadCustomers(this.selectedCompanyId);
         } else {
           this.companyOverdueAmount = 0;
           this.loadingCompanyOverdue = false;
+          this.customers = [];
+          this.selectedCustomerId = '';
           this.cdr.detectChanges();
         }
       });

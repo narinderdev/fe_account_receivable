@@ -47,12 +47,12 @@ export class CollectionService {
     return this.http.get<PromiseToPayResponse>(`${this.baseUrl}/collections/promise`, { headers });
   }
 
-  getPendingCustomer(): Observable<any> {
+  getPendingCustomer(companyId:number): Observable<any> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
     return this.http.get<any>(
-      `${this.baseUrl}/invoice/with-pending-amounts`,
+      `${this.baseUrl}/invoice/company/${companyId}/with-pending-amounts`,
       { headers }
     );
   }
