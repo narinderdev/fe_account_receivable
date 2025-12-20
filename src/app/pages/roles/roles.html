@@ -56,47 +56,42 @@
 
       <div class="form-field">
         <label>Permissions</label>
-        <div class="permissions-panel">
-          <div class="permission-tabs">
-            <button
-              type="button"
-              class="permission-tab"
-              *ngFor="let tab of permissionTabs"
-              [class.active]="tab.key === activePermissionTab"
-              (click)="setActiveTab(tab.key)"
-            >
-              <span>{{ tab.label }}</span>
-              <span class="tab-count" *ngIf="getPermissionsForTab(tab.key).length">
-                {{ getPermissionsForTab(tab.key).length }}
-              </span>
-            </button>
-          </div>
-
-          <div class="permission-content">
-            <div class="permission-list" *ngIf="getPermissionsForTab(activePermissionTab).length; else noPerms">
-              <label class="permission-option" *ngFor="let perm of getPermissionsForTab(activePermissionTab)">
+        <div class="permissions-grid">
+          <!-- Regular tabs -->
+          <div class="permission-row" *ngFor="let tab of permissionTabs">
+            <div class="row-label">{{ tab.label }}</div>
+            <div class="row-permissions">
+              <label class="permission-checkbox" *ngFor="let perm of tab.permissions">
                 <input
                   type="checkbox"
-                  [checked]="isPermissionSelected(perm)"
-                  (change)="togglePermissionSelection(perm)"
+                  [checked]="isPermissionSelected(perm.code)"
+                  (change)="togglePermissionSelection(perm.code)"
                 />
-                <div class="permission-text">
-                  <span class="perm-name">{{ permissionLabel(perm) }}</span>
-                  <span class="perm-code">{{ perm }}</span>
-                </div>
+                <span>{{ perm.label }}</span>
               </label>
+              
+              <!-- Subtabs (for Collections & Disputes) -->
+              <div class="subtabs-inline" *ngIf="tab.subtabs && tab.subtabs.length > 0">
+                <div class="subtab-inline" *ngFor="let subtab of tab.subtabs">
+                  <span class="subtab-name">{{ subtab.label }}:</span>
+                  <label class="permission-checkbox" *ngFor="let perm of subtab.permissions">
+                    <input
+                      type="checkbox"
+                      [checked]="isPermissionSelected(perm.code)"
+                      (change)="togglePermissionSelection(perm.code)"
+                    />
+                    <span>{{ perm.label }}</span>
+                  </label>
+                  <!-- <span class="coming-soon" *ngIf="subtab.permissions.length === 0">Coming soon</span> -->
+                </div>
+              </div>
             </div>
-            <ng-template #noPerms>
-              <p class="no-permissions">No permissions available for this section.</p>
-            </ng-template>
           </div>
         </div>
+        
         <div class="selected-permissions" *ngIf="selectedPermissionLabels().length > 0">
           <span class="chip" *ngFor="let label of selectedPermissionLabels()">{{ label }}</span>
         </div>
-        <!-- <p class="helper-text" *ngIf="selectedPermissionLabels().length === 0">
-          Choose at least one permission to define access.
-        </p> -->
       </div>
 
       <div class="modal-actions">
