@@ -1,6 +1,6 @@
-.customers-container {
+/* .customers-container {
   padding: 32px;
-}
+} */
 
 .customers-title {
   font-size: 26px;
@@ -89,7 +89,7 @@
 }
 .customers-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: end;
   align-items: center;
   margin-bottom: 16px;
   gap: 16px;

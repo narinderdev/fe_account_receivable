@@ -1,67 +1,64 @@
 <div class="company-container">
   <div class="form-section">
-    <h2 class="section-title">Select Company</h2>
+    <!-- <h2 class="section-title">Company Users</h2>
 
-    <div class="company-select-wrapper">
-      <select class="company-select" [(ngModel)]="companyId" (change)="onCompanyChange()">
-        <option value="">-- Select Company --</option>
-        <option *ngFor="let c of companies" [value]="c.id">
-          {{ c.legalName }}
-        </option>
-      </select>
-    </div>
-
-    <p class="section-description" *ngIf="!companyId">
-      Please select a company to view & invite users.
+    <p class="section-description">
+      Use the navbar company dropdown to switch between companies.
     </p>
 
+    <p class="section-description" *ngIf="!companyId">
+      Select a company from the navbar to view & invite users.
+    </p> -->
+
     <div class="actions" *ngIf="companyId">
-      <h2 class="section-title">Invite Users</h2>
+      <!-- <h2 class="section-title">Invite Users</h2> -->
       <div class="invite-user">
         <button class="invite-user-btn" (click)="openModal()">Invite User</button>
       </div>
     </div>
 
-    <p class="section-description" *ngIf="companyId">
+    <!-- <p class="section-description" *ngIf="companyId">
       Send email invitations to users you want to add to this company.
-    </p>
+    </p> -->
 
-    <table class="user-table" *ngIf="companyId && users.length > 0">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Status</th>
-        </tr>
-      </thead>
+    <div class="users-table-wrapper" *ngIf="companyId && users.length > 0">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+          </tr>
+        </thead>
 
-      <tbody>
-        <tr *ngFor="let u of users; let i = index">
-          <td>
-            <div class="user-info">
-              <div
-                class="user-initial"
-                [ngStyle]="{
-                  backgroundColor: getInitialColor(i).background,
-                  color: getInitialColor(i).color
-                }"
-              >
-                {{ getUserInitial(u) }}
+        <tbody>
+          <tr *ngFor="let u of users; let i = index">
+            <td>
+              <div class="user-info">
+                <div
+                  class="user-initial"
+                  [ngStyle]="{
+                    backgroundColor: getInitialColor(i).background,
+                    color: getInitialColor(i).color
+                  }"
+                >
+                  {{ getUserInitial(u) }}
+                </div>
+                <span class="user-name">{{ getUserName(u) }}</span>
               </div>
-              <span class="user-name">{{ getUserName(u) }}</span>
-            </div>
-          </td>
-          <td>{{ u.email }}</td>
-          <td>{{ getUserRole(u) }}</td>
-          <td>
-            <span class="status-badge" [ngClass]="getStatusClass(u)">
-              {{ getUserStatus(u) }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            </td>
+            <td>{{ u.email }}</td>
+            <td>{{ getUserRole(u) }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(u)">
+                {{ getUserStatus(u) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <p *ngIf="companyId && users.length === 0" class="section-description">
       No users found for this company.

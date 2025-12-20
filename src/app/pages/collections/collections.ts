@@ -1,12 +1,13 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Customer } from '../../services/customer';
 import { CollectionService } from '../../services/collection-service';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Invoice } from '../../models/invoice.model';
-import { CompanyService } from '../../services/company-service';
 import { PromiseToPayRecord } from '../../models/promise-to-pay.model';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 
 interface CreditItem {
   customer: string;
@@ -27,12 +28,11 @@ interface ReminderItem {
   templateUrl: './collections.html',
   styleUrls: ['./collections.css'],
 })
-export class Collections implements OnInit {
+export class Collections implements OnInit, OnDestroy {
   customers: any[] = [];
   selectedCustomerId: string = '';
 
-  companies: any[] = [];
-  selectedCompanyId: string = '';
+  selectedCompanyId: number | null = null;
   companyOverdueAmount = 0;
   loadingCompanyOverdue = false;
 
@@ -69,18 +69,24 @@ export class Collections implements OnInit {
   ];
 
   promiseToPayMessage = 'No promises to pay have been logged.';
+  private destroy$ = new Subject<void>();
 
   constructor(
     private customerService: Customer,
     private collectionService: CollectionService,
-    private companyService: CompanyService,
+    private companySelection: CompanySelectionService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.loadCustomers();
-    this.loadCompanies();
+    this.watchCompanySelection();
     this.loadPromiseToPay();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   setTab(tab: 'promise' | 'reminders') {
@@ -104,34 +110,27 @@ export class Collections implements OnInit {
     });
   }
 
-  loadCompanies() {
-    this.companyService.getCompany(0, 50).subscribe({
-      next: (res) => {
-        this.companies = res?.data?.content || [];
+  private watchCompanySelection() {
+    this.companySelection.selectedCompanyId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((id) => {
+        const parsed = id ? Number(id) : NaN;
+        const nextId = Number.isFinite(parsed) ? parsed : null;
 
-        if (!this.selectedCompanyId && this.companies.length > 0) {
-          this.selectedCompanyId = String(this.companies[0].id);
-          this.fetchCompanyOverdue(+this.selectedCompanyId);
+        if (this.selectedCompanyId === nextId) {
+          return;
         }
 
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.companies = [];
-        this.cdr.detectChanges();
-      },
-    });
-  }
+        this.selectedCompanyId = nextId;
 
-  onCompanyChange() {
-    if (!this.selectedCompanyId) {
-      this.companyOverdueAmount = 0;
-      this.loadingCompanyOverdue = false;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    this.fetchCompanyOverdue(+this.selectedCompanyId);
+        if (this.selectedCompanyId) {
+          this.fetchCompanyOverdue(this.selectedCompanyId);
+        } else {
+          this.companyOverdueAmount = 0;
+          this.loadingCompanyOverdue = false;
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   fetchCompanyOverdue(companyId: number) {

@@ -1,22 +1,7 @@
 /* Page container */
 .invoice-container {
-  padding: 32px;
+  /* padding: 32px; */
   min-height: 100vh;
-}
-
-/* Header row */
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.page-title {
-  font-size: 24px;
-  color: #111827;
-  font-weight: 600;
-  margin: 0;
 }
 
 /* Primary button */
@@ -31,6 +16,8 @@
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .btn-new:hover {
@@ -67,6 +54,11 @@
 
 .search-card-body {
   padding: 0 20px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .search-input {
@@ -78,7 +70,8 @@
   align-items: center;
   padding-left: 42px;
   transition: border-color 0.2s, box-shadow 0.2s;
-  width: 100%;
+  flex: 1;
+  min-width: 300px;
 }
 
 .search-input:focus-within {
@@ -115,11 +108,6 @@
 }
 
 @media (min-width: 1024px) {
-  .search-card-body {
-    display: flex;
-    justify-content: flex-start;
-  }
-
   .search-input {
     max-width: 448px;
   }
@@ -324,15 +312,26 @@
     padding: 4px 8px;
     font-size: 13px;
   }
+
+  .search-card-body {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .btn-new {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .search-input {
+    min-width: 0;
+  }
 }
 
 @media (max-width: 480px) {
   .invoice-container {
     padding: 20px 12px;
-  }
-
-  .btn-new {
-    width: 100%;
   }
 
   .pagination-wrapper {

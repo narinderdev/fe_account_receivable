@@ -5,9 +5,9 @@
 }
 
 /* Page layout */
-.payments-page {
+/* .payments-page {
   padding: 24px 32px;
-}
+} */
 
 .page-title {
   font-size: 26px;
@@ -117,7 +117,7 @@
 
 .button-receive {
   display: flex;
-  justify-content: space-between;
+  justify-content: end;
   align-items: center;
   margin-bottom: 16px;
 }

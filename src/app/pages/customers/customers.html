@@ -1,16 +1,4 @@
 <div class="customers-container">
-  <div class="customers-actions">
-    <h1 class="customers-title">Customers</h1>
-    <div class="button-gap">
-      <button class="import-customer-btn" (click)="openImportModal()">Import Customer List</button>
-
-      <button class="add-customer-btn" routerLink="add">
-        <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
-        Add Customer
-      </button>
-    </div>
-  </div>
-
   <div class="search-card">
     <div class="search-card-header">
       <label class="search-card-label">Customer Name</label>
@@ -21,6 +9,17 @@
           <img src="/search.svg" alt="Search Icon" />
         </span>
         <input type="text" placeholder="Enter customer name" />
+      </div>
+
+      <div class="button-gap">
+        <button class="import-customer-btn" (click)="openImportModal()">
+          Import Customer List
+        </button>
+
+        <button class="add-customer-btn" routerLink="add">
+          <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
+          Add Customer
+        </button>
       </div>
     </div>
   </div>
