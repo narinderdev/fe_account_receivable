@@ -10,6 +10,107 @@
   color: #151d48;
   margin-bottom: 12px;
 } */
+ .permissions-grid {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.permission-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  border-bottom: 1px solid #e5e7eb;
+  min-height: 44px;
+}
+
+.permission-row:last-child {
+  border-bottom: none;
+}
+
+.row-label {
+  background: #f9fafb;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+}
+
+.row-permissions {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #fff;
+}
+
+.permission-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+}
+
+.permission-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.permission-checkbox span {
+  user-select: none;
+}
+
+.subtabs-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding-top: 6px;
+  /* border-top: 1px solid #f3f4f6; */
+  margin-top: 6px;
+}
+
+.subtab-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.subtab-name {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.coming-soon {
+  font-size: 13px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .permission-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .row-label {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+}
 
 .section-description {
   font-size: 14px;
@@ -34,7 +135,7 @@
   font-weight: 500;
   border-radius: 8px;
   transition: all 0.2s;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 }
 
 /* ROLE TABLE */

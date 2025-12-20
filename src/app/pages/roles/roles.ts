@@ -6,6 +6,22 @@ import { Spinner } from '../../shared/spinner/spinner';
 import { Role } from '../../models/company-users.model';
 import { ToastrService } from 'ngx-toastr';
 
+interface Permission {
+  code: string;
+  label: string;
+}
+
+interface PermissionTab {
+  key: string;
+  label: string;
+  permissions: Permission[];
+  subtabs?: {
+    key: string;
+    label: string;
+    permissions: Permission[];
+  }[];
+}
+
 @Component({
   selector: 'app-roles',
   standalone: true,
@@ -15,81 +31,93 @@ import { ToastrService } from 'ngx-toastr';
 })
 export class Roles implements OnInit {
   roles: Role[] = [];
-  permissions: any[] = [];
   isLoading = false;
   isModalOpen = false;
   isSaving = false;
   submitted = false;
   addRoleForm!: FormGroup;
-  activePermissionTab = 'dashboard';
-  tabPermissions: Record<string, string[]> = {};
 
-  permissionTabs = [
+  permissionTabs: PermissionTab[] = [
     {
       key: 'dashboard',
       label: 'Dashboard',
-      permissions: ['VIEW_DASHBOARD'],
+      permissions: [{ code: 'VIEW_DASHBOARD', label: 'View' }],
     },
     {
       key: 'customers',
       label: 'Customers',
       permissions: [
-        'VIEW_CUSTOMERS',
-        'VIEW_CUSTOMER_DETAILS',
-        'CREATE_CUSTOMER',
-        'EDIT_CUSTOMER',
-        'DELETE_CUSTOMER',
+        { code: 'VIEW_CUSTOMERS', label: 'View' },
+        { code: 'CREATE_CUSTOMER', label: 'Add' },
+        { code: 'EDIT_CUSTOMER', label: 'Update' },
+        { code: 'DELETE_CUSTOMER', label: 'Delete' },
       ],
     },
     {
       key: 'invoices',
       label: 'Invoices',
       permissions: [
-        'VIEW_INVOICES',
-        'VIEW_INVOICE_DETAILS',
-        'CREATE_INVOICE',
-        'EDIT_INVOICE',
-        'DELETE_INVOICE',
-        'SEND_INVOICE',
+        { code: 'VIEW_INVOICES', label: 'View' },
+        { code: 'CREATE_INVOICE', label: 'Create' },
       ],
     },
     {
       key: 'payments',
       label: 'Payments',
-      permissions: ['VIEW_PAYMENTS', 'VIEW_PAYMENT_DETAILS', 'CREATE_PAYMENT', 'APPLY_PAYMENT'],
+      permissions: [
+        { code: 'VIEW_PAYMENTS', label: 'View' },
+        { code: 'RECEIVE_PAYMENT', label: 'Receive' },
+      ],
     },
     {
       key: 'reports',
       label: 'Aging & Reports',
-      permissions: ['VIEW_AGING_REPORTS', 'EXPORT_AGING_REPORT', 'EXPORT_REPORTS'],
+      permissions: [{ code: 'VIEW_AGING_REPORTS', label: 'View' }],
     },
     {
       key: 'collections',
       label: 'Collections & Disputes',
-      permissions: [
-        'VIEW_COLLECTIONS',
-        'VIEW_PROMISE_TO_PAY',
-        'CREATE_PROMISE_TO_PAY',
-        'UPDATE_PROMISE_TO_PAY',
-        'VIEW_DISPUTES',
-        'CREATE_DISPUTE',
-        'RESOLVE_DISPUTE',
+      permissions: [],
+      subtabs: [
+        {
+          key: 'promise_to_pay',
+          label: 'Promise to Pay',
+          permissions: [
+            { code: 'VIEW_PROMISE_TO_PAY', label: 'View' },
+            { code: 'CREATE_PROMISE_TO_PAY', label: 'Create' },
+          ],
+        },
+        // {
+        //   key: 'reminders',
+        //   label: 'Reminders',
+        //   permissions: [],
+        // },
       ],
     },
     {
-      key: 'integration',
-      label: 'Integration',
-      permissions: [],
+      key: 'company',
+      label: 'Company',
+      permissions: [
+        { code: 'VIEW_COMPANY', label: 'View' },
+        { code: 'CREATE_COMPANY', label: 'Add' },
+        { code: 'EDIT_COMPANY', label: 'Update' },
+        { code: 'DELETE_COMPANY', label: 'Delete' },
+      ],
     },
     {
-      key: 'setup',
-      label: 'Setup / Admin',
+      key: 'users',
+      label: 'Users',
       permissions: [
-        'VIEW_SETUP_ADMIN',
-        'MANAGE_COMPANY_SETTINGS',
-        'MANAGE_USERS',
-        'MANAGE_ROLES',
-        'INVITE_USER',
+        { code: 'VIEW_USERS', label: 'View' },
+        { code: 'INVITE_USER', label: 'Invite' },
+      ],
+    },
+    {
+      key: 'roles',
+      label: 'Roles',
+      permissions: [
+        { code: 'VIEW_ROLES', label: 'View' },
+        { code: 'CREATE_ROLE', label: 'Create' },
       ],
     },
   ];
@@ -116,7 +144,7 @@ export class Roles implements OnInit {
 
     this.roleService.getRoles().subscribe({
       next: (res) => {
-        this.roles = res.data; 
+        this.roles = res.data;
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -129,48 +157,6 @@ export class Roles implements OnInit {
     });
   }
 
-  loadPermissions() {
-    if (this.permissions.length) return;
-
-    this.roleService.getPermissions().subscribe({
-      next: (res) => {
-        this.permissions = res?.data || res || [];
-        this.buildTabPermissions();
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load permissions', err);
-        this.permissions = [];
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  permissionValue(perm: any) {
-    if (typeof perm === 'string') {
-      return perm;
-    }
-    return perm?.id ?? perm?.code ?? perm;
-  }
-
-  permissionLabel(perm: any) {
-    let raw: any;
-    if (typeof perm === 'string') {
-      raw = perm;
-    } else {
-      raw = perm?.name || perm?.description || perm?.code || perm;
-    }
-    if (typeof raw !== 'string') {
-      return raw;
-    }
-
-    return raw
-      .toLowerCase()
-      .split('_')
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ');
-  }
-
   openModal() {
     this.addRoleForm.reset({
       name: '',
@@ -180,9 +166,6 @@ export class Roles implements OnInit {
 
     this.submitted = false;
     this.isModalOpen = true;
-    const fallbackTab = this.permissionTabs.find((tab) => this.getPermissionsForTab(tab.key).length);
-    this.activePermissionTab = fallbackTab?.key || this.permissionTabs[0].key;
-    this.loadPermissions();
     this.cdr.detectChanges();
   }
 
@@ -221,51 +204,39 @@ export class Roles implements OnInit {
     });
   }
 
-  isPermissionSelected(id: any) {
+  isPermissionSelected(code: string) {
     const selected = this.addRoleForm.get('permissions')?.value || [];
-    return selected.includes(id);
+    return selected.includes(code);
   }
 
-  togglePermissionSelection(id: any) {
+  togglePermissionSelection(code: string) {
     const control = this.addRoleForm.get('permissions');
     if (!control) return;
 
     const current = control.value || [];
-    if (current.includes(id)) {
-      control.setValue(current.filter((val: any) => val !== id));
+    if (current.includes(code)) {
+      control.setValue(current.filter((val: any) => val !== code));
     } else {
-      control.setValue([...current, id]);
+      control.setValue([...current, code]);
     }
   }
 
   selectedPermissionLabels(): string[] {
     const selected = this.addRoleForm.get('permissions')?.value || [];
-    return selected.map((perm: any) => this.permissionLabel(perm));
-  }
+    const allPermissions: Permission[] = [];
 
-  getPermissionsForTab(tabKey: string): string[] {
-    return this.tabPermissions[tabKey] || [];
-  }
-
-  setActiveTab(tabKey: string) {
-    this.activePermissionTab = tabKey;
-    this.cdr.detectChanges();
-  }
-
-  private buildTabPermissions() {
-    const available = new Set(
-      this.permissions.map((perm) => this.permissionValue(perm))
-    );
-
-    this.tabPermissions = {};
     this.permissionTabs.forEach((tab) => {
-      this.tabPermissions[tab.key] = tab.permissions.filter((perm) => available.has(perm));
+      allPermissions.push(...tab.permissions);
+      if (tab.subtabs) {
+        tab.subtabs.forEach((subtab) => {
+          allPermissions.push(...subtab.permissions);
+        });
+      }
     });
 
-    const currentList = this.tabPermissions[this.activePermissionTab];
-    if (!currentList || currentList.length === 0) {
-      const fallback = this.permissionTabs.find((tab) => (this.tabPermissions[tab.key] || []).length > 0);
-      this.activePermissionTab = fallback?.key || this.permissionTabs[0].key;
-    }
+    return selected.map((code: string) => {
+      const perm = allPermissions.find((p) => p.code === code);
+      return perm ? perm.label : code;
+    });
   }
 }
