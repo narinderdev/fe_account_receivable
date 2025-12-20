@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { CommonModule, CurrencyPipe } from '@angular/common';
@@ -6,6 +6,8 @@ import { Customer } from '../../services/customer';
 import { InvoiceService } from '../../services/invoice-service';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-create-invoice',
@@ -14,8 +16,10 @@ import { Spinner } from '../../shared/spinner/spinner';
   templateUrl: './create-invoice.html',
   styleUrl: './create-invoice.css',
 })
-export class CreateInvoice implements OnInit {
+export class CreateInvoice implements OnInit, OnDestroy {
   customers: any[] = [];
+  private destroy$ = new Subject<void>();
+  private activeCompanyId: number | null = null;
 
   formSubmitted = false;
   loading = false;
@@ -35,18 +39,38 @@ export class CreateInvoice implements OnInit {
     private invoiceService: InvoiceService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private companySelection: CompanySelectionService
   ) {}
 
   ngOnInit(): void {
-    this.loadCustomers();
+    this.companySelection.selectedCompanyId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((id) => {
+        const parsed = id ? Number(id) : NaN;
+        const nextId = Number.isFinite(parsed) ? parsed : null;
+
+        if (this.activeCompanyId === nextId) {
+          return;
+        }
+
+        this.activeCompanyId = nextId;
+
+        if (this.activeCompanyId) {
+          this.loadCustomers(this.activeCompanyId);
+        } else {
+          this.customers = [];
+          this.invoice.customerId = '';
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   // ---------------------------
   // LOAD CUSTOMERS
   // ---------------------------
-  loadCustomers(): void {
-    this.customerService.getCustomers(0, 100).subscribe({
+  loadCustomers(companyId: number): void {
+    this.customerService.getCustomers(companyId, 0, 100).subscribe({
       next: (res: any) => {
         this.customers = res?.data?.content || [];
         this.cdr.detectChanges();
@@ -188,5 +212,10 @@ export class CreateInvoice implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
