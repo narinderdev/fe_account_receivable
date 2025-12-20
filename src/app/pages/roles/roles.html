@@ -1,29 +1,28 @@
 <div class="roles-container">
   <div class="roles-header">
-    <div>
-      <h2 class="section-title">User Roles</h2>
-    </div>
     <button class="btn-add" (click)="openModal()">Add Role</button>
   </div>
 
   <app-spinner *ngIf="isLoading"></app-spinner>
 
   <!-- ROLES TABLE -->
-  <table class="role-table" *ngIf="!isLoading && roles.length > 0">
-    <thead>
-      <tr>
-        <th>Role Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
+  <div class="roles-table-wrapper" *ngIf="!isLoading && roles.length > 0">
+    <table class="roles-table">
+      <thead>
+        <tr>
+          <th>Role Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
 
-    <tbody>
-      <tr *ngFor="let r of roles">
-        <td>{{ r.name }}</td>
-        <td>{{ r.description }}</td>
-      </tr>
-    </tbody>
-  </table>
+      <tbody>
+        <tr *ngFor="let r of roles">
+          <td>{{ r.name }}</td>
+          <td>{{ r.description }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
   <p *ngIf="!isLoading && roles.length === 0" class="section-description">
     No roles found.

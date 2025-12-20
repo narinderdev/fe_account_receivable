@@ -1,0 +1,37 @@
+<header class="app-navbar">
+  <h1 class="navbar-title">{{ pageTitle }}</h1>
+
+  <div class="company-select" [class.open]="companyDropdownOpen" [class.disabled]="loadingCompanies">
+    <button
+      class="company-select-trigger"
+      type="button"
+      (click)="toggleCompanyDropdown($event)"
+      [disabled]="loadingCompanies || companies.length < 2"
+    >
+      <img src="/assets/company.svg" alt="Company icon" class="company-select-icon" />
+
+      <span class="company-select-label">
+        {{ loadingCompanies ? 'Loading...' : getSelectedCompanyLabel() }}
+      </span>
+
+      <img
+        src="/assets/arrow-down.svg"
+        alt="Toggle company dropdown"
+        class="company-select-arrow"
+        *ngIf="!loadingCompanies && companies.length > 1"
+      />
+    </button>
+
+    <div class="company-select-menu" *ngIf="companyDropdownOpen && companies.length > 1">
+      <button
+        type="button"
+        class="company-option"
+        *ngFor="let company of companies"
+        [class.active]="company.id ? company.id.toString() === selectedCompanyId : false"
+        (click)="onCompanyChange(company.id ? company.id.toString() : '')"
+      >
+        {{ company.legalName || company.tradeName }}
+      </button>
+    </div>
+  </div>
+</header>

@@ -91,15 +91,15 @@ export const routes: Routes = [
       { path: 'invoices/create', component: CreateInvoice },
       { path: 'invoices/detail/:invoiceId', component: InvoiceDetail },
 
-      {path:'payments', component: Payments},
-      {path:'payments/receive-payment', component: ReceivePayment},
+      { path: 'payments', component: Payments },
+      { path: 'payments/receive-payment', component: ReceivePayment },
       { path: 'payments/details/:paymentId', component: PaymentDetails },
 
-      {path:'users', component: Users},
-      {path:'roles', component: Roles},
+      { path: 'users', component: Users },
+      { path: 'roles', component: Roles },
 
-      {path:'ar-reports', component: Aging},
-      {path:'collections', component: Collections},
+      { path: 'ar-reports', component: Aging },
+      { path: 'collections', component: Collections },
     ],
   },
 ];

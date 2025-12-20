@@ -1,6 +1,6 @@
-.customers-container {
-  padding: 32px;
-}
+/* .customers-container {
+  padding: 10px;
+} */
 
 .customers-table-wrapper {
   background: white;
@@ -79,21 +79,6 @@
   opacity: 0.9;
   cursor: pointer;
   flex-shrink: 0;
-}
-.customers-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.customers-title {
-  font-size: 24px;
-  color: #111827;
-  margin: 0;
-  font-weight: 600;
 }
 
 .add-customer-btn,
@@ -200,13 +185,8 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  margin-left: auto;
 }
-
-/* .import-customer-btn {
-  display: flex;
-  gap :2%
-} */
 
 /* Import Modal Styles */
 .import-modal {
@@ -298,32 +278,11 @@
   .customers-container {
     padding: 24px 16px 16px;
   }
-
-  .customers-actions {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .button-gap {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .customers-title {
-    font-size: 24px;
-    color: #111827;
-    font-weight: 600;
-    margin: 0;
-  }
 }
 
 @media (max-width: 768px) {
   .customers-container {
     padding: 20px 12px;
-  }
-
-  .customers-title {
-    font-size: 22px;
   }
 
   .customers-table-wrapper {
@@ -352,13 +311,20 @@
     width: 100%;
     max-width: 420px;
   }
+
+  .search-card-body {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .button-gap {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 480px) {
-  .customers-title {
-    font-size: 22px;
-  }
-
   .add-customer-btn,
   .import-customer-btn,
   .page-btn {
@@ -405,6 +371,11 @@
 
 .search-card-body {
   padding: 0 20px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .search-input {
@@ -416,7 +387,8 @@
   align-items: center;
   padding-left: 42px;
   transition: border-color 0.2s, box-shadow 0.2s;
-  width: 100%;
+  flex: 1;
+  min-width: 300px;
 }
 
 .search-input:focus-within {
@@ -449,11 +421,6 @@
 }
 
 @media (min-width: 1024px) {
-  .search-card-body {
-    display: flex;
-    justify-content: flex-start;
-  }
-
   .search-input {
     max-width: 448px;
   }

@@ -4,21 +4,20 @@ import {
   FormGroup,
   Validators,
   ReactiveFormsModule,
-  FormsModule,
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { CompanyUser, Role } from '../../models/company-users.model';
-import { CompanyEntity } from '../../models/company.model';
 import { CompanyService } from '../../services/company-service';
 import { RoleService } from '../../services/role-service';
-import { Subject } from 'rxjs';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, Spinner],
+  imports: [CommonModule, ReactiveFormsModule, Spinner],
   templateUrl: './users.html',
   styleUrls: ['./users.css'],
 })
@@ -28,7 +27,6 @@ export class Users implements OnInit, OnDestroy {
   submitted = false;
   isSavingInvite = false;
 
-  companies: CompanyEntity[] = [];
   roles: Role[] = [];
   users: CompanyUser[] = [];
 
@@ -39,6 +37,7 @@ export class Users implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private companyService: CompanyService,
+    private companySelection: CompanySelectionService,
     private roleService: RoleService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef
@@ -53,36 +52,31 @@ export class Users implements OnInit, OnDestroy {
       // status: ['', Validators.required],
     });
 
-    this.loadCompanies();
+    this.listenForCompanySelection();
   }
 
-  loadCompanies() {
-    this.companyService.getCompany(0, 100).subscribe({
-      next: (res) => {
-        this.companies = res?.data?.content || [];
+  private listenForCompanySelection() {
+    this.companySelection.selectedCompanyId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((id) => {
+        const parsed = id ? Number(id) : NaN;
+        const nextCompanyId = Number.isFinite(parsed) ? parsed : null;
 
-        if (this.companies.length > 0) {
-          this.companyId = this.companies[0].id;
-          this.loadRoles();
-          this.loadUsers();
+        if (this.companyId === nextCompanyId) {
+          return;
         }
 
-        this.cdr.detectChanges();
-      },
-      error: (err) => console.error('Failed to load companies', err),
-    });
-  }
+        this.companyId = nextCompanyId;
 
-  onCompanyChange() {
-    if (!this.companyId) {
-      this.roles = [];
-      this.users = [];
-      this.cdr.detectChanges();
-      return;
-    }
-
-    this.loadRoles();
-    this.loadUsers();
+        if (this.companyId) {
+          this.loadRoles();
+          this.loadUsers();
+        } else {
+          this.users = [];
+          this.roles = [];
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   loadUsers() {

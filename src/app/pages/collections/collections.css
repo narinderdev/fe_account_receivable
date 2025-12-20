@@ -1,5 +1,5 @@
 .collections-container {
-  padding: 32px;
+  /* padding: 32px; */
   background: #f8f9fa;
   min-height: 100vh;
 }
@@ -10,27 +10,18 @@
   color: #1a1a1a;
 }
 
-.top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
 .company-overdue-group {
-background: #fff;
-    border-radius: 16px;
-    margin-bottom: 10px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-    overflow: hidden;
-    padding: 20px;
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    flex-wrap: wrap;
+  background: #fff;
+  border-radius: 16px;
+  margin-bottom: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .color {
@@ -51,24 +42,10 @@ background: #fff;
   letter-spacing: 0.3px;
 }
 
-.company-dropdown {
-  min-width: 200px;
-  padding: 8px 12px;
+.company-selected-text {
   font-size: 14px;
   font-weight: 500;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background-color: white;
-  cursor: pointer;
   color: #111827;
-  transition: all 0.15s;
-  height: 38px;
-}
-
-.company-dropdown:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
 }
 
 .customer-info {
@@ -91,10 +68,6 @@ background: #fff;
 
 .customer-name {
   color: #111827;
-}
-
-.company-dropdown:hover {
-  border-color: #9ca3af;
 }
 
 .overdue-box {
@@ -136,6 +109,7 @@ background: #fff;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .btn-secondary {
@@ -148,6 +122,7 @@ background: #fff;
   font-weight: 500;
   border-radius: 8px;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .btn-secondary:hover {
@@ -166,6 +141,7 @@ background: #fff;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .btn-primary:hover {
@@ -534,11 +510,6 @@ background: #fff;
     padding: 20px 16px;
   }
 
-  .top-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .company-overdue-group {
     flex-direction: column;
     align-items: stretch;
@@ -546,6 +517,7 @@ background: #fff;
 
   .action-buttons {
     width: 100%;
+    margin-left: 0;
   }
 
   .btn-secondary,

@@ -1,24 +1,15 @@
 <div class="collections-container">
-  <!-- TOP ROW -->
-  <div class="top-row">
-    <h2 class="page-title">Collections</h2>
-    <div class="action-buttons">
-      <button class="btn-secondary" (click)="logCall()">Log Call</button>
-      <button class="btn-primary" (click)="newReminder()">New Reminder</button>
-      <button class="btn-primary" (click)="openPromisePopup()">New Promise</button>
-    </div>
-  </div>
-
   <div class="company-overdue-group">
-    <div class="company-field">
-      <label>Select Company</label>
-      <select class="company-dropdown" [(ngModel)]="selectedCompanyId" (change)="onCompanyChange()">
-        <option value="">Select Company</option>
-        <option *ngFor="let company of companies" [value]="company.id">
-          {{ company.legalName || company.tradeName }}
-        </option>
-      </select>
-    </div>
+    <!-- <div class="company-field">
+      <label>Company</label>
+      <span class="company-selected-text">
+        {{
+          selectedCompanyId
+            ? 'Using the company selected in the navbar'
+            : 'Select a company from the navbar to view data'
+        }}
+      </span>
+    </div> -->
 
     <div class="overdue-box">
       <label>Company Overdue</label>
@@ -30,6 +21,12 @@
           <span class="overdue-loading-text">Fetching...</span>
         </ng-template>
       </div>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn-secondary" (click)="logCall()">Log Call</button>
+      <button class="btn-primary" (click)="newReminder()">New Reminder</button>
+      <button class="btn-primary" (click)="openPromisePopup()">New Promise</button>
     </div>
   </div>
 

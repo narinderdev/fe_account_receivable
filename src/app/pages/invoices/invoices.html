@@ -1,13 +1,4 @@
 <div class="invoice-container">
-  <!-- Header -->
-  <div class="header-row">
-    <h1 class="page-title">Invoices</h1>
-    <button class="btn-new" routerLink="create">
-      <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
-      New Invoice
-    </button>
-  </div>
-
   <!-- Search -->
   <div class="search-card">
     <div class="search-card-header">
@@ -25,6 +16,11 @@
           (input)="onSearchChange()"
         />
       </div>
+
+      <button class="btn-new" routerLink="create">
+        <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
+        New Invoice
+      </button>
     </div>
   </div>
 
