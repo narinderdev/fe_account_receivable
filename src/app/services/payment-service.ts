@@ -12,13 +12,13 @@ export class PaymentService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  getPayments(page = 0, size = 10): Observable<PaymentPage> {
+  getPayments(companyId: number, page = 0, size = 10): Observable<PaymentPage> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
 
     return this.http.get<PaymentPage>(
-      `${this.baseUrl}/payment?page=${page}&size=${size}`,
+      `${this.baseUrl}/payment/company/${companyId}?page=${page}&size=${size}`,
       { headers }
     );
   }
@@ -26,5 +26,4 @@ export class PaymentService {
   applyPayment(customerId: number, data: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/payment/apply/${customerId}`, data);
   }
-
 }
