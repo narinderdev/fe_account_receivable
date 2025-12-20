@@ -1,8 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { PaymentService } from '../../services/payment-service';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Loader } from '../../shared/loader/loader';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 
 interface InvoiceCustomer {
   customerName: string;
@@ -40,25 +42,47 @@ interface Payment {
   templateUrl: './payments.html',
   styleUrls: ['./payments.css'],
 })
-export class Payments implements OnInit {
+export class Payments implements OnInit, OnDestroy {
   payments: Payment[] = [];
-  loading = false; // 🔥 SAME LOADER FLAG AS Customers + Aging
+  loading = false;
+  private destroy$ = new Subject<void>();
+  private activeCompanyId: number | null = null;
 
   constructor(
     private paymentService: PaymentService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private companySelection: CompanySelectionService
   ) {}
 
   ngOnInit() {
-    this.loadPayments();
+    this.companySelection.selectedCompanyId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((id) => {
+        const parsed = id ? Number(id) : NaN;
+        const nextId = Number.isFinite(parsed) ? parsed : null;
+
+        if (this.activeCompanyId === nextId) {
+          return;
+        }
+
+        this.activeCompanyId = nextId;
+
+        if (this.activeCompanyId) {
+          this.loadPayments(this.activeCompanyId);
+        } else {
+          this.payments = [];
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      });
   }
 
-  loadPayments(): void {
+  loadPayments(companyId: number): void {
     this.loading = true;
     this.cdr.detectChanges();
 
-    this.paymentService.getPayments().subscribe({
+    this.paymentService.getPayments(companyId).subscribe({
       next: (response) => {
         this.payments = response?.data?.content || [];
         localStorage.setItem('paymentsData', JSON.stringify(this.payments));
@@ -136,5 +160,10 @@ export class Payments implements OnInit {
 
   openPaymentDetails(paymentId: number) {
     this.router.navigate(['/admin/payments/details', paymentId]);
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
