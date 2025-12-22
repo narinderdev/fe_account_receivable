@@ -1,8 +1,13 @@
 <div class="app-shell">
-  <app-sidebar></app-sidebar>
+  <app-sidebar *ngIf="!hideSidebar"></app-sidebar>
 
   <div class="shell-content">
-    <app-navbar></app-navbar>
+    <div class="signout-bar" *ngIf="showSignoutBar">
+      <span>You need to complete company setup before continuing.</span>
+      <button type="button" (click)="signOut()">Sign out</button>
+    </div>
+
+    <app-navbar *ngIf="showNavbar"></app-navbar>
 
     <div class="page-content">
       <router-outlet></router-outlet>
