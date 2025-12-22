@@ -39,9 +39,18 @@
     <div class="form-group">
       <label>Password</label>
       <div class="input-wrapper">
-        <input type="password" formControlName="password" placeholder="Create a password" />
+        <input
+          [type]="passwordVisible ? 'text' : 'password'"
+          formControlName="password"
+          placeholder="Create a password"
+        />
         <img src="/lock.svg" class="input-icon-left" />
-        <img src="/eye.svg" class="input-icon" />
+        <img
+          [src]="passwordVisible ? 'show.svg' : 'eye.svg'"
+          class="input-icon password-toggle"
+          (click)="togglePasswordVisibility('password')"
+          alt="Toggle password visibility"
+        />
       </div>
 
       <small class="error" *ngIf="form.get('password')?.touched && form.get('password')?.invalid">
@@ -53,11 +62,17 @@
       <label>Confirm Password</label>
       <div class="input-wrapper">
         <input
-          type="password"
+          [type]="confirmPasswordVisible ? 'text' : 'password'"
           formControlName="confirmPassword"
           placeholder="Confirm your password"
         />
         <img src="/relock.svg" class="input-icon-left" />
+        <img
+          [src]="confirmPasswordVisible ? 'show.svg' : 'eye.svg'"
+          class="input-icon password-toggle"
+          (click)="togglePasswordVisibility('confirmPassword')"
+          alt="Toggle confirm password visibility"
+        />
       </div>
 
       <small class="error" *ngIf="form.touched && form.errors?.['mismatch']">
