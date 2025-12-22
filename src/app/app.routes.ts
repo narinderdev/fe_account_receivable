@@ -44,8 +44,6 @@ export const routes: Routes = [
     canActivateChild: [AuthGuard],
     children: [
       { path: 'dashboard', component: Dashboard },
-
-      // Customers
       { path: 'customers', component: Customers },
       { path: 'customers/add', component: AddCustomer },
       { path: 'customers/edit/:id', component: AddCustomer },
@@ -67,7 +65,6 @@ export const routes: Routes = [
           { path: 'step-4', component: BanksAndPayments },
           // { path: 'step-5', component: UserAndRoles },
           // { path: 'step-6', component: OpeningBalances },
-          { path: 'complete', component: OnboardingComplete },
         ],
       },
 
@@ -82,9 +79,10 @@ export const routes: Routes = [
           { path: 'step-3', component: FinancialArSettings },
           { path: 'step-4', component: BanksAndPayments },
           // { path: 'step-5', component: UserAndRoles },
-          { path: 'complete', component: OnboardingComplete },
         ],
       },
+
+      { path: 'company/onboarding-complete', component: OnboardingComplete },
 
       // Invoices
       { path: 'invoices', component: Invoices },

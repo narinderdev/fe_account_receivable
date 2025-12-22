@@ -11,6 +11,7 @@ import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
 import { CompanyEntity } from '../../models/company.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { UserContextService } from '../../services/user-context.service';
 
 @Component({
   selector: 'app-customers',
@@ -44,6 +45,10 @@ export class Customers implements OnInit, OnDestroy {
   pageSize = 6;
   activeCompanyId: number | null = null;
   private destroy$ = new Subject<void>();
+  canViewCustomers = false;
+  canCreateCustomer = false;
+  canEditCustomer = false;
+  canDeleteCustomer = false;
 
   constructor(
     private customerService: Customer,
@@ -51,10 +56,18 @@ export class Customers implements OnInit, OnDestroy {
     private companySelection: CompanySelectionService,
     private cdr: ChangeDetectorRef,
     private router: Router,
-    private toastr: ToastrService
-  ) {}
+    private toastr: ToastrService,
+    private userContext: UserContextService
+  ) {
+    this.setPermissionFlags();
+  }
 
   ngOnInit() {
+    if (!this.canViewCustomers) {
+      this.loading = false;
+      return;
+    }
+
     this.companySelection.selectedCompanyId$
       .pipe(takeUntil(this.destroy$))
       .subscribe((id) => {
@@ -127,6 +140,10 @@ export class Customers implements OnInit, OnDestroy {
   /* ---------------- IMPORT MODAL ---------------- */
 
   openImportModal() {
+    if (!this.canCreateCustomer) {
+      return;
+    }
+
     this.isImportModalOpen = true;
     this.selectedCompanyId = null;
     this.loadCompanies();
@@ -143,6 +160,10 @@ export class Customers implements OnInit, OnDestroy {
   }
 
   handleCsvUpload(event: Event) {
+    if (!this.canCreateCustomer) {
+      return;
+    }
+
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
@@ -201,10 +222,18 @@ export class Customers implements OnInit, OnDestroy {
   /* ---------------- ACTIONS ---------------- */
 
   editCustomer(id: number) {
+    if (!this.canEditCustomer) {
+      return;
+    }
+
     this.router.navigate(['/admin/customers/edit', id]);
   }
 
   openDeleteModal(id: number) {
+    if (!this.canDeleteCustomer) {
+      return;
+    }
+
     this.deleteId = id;
     this.isDeleteModalOpen = true;
   }
@@ -258,5 +287,12 @@ export class Customers implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private setPermissionFlags() {
+    this.canViewCustomers = this.userContext.hasPermission('VIEW_CUSTOMERS');
+    this.canCreateCustomer = this.userContext.hasPermission('CREATE_CUSTOMER');
+    this.canEditCustomer = this.userContext.hasPermission('EDIT_CUSTOMER');
+    this.canDeleteCustomer = this.userContext.hasPermission('DELETE_CUSTOMER');
   }
 }

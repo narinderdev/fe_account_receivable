@@ -12,16 +12,16 @@ export class RoleService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  getRoles(): Observable<RolesResponse> {
+  getRoles(companyId:number): Observable<RolesResponse> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
 
-    return this.http.get<RolesResponse>(`${this.baseUrl}/api/roles`, { headers });
+    return this.http.get<RolesResponse>(`${this.baseUrl}/api/roles/company/${companyId}`, { headers });
   }
 
-  createRoles(data: any): Observable<RolesResponse> {
-    return this.http.post<RolesResponse>(`${this.baseUrl}/api/roles`, data);
+  createRoles(companyId:number, data: any): Observable<RolesResponse> {
+    return this.http.post<RolesResponse>(`${this.baseUrl}/api/roles/company/${companyId}`, data);
   }
 
   getPermissions(): Observable<any> {

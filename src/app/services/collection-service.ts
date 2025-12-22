@@ -40,11 +40,11 @@ export class CollectionService {
     return this.http.post(`${this.baseUrl}/collections/promise`, data);
   }
 
-  getPromiseToPay(): Observable<PromiseToPayResponse> {
+  getPromiseToPay(companyId:number): Observable<PromiseToPayResponse> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
-    return this.http.get<PromiseToPayResponse>(`${this.baseUrl}/collections/promise`, { headers });
+    return this.http.get<PromiseToPayResponse>(`${this.baseUrl}/collections/promise/company/${companyId}`, { headers });
   }
 
   getPendingCustomer(companyId:number): Observable<any> {

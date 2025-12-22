@@ -1,25 +1,24 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { RoleService } from '../../services/role-service';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Role } from '../../models/company-users.model';
 import { ToastrService } from 'ngx-toastr';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 
-interface Permission {
-  code: string;
-  label: string;
+interface PermissionColumn {
+  view?: string;
+  create?: string;
+  update?: string;
+  delete?: string;
 }
 
-interface PermissionTab {
-  key: string;
+interface PermissionRow {
   label: string;
-  permissions: Permission[];
-  subtabs?: {
-    key: string;
-    label: string;
-    permissions: Permission[];
-  }[];
+  permissions: PermissionColumn;
+  isSubRow?: boolean;
 }
 
 @Component({
@@ -29,7 +28,7 @@ interface PermissionTab {
   templateUrl: './roles.html',
   styleUrls: ['./roles.css'],
 })
-export class Roles implements OnInit {
+export class Roles implements OnInit, OnDestroy {
   roles: Role[] = [];
   isLoading = false;
   isModalOpen = false;
@@ -37,96 +36,90 @@ export class Roles implements OnInit {
   submitted = false;
   addRoleForm!: FormGroup;
 
-  permissionTabs: PermissionTab[] = [
+  permissionRows: PermissionRow[] = [
     {
-      key: 'dashboard',
       label: 'Dashboard',
-      permissions: [{ code: 'VIEW_DASHBOARD', label: 'View' }],
+      permissions: {
+        view: 'VIEW_DASHBOARD',
+      },
     },
     {
-      key: 'customers',
       label: 'Customers',
-      permissions: [
-        { code: 'VIEW_CUSTOMERS', label: 'View' },
-        { code: 'CREATE_CUSTOMER', label: 'Add' },
-        { code: 'EDIT_CUSTOMER', label: 'Update' },
-        { code: 'DELETE_CUSTOMER', label: 'Delete' },
-      ],
+      permissions: {
+        view: 'VIEW_CUSTOMERS',
+        create: 'CREATE_CUSTOMER',
+        update: 'EDIT_CUSTOMER',
+        delete: 'DELETE_CUSTOMER',
+      },
     },
     {
-      key: 'invoices',
       label: 'Invoices',
-      permissions: [
-        { code: 'VIEW_INVOICES', label: 'View' },
-        { code: 'CREATE_INVOICE', label: 'Create' },
-      ],
+      permissions: {
+        view: 'VIEW_INVOICES',
+        create: 'CREATE_INVOICE',
+        update: 'EDIT_INVOICE',
+        delete: 'DELETE_INVOICE',
+      },
     },
     {
-      key: 'payments',
       label: 'Payments',
-      permissions: [
-        { code: 'VIEW_PAYMENTS', label: 'View' },
-        { code: 'RECEIVE_PAYMENT', label: 'Receive' },
-      ],
+      permissions: {
+        view: 'VIEW_PAYMENTS',
+        create: 'APPLY_PAYMENT', // Receive treated as Create
+      },
     },
     {
-      key: 'reports',
       label: 'Aging & Reports',
-      permissions: [{ code: 'VIEW_AGING_REPORTS', label: 'View' }],
+      permissions: {
+        view: 'VIEW_AGING_REPORTS',
+      },
     },
     {
-      key: 'collections',
-      label: 'Collections & Disputes',
-      permissions: [],
-      subtabs: [
-        {
-          key: 'promise_to_pay',
-          label: 'Promise to Pay',
-          permissions: [
-            { code: 'VIEW_PROMISE_TO_PAY', label: 'View' },
-            { code: 'CREATE_PROMISE_TO_PAY', label: 'Create' },
-          ],
-        },
-        // {
-        //   key: 'reminders',
-        //   label: 'Reminders',
-        //   permissions: [],
-        // },
-      ],
+      label: 'Collections',
+      permissions: {},
     },
     {
-      key: 'company',
+      label: 'Promise to Pay',
+      permissions: {
+        view: 'VIEW_PROMISE_TO_PAY',
+        create: 'CREATE_PROMISE_TO_PAY',
+      },
+      isSubRow: true,
+    },
+    {
       label: 'Company',
-      permissions: [
-        { code: 'VIEW_COMPANY', label: 'View' },
-        { code: 'CREATE_COMPANY', label: 'Add' },
-        { code: 'EDIT_COMPANY', label: 'Update' },
-        { code: 'DELETE_COMPANY', label: 'Delete' },
-      ],
+      permissions: {
+        view: 'VIEW_COMPANY',
+        create: 'CREATE_COMPANY',
+        update: 'UPDATE_COMPANY',
+        delete: 'DELETE_COMPANY',
+      },
     },
     {
-      key: 'users',
       label: 'Users',
-      permissions: [
-        { code: 'VIEW_USERS', label: 'View' },
-        { code: 'INVITE_USER', label: 'Invite' },
-      ],
+      permissions: {
+        view: 'VIEW_USER',
+        create: 'INVITE_USER', // Invite treated as Create
+      },
     },
     {
-      key: 'roles',
       label: 'Roles',
-      permissions: [
-        { code: 'VIEW_ROLES', label: 'View' },
-        { code: 'CREATE_ROLE', label: 'Create' },
-      ],
+      permissions: {
+        view: 'VIEW_ROLES',
+        create: 'CREATE_ROLES',
+      },
     },
   ];
+
+  private destroy$ = new Subject<void>();
+  private activeCompanyId: number | null = null;
 
   constructor(
     private fb: FormBuilder,
     private roleService: RoleService,
     private cdr: ChangeDetectorRef,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private companySelection: CompanySelectionService
   ) {}
 
   ngOnInit() {
@@ -136,13 +129,30 @@ export class Roles implements OnInit {
       permissions: [[]],
     });
 
-    this.loadRoles();
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      const parsed = id ? Number(id) : NaN;
+      const nextId = Number.isFinite(parsed) ? parsed : null;
+
+      if (this.activeCompanyId === nextId) {
+        return;
+      }
+
+      this.activeCompanyId = nextId;
+
+      if (this.activeCompanyId) {
+        this.loadRoles(this.activeCompanyId);
+      } else {
+        this.roles = [];
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
-  loadRoles() {
+  loadRoles(companyId: number) {
     this.isLoading = true;
 
-    this.roleService.getRoles().subscribe({
+    this.roleService.getRoles(companyId).subscribe({
       next: (res) => {
         this.roles = res.data;
         this.isLoading = false;
@@ -187,12 +197,16 @@ export class Roles implements OnInit {
       permissions: formValue.permissions || [],
     };
 
-    this.roleService.createRoles(payload).subscribe({
+    if (!this.activeCompanyId) return;
+
+    this.roleService.createRoles(this.activeCompanyId, payload).subscribe({
       next: (res) => {
         this.toastr.success(res?.message || 'Role created successfully');
         this.isSaving = false;
         this.isModalOpen = false;
-        this.loadRoles();
+        if (this.activeCompanyId) {
+          this.loadRoles(this.activeCompanyId);
+        }
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -204,12 +218,15 @@ export class Roles implements OnInit {
     });
   }
 
-  isPermissionSelected(code: string) {
+  isPermissionSelected(code: string | undefined): boolean {
+    if (!code) return false;
     const selected = this.addRoleForm.get('permissions')?.value || [];
     return selected.includes(code);
   }
 
-  togglePermissionSelection(code: string) {
+  togglePermissionSelection(code: string | undefined) {
+    if (!code) return;
+
     const control = this.addRoleForm.get('permissions');
     if (!control) return;
 
@@ -221,22 +238,13 @@ export class Roles implements OnInit {
     }
   }
 
-  selectedPermissionLabels(): string[] {
+  getSelectedCount(): number {
     const selected = this.addRoleForm.get('permissions')?.value || [];
-    const allPermissions: Permission[] = [];
+    return selected.length;
+  }
 
-    this.permissionTabs.forEach((tab) => {
-      allPermissions.push(...tab.permissions);
-      if (tab.subtabs) {
-        tab.subtabs.forEach((subtab) => {
-          allPermissions.push(...subtab.permissions);
-        });
-      }
-    });
-
-    return selected.map((code: string) => {
-      const perm = allPermissions.find((p) => p.code === code);
-      return perm ? perm.label : code;
-    });
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

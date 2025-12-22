@@ -15,7 +15,7 @@ export class AgingService {
     'ngrok-skip-browser-warning': 'true',
   });
 
-  getAging(filters?: {
+  getAging(companyId: number, filters?: {
     customerId?: number;
     status?: string;
     asOfDate?: string;
@@ -34,9 +34,9 @@ export class AgingService {
       }
     }
 
-    return this.http.get<PaymentPage>(
-      `${this.baseUrl}/reports/aging`,
-      { headers: this.headers, params }
-    );
+    return this.http.get<PaymentPage>(`${this.baseUrl}/reports/aging/company/${companyId}`, {
+      headers: this.headers,
+      params,
+    });
   }
 }

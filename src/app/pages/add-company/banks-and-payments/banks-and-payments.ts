@@ -158,7 +158,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       next: () => {
         this.isSaving = false;
 
-        this.router.navigate(['/admin/company/add/complete'], {
+        this.router.navigate(['/admin/company/onboarding-complete'], {
           queryParams: { id: this.companyId },
         });
       },

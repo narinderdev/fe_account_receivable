@@ -6,6 +6,7 @@ import { LoginService } from '../../services/login-service';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
 import { finalize } from 'rxjs';
+import { UserContextService } from '../../services/user-context.service';
 
 @Component({
   selector: 'app-login',
@@ -24,7 +25,8 @@ export class Login {
     private router: Router,
     private loginService: LoginService,
     private toastr: ToastrService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private userContext: UserContextService
   ) {
     this.form = this.fb.group({
       email: [
@@ -81,6 +83,7 @@ export class Login {
             }
 
             localStorage.setItem('isLoggedIn', 'true');
+            this.userContext.setFromLogin(user);
 
             const userCompanies = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
 

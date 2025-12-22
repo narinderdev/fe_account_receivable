@@ -167,10 +167,15 @@ export class Collections implements OnInit, OnDestroy {
   }
 
   loadPromiseToPay() {
+    if (!this.selectedCompanyId) {
+      this.promiseToPayList = [];
+      return;
+    }
+
     this.loadingPromiseToPay = true;
     this.cdr.detectChanges();
 
-    this.collectionService.getPromiseToPay().subscribe({
+    this.collectionService.getPromiseToPay(this.selectedCompanyId).subscribe({
       next: (res) => {
         this.promiseToPayList = Array.isArray(res?.data) ? res.data : [];
 

@@ -6,32 +6,68 @@
       </div>
 
       <nav class="sidebar-nav">
-        <a routerLink="dashboard" routerLinkActive="active" #dashLink="routerLinkActive" class="nav-item">
+        <a
+          *ngIf="canViewDashboard"
+          routerLink="dashboard"
+          routerLinkActive="active"
+          #dashLink="routerLinkActive"
+          class="nav-item"
+        >
           <img [src]="dashLink.isActive ? '/home1.svg' : '/home.svg'" class="nav-icon" />
           Dashboard
         </a>
 
-        <a routerLink="customers" routerLinkActive="active" #customersLink="routerLinkActive" class="nav-item">
+        <a
+          *ngIf="canViewCustomers"
+          routerLink="customers"
+          routerLinkActive="active"
+          #customersLink="routerLinkActive"
+          class="nav-item"
+        >
           <img [src]="customersLink.isActive ? '/customers1.svg' : '/customers.svg'" class="nav-icon" />
           Customers
         </a>
 
-        <a routerLink="invoices" routerLinkActive="active" #invoicesLink="routerLinkActive" class="nav-item">
+        <a
+          *ngIf="canViewInvoices"
+          routerLink="invoices"
+          routerLinkActive="active"
+          #invoicesLink="routerLinkActive"
+          class="nav-item"
+        >
           <img [src]="invoicesLink.isActive ? '/invoice1.svg' : '/invoice.svg'" class="nav-icon" />
           Invoices
         </a>
 
-        <a routerLink="payments" routerLinkActive="active" #paymentsLink="routerLinkActive" class="nav-item">
+        <a
+          *ngIf="canViewPayments"
+          routerLink="payments"
+          routerLinkActive="active"
+          #paymentsLink="routerLinkActive"
+          class="nav-item"
+        >
           <img [src]="paymentsLink.isActive ? '/payment1.svg' : '/payment.svg'" class="nav-icon" />
           Payments
         </a>
 
-        <a routerLink="ar-reports" routerLinkActive="active" #reportsLink="routerLinkActive" class="nav-item">
+        <a
+          *ngIf="canViewReports"
+          routerLink="ar-reports"
+          routerLinkActive="active"
+          #reportsLink="routerLinkActive"
+          class="nav-item"
+        >
           <img [src]="reportsLink.isActive ? '/reports1.svg' : '/reports.svg'" class="nav-icon" />
           Aging & Reports
         </a>
 
-        <a routerLink="collections" routerLinkActive="active" #collectionsLink="routerLinkActive" class="nav-item">
+        <a
+          *ngIf="canViewCollections"
+          routerLink="collections"
+          routerLinkActive="active"
+          #collectionsLink="routerLinkActive"
+          class="nav-item"
+        >
           <img [src]="collectionsLink.isActive ? '/collection1.svg' : '/collection.svg'" class="nav-icon" />
           Collections & Dispute
         </a>
@@ -41,16 +77,18 @@
           Integration
         </a>
 
-        <div class="nav-item setup-parent" (click)="toggleSetup()">
+        <div class="nav-item setup-parent" *ngIf="showSetupLinks" (click)="toggleSetup()">
           <img src="/settings.svg" class="nav-icon" />
           Setup / Admin
           <span class="arrow" [class.open]="setupOpen">&rsaquo;</span>
         </div>
 
-        <div class="setup-children" *ngIf="setupOpen">
-          <a routerLink="company" routerLinkActive="active" class="sub-nav-item">Company</a>
-          <a routerLink="users" routerLinkActive="active" class="sub-nav-item">Users</a>
-          <a routerLink="roles" routerLinkActive="active" class="sub-nav-item">Roles</a>
+        <div class="setup-children" *ngIf="setupOpen && showSetupLinks">
+          <a *ngIf="canViewCompany" routerLink="company" routerLinkActive="active" class="sub-nav-item"
+            >Company</a
+          >
+          <a *ngIf="canViewUsers" routerLink="users" routerLinkActive="active" class="sub-nav-item">Users</a>
+          <a *ngIf="canViewRoles" routerLink="roles" routerLinkActive="active" class="sub-nav-item">Roles</a>
         </div>
       </nav>
     </div>
@@ -84,32 +122,68 @@
 
     <div class="mobile-drawer" [class.open]="mobileMenuOpen">
       <nav class="mobile-nav-links">
-        <a routerLink="dashboard" routerLinkActive="active" #mobileDash="routerLinkActive" (click)="closeMobileMenu()">
+        <a
+          *ngIf="canViewDashboard"
+          routerLink="dashboard"
+          routerLinkActive="active"
+          #mobileDash="routerLinkActive"
+          (click)="closeMobileMenu()"
+        >
           <img [src]="mobileDash.isActive ? '/home1.svg' : '/home.svg'" class="nav-icon" />
           Dashboard
         </a>
 
-        <a routerLink="customers" routerLinkActive="active" #mobileCustomers="routerLinkActive" (click)="closeMobileMenu()">
+        <a
+          *ngIf="canViewCustomers"
+          routerLink="customers"
+          routerLinkActive="active"
+          #mobileCustomers="routerLinkActive"
+          (click)="closeMobileMenu()"
+        >
           <img [src]="mobileCustomers.isActive ? '/customers1.svg' : '/customers.svg'" class="nav-icon" />
           Customers
         </a>
 
-        <a routerLink="invoices" routerLinkActive="active" #mobileInvoices="routerLinkActive" (click)="closeMobileMenu()">
+        <a
+          *ngIf="canViewInvoices"
+          routerLink="invoices"
+          routerLinkActive="active"
+          #mobileInvoices="routerLinkActive"
+          (click)="closeMobileMenu()"
+        >
           <img [src]="mobileInvoices.isActive ? '/invoice1.svg' : '/invoice.svg'" class="nav-icon" />
           Invoices
         </a>
 
-        <a routerLink="payments" routerLinkActive="active" #mobilePayments="routerLinkActive" (click)="closeMobileMenu()">
+        <a
+          *ngIf="canViewPayments"
+          routerLink="payments"
+          routerLinkActive="active"
+          #mobilePayments="routerLinkActive"
+          (click)="closeMobileMenu()"
+        >
           <img [src]="mobilePayments.isActive ? '/payment1.svg' : '/payment.svg'" class="nav-icon" />
           Payments
         </a>
 
-        <a routerLink="ar-reports" routerLinkActive="active" #mobileReports="routerLinkActive" (click)="closeMobileMenu()">
+        <a
+          *ngIf="canViewReports"
+          routerLink="ar-reports"
+          routerLinkActive="active"
+          #mobileReports="routerLinkActive"
+          (click)="closeMobileMenu()"
+        >
           <img [src]="mobileReports.isActive ? '/reports1.svg' : '/reports.svg'" class="nav-icon" />
           Aging & Reports
         </a>
 
-        <a routerLink="collections" routerLinkActive="active" #mobileCollections="routerLinkActive" (click)="closeMobileMenu()">
+        <a
+          *ngIf="canViewCollections"
+          routerLink="collections"
+          routerLinkActive="active"
+          #mobileCollections="routerLinkActive"
+          (click)="closeMobileMenu()"
+        >
           <img [src]="mobileCollections.isActive ? '/collection1.svg' : '/collection.svg'" class="nav-icon" />
           Collections & Dispute
         </a>
@@ -119,7 +193,12 @@
           Integration
         </a>
 
-        <button type="button" class="mobile-setup-toggle" (click)="toggleMobileSetup($event)">
+        <button
+          type="button"
+          class="mobile-setup-toggle"
+          *ngIf="showSetupLinks"
+          (click)="toggleMobileSetup($event)"
+        >
           <div class="label">
             <img src="/setup.svg" class="nav-icon" />
             Setup / Admin
@@ -127,10 +206,12 @@
           <span class="arrow" [class.open]="mobileSetupOpen">&rsaquo;</span>
         </button>
 
-        <div class="mobile-setup-children" *ngIf="mobileSetupOpen">
-          <a routerLink="company" routerLinkActive="active" (click)="closeMobileMenu()">Company</a>
-          <a routerLink="users" routerLinkActive="active" (click)="closeMobileMenu()">Users</a>
-          <a routerLink="roles" routerLinkActive="active" (click)="closeMobileMenu()">Roles</a>
+        <div class="mobile-setup-children" *ngIf="mobileSetupOpen && showSetupLinks">
+          <a *ngIf="canViewCompany" routerLink="company" routerLinkActive="active" (click)="closeMobileMenu()"
+            >Company</a
+          >
+          <a *ngIf="canViewUsers" routerLink="users" routerLinkActive="active" (click)="closeMobileMenu()">Users</a>
+          <a *ngIf="canViewRoles" routerLink="roles" routerLinkActive="active" (click)="closeMobileMenu()">Roles</a>
         </div>
       </nav>
 

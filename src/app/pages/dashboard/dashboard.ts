@@ -12,6 +12,8 @@ import {
 import { CurrencyPipe, NgIf, isPlatformBrowser } from '@angular/common';
 import Chart from 'chart.js/auto';
 import { DashboardService } from '../../services/dashboard-service';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -36,11 +38,14 @@ export class Dashboard implements OnInit, AfterViewInit {
     totalCustomers: 0,
     currentPromiseToPay: 0,
   };
+  private destroy$ = new Subject<void>();
+  private activeCompanyId: number | null = null;
 
   constructor(
     @Inject(PLATFORM_ID) platformId: any,
     private dashboardService: DashboardService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private companySelection: CompanySelectionService
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
@@ -49,7 +54,34 @@ export class Dashboard implements OnInit, AfterViewInit {
      INIT
   ========================= */
   ngOnInit(): void {
-    this.loadDashboardSummary();
+    this.companySelection.selectedCompanyId$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((id) => {
+        const parsed = id ? Number(id) : NaN;
+        const nextId = Number.isFinite(parsed) ? parsed : null;
+
+        if (this.activeCompanyId === nextId) {
+          return;
+        }
+
+        this.activeCompanyId = nextId;
+
+        if (this.activeCompanyId) {
+          this.loadDashboardSummary(this.activeCompanyId);
+        } else {
+          this.dashboardData = {
+            totalReceivables: 0,
+            currentReceivables: 0,
+            totalPaymentReceived: 0,
+            todayPaymentReceived: 0,
+            totalInvoices: 0,
+            pendingInvoices: 0,
+            totalCustomers: 0,
+            currentPromiseToPay: 0,
+          };
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   ngAfterViewInit() {
@@ -63,8 +95,8 @@ export class Dashboard implements OnInit, AfterViewInit {
   /* =========================
      API CALL
   ========================= */
-  loadDashboardSummary(): void {
-    this.dashboardService.getDashboardCardData().subscribe({
+  loadDashboardSummary(companyId: number): void {
+    this.dashboardService.getDashboardCardData(companyId).subscribe({
       next: (res) => {
         const data = res?.data;
 
@@ -186,5 +218,10 @@ export class Dashboard implements OnInit, AfterViewInit {
         },
       },
     });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

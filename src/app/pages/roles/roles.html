@@ -24,9 +24,7 @@
     </table>
   </div>
 
-  <p *ngIf="!isLoading && roles.length === 0" class="section-description">
-    No roles found.
-  </p>
+  <p *ngIf="!isLoading && roles.length === 0" class="section-description">No roles found.</p>
 </div>
 
 <!-- ADD ROLE MODAL -->
@@ -35,8 +33,13 @@
     <div class="modal-header">
       <div>
         <h3>Add Role</h3>
+        <p class="modal-subtitle" *ngIf="getSelectedCount() > 0">
+          {{ getSelectedCount() }} permission(s) selected
+        </p>
       </div>
-      <button class="close-btn" type="button" aria-label="Close" (click)="closeModal()">&times;</button>
+      <button class="close-btn" type="button" aria-label="Close" (click)="closeModal()">
+        &times;
+      </button>
     </div>
 
     <form [formGroup]="addRoleForm" (ngSubmit)="saveRole()" class="modal-body">
@@ -48,7 +51,10 @@
 
       <div class="form-field">
         <label>Description</label>
-        <textarea formControlName="description" placeholder="Describe what this role can do"></textarea>
+        <textarea
+          formControlName="description"
+          placeholder="Describe what this role can do"
+        ></textarea>
         <div class="error" *ngIf="submitted && addRoleForm.controls['description'].errors">
           Required
         </div>
@@ -56,41 +62,61 @@
 
       <div class="form-field">
         <label>Permissions</label>
-        <div class="permissions-grid">
-          <!-- Regular tabs -->
-          <div class="permission-row" *ngFor="let tab of permissionTabs">
-            <div class="row-label">{{ tab.label }}</div>
-            <div class="row-permissions">
-              <label class="permission-checkbox" *ngFor="let perm of tab.permissions">
-                <input
-                  type="checkbox"
-                  [checked]="isPermissionSelected(perm.code)"
-                  (change)="togglePermissionSelection(perm.code)"
-                />
-                <span>{{ perm.label }}</span>
-              </label>
-              
-              <!-- Subtabs (for Collections & Disputes) -->
-              <div class="subtabs-inline" *ngIf="tab.subtabs && tab.subtabs.length > 0">
-                <div class="subtab-inline" *ngFor="let subtab of tab.subtabs">
-                  <span class="subtab-name">{{ subtab.label }}:</span>
-                  <label class="permission-checkbox" *ngFor="let perm of subtab.permissions">
+        <div class="permissions-table-wrapper">
+          <table class="permissions-table">
+            <thead>
+              <tr>
+                <th class="module-col">Module</th>
+                <th class="permission-col">View</th>
+                <th class="permission-col">Create</th>
+                <th class="permission-col">Update</th>
+                <th class="permission-col">Delete</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of permissionRows" [class.sub-row]="row.isSubRow">
+                <td class="module-name" [class.sub-module]="row.isSubRow">
+                  {{ row.label }}
+                </td>
+                <td class="permission-cell">
+                  <label class="checkbox-wrapper" *ngIf="row.permissions.view">
                     <input
                       type="checkbox"
-                      [checked]="isPermissionSelected(perm.code)"
-                      (change)="togglePermissionSelection(perm.code)"
+                      [checked]="isPermissionSelected(row.permissions.view)"
+                      (change)="togglePermissionSelection(row.permissions.view)"
                     />
-                    <span>{{ perm.label }}</span>
                   </label>
-                  <!-- <span class="coming-soon" *ngIf="subtab.permissions.length === 0">Coming soon</span> -->
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="selected-permissions" *ngIf="selectedPermissionLabels().length > 0">
-          <span class="chip" *ngFor="let label of selectedPermissionLabels()">{{ label }}</span>
+                </td>
+                <td class="permission-cell">
+                  <label class="checkbox-wrapper" *ngIf="row.permissions.create">
+                    <input
+                      type="checkbox"
+                      [checked]="isPermissionSelected(row.permissions.create)"
+                      (change)="togglePermissionSelection(row.permissions.create)"
+                    />
+                  </label>
+                </td>
+                <td class="permission-cell">
+                  <label class="checkbox-wrapper" *ngIf="row.permissions.update">
+                    <input
+                      type="checkbox"
+                      [checked]="isPermissionSelected(row.permissions.update)"
+                      (change)="togglePermissionSelection(row.permissions.update)"
+                    />
+                  </label>
+                </td>
+                <td class="permission-cell">
+                  <label class="checkbox-wrapper" *ngIf="row.permissions.delete">
+                    <input
+                      type="checkbox"
+                      [checked]="isPermissionSelected(row.permissions.delete)"
+                      (change)="togglePermissionSelection(row.permissions.delete)"
+                    />
+                  </label>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 

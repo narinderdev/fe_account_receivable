@@ -12,11 +12,11 @@
       </div>
 
       <div class="button-gap">
-        <button class="import-customer-btn" (click)="openImportModal()">
+        <button class="import-customer-btn" (click)="openImportModal()" *ngIf="canCreateCustomer">
           Import Customer List
         </button>
 
-        <button class="add-customer-btn" routerLink="add">
+        <button class="add-customer-btn" routerLink="add" *ngIf="canCreateCustomer">
           <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
           Add Customer
         </button>
@@ -82,18 +82,19 @@
           </td>
 
           <td class="actions">
-            <span class="actions-gap">
+            <span class="actions-gap" *ngIf="canEditCustomer">
               <img
                 src="/editIcn.svg"
                 class="action-icon"
                 (click)="editCustomer(c.id); $event.stopPropagation()"
             /></span>
-            <span>
+            <span *ngIf="canDeleteCustomer">
               <img
                 src="/deleteIcn.svg"
                 class="action-icon delete"
                 (click)="openDeleteModal(c.id); $event.stopPropagation()"
             /></span>
+            <span *ngIf="!canEditCustomer && !canDeleteCustomer">--</span>
           </td>
         </tr>
       </tbody>
