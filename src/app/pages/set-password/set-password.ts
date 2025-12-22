@@ -19,6 +19,8 @@ export class SetPassword implements OnInit {
   email: string = '';
   loading = false;
   errorMessage: string = '';
+  passwordVisible = false;
+  confirmPasswordVisible = false;
 
   constructor(
     private fb: FormBuilder,
@@ -56,6 +58,14 @@ export class SetPassword implements OnInit {
     const pass = group.get('password')?.value;
     const confirm = group.get('confirmPassword')?.value;
     return pass === confirm ? null : { mismatch: true };
+  }
+
+  togglePasswordVisibility(field: 'password' | 'confirmPassword') {
+    if (field === 'password') {
+      this.passwordVisible = !this.passwordVisible;
+    } else {
+      this.confirmPasswordVisible = !this.confirmPasswordVisible;
+    }
   }
 
   submit() {
