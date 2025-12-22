@@ -65,6 +65,7 @@ export class Aging implements OnInit, OnDestroy {
 
         if (this.activeCompanyId) {
           this.loadCustomers(this.activeCompanyId);
+          this.loadAgingData(this.activeCompanyId);
         } else {
           this.customers = [{ label: 'All Customers', value: '' }];
           this.selectedCustomer = '';
@@ -72,8 +73,6 @@ export class Aging implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         }
       });
-
-    this.loadAgingData();
   }
 
   /** GET INITIAL COLOR BASED ON FIRST LETTER */
@@ -124,11 +123,11 @@ export class Aging implements OnInit, OnDestroy {
   }
 
   /** INITIAL LOAD */
-  loadAgingData() {
+  loadAgingData(companyId: number) {
     this.loading = true;
     this.cdr.detectChanges();
 
-    this.agingService.getAging().subscribe({
+    this.agingService.getAging(companyId).subscribe({
       next: (res) => {
         this.mapResponse(res);
         this.loading = false;
@@ -202,7 +201,13 @@ export class Aging implements OnInit, OnDestroy {
     if (this.selectedCustomer) filters.customerId = Number(this.selectedCustomer);
     if (this.selectedStatus) filters.status = this.selectedStatus;
 
-    this.agingService.getAging(filters).subscribe({
+    if (!this.activeCompanyId) {
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.agingService.getAging(this.activeCompanyId, filters).subscribe({
       next: (res) => {
         this.mapResponse(res);
         this.loading = false;

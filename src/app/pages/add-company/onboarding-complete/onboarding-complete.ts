@@ -24,11 +24,15 @@ export class OnboardingComplete implements OnInit {
   ) {}
 
   ngOnInit() {
-    const id = this.route.parent?.snapshot.params['id'] ?? this.route.snapshot.params['id'];
-    if (id) {
+    const routeId = this.route.snapshot.params['id'] ?? this.route.parent?.snapshot.params['id'];
+    const queryId = this.route.snapshot.queryParamMap.get('id');
+
+    if (routeId) {
       this.isEditMode = true;
-      this.companyId = Number(id);
+      this.companyId = Number(routeId);
       this.hydrateCachedState();
+    } else if (queryId) {
+      this.companyId = Number(queryId);
     }
   }
 

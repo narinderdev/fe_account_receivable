@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SignupService } from '../../services/signup-service'; 
+import { UserContextService } from '../../services/user-context.service';
 
 @Component({
   selector: 'app-signup',
@@ -20,7 +21,8 @@ export class Signup {
   constructor(
     private fb: FormBuilder,
     private signupService: SignupService,
-    private router: Router
+    private router: Router,
+    private userContext: UserContextService
   ) {
     this.form = this.fb.group(
       {
@@ -86,6 +88,7 @@ export class Signup {
             if (userId) {
               localStorage.setItem('signupUserId', String(userId));
             }
+            this.userContext.setAdminDefaults(response?.data?.id);
             this.router.navigate(['/admin/company/add/step-1']);
           }
       },

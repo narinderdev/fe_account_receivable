@@ -83,7 +83,7 @@ export class OpeningBalances implements OnInit {
   this.companyService.uploadBalance(this.companyId, formData).subscribe({
     next: (res) => {
       console.log('Uploaded Successfully:', res);
-      this.router.navigate(['/admin/company/add/complete']);
+      this.router.navigate(['/admin/company/onboarding-complete']);
     },
     error: (err) => {
       console.error('Upload failed:', err);

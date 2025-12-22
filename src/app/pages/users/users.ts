@@ -69,7 +69,7 @@ export class Users implements OnInit, OnDestroy {
         this.companyId = nextCompanyId;
 
         if (this.companyId) {
-          this.loadRoles();
+          this.loadRoles(this.companyId);
           this.loadUsers();
         } else {
           this.users = [];
@@ -95,8 +95,8 @@ export class Users implements OnInit, OnDestroy {
     });
   }
 
-  loadRoles() {
-    this.roleService.getRoles().subscribe({
+  loadRoles(companyId: number) {
+    this.roleService.getRoles(companyId).subscribe({
       next: (res) => {
         this.roles = res?.data || [];
         this.cdr.detectChanges();

@@ -10,11 +10,11 @@ export class DashboardService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  getDashboardCardData(): Observable<any> {
+  getDashboardCardData(companyId:number): Observable<any> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
 
-    return this.http.get(`${this.baseUrl}/dashboard/summary`, { headers });
+    return this.http.get(`${this.baseUrl}/dashboard/summary/company/${companyId}`, { headers });
   }
 }
