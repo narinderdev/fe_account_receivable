@@ -5,6 +5,7 @@ import { Subject, filter, takeUntil } from 'rxjs';
 import { CompanyService } from '../../services/company-service';
 import { CompanyEntity } from '../../models/company.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 type TitleRule = {
   prefix: string;
@@ -14,6 +15,7 @@ type TitleRule = {
 const TITLE_RULES: TitleRule[] = [
   { prefix: '/admin/company/add', title: 'Add Company' },
   { prefix: '/admin/company/edit', title: 'Edit Company' },
+  { prefix: '/admin/company/onboarding-complete', title: 'Onboarding Complete' },
   { prefix: '/admin/company', title: 'Company' },
   { prefix: '/admin/customers/add', title: 'Add Customer' },
   { prefix: '/admin/customers/edit', title: 'Edit Customer' },
@@ -51,6 +53,7 @@ export class Navbar implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private companyService: CompanyService,
+    private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService
   ) {
     this.selectedCompanyId = this.companySelection.getSelectedCompanyId() ?? '';
@@ -69,7 +72,12 @@ export class Navbar implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe((event) => {
-        this.setTitle(event.urlAfterRedirects || event.url);
+        const nextUrl = event.urlAfterRedirects || event.url;
+        this.setTitle(nextUrl);
+
+        if (nextUrl.includes('/admin/company/onboarding-complete')) {
+          this.loadCompanies();
+        }
       });
   }
 
@@ -100,6 +108,11 @@ export class Navbar implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.companies = res?.data?.content ?? [];
+          if (this.companies.length > 0) {
+            localStorage.setItem('hasCompanies', 'true');
+          } else {
+            localStorage.removeItem('hasCompanies');
+          }
 
           if (this.companies.length > 0) {
             const selectedExists = this.companies.some(
@@ -114,9 +127,11 @@ export class Navbar implements OnInit, OnDestroy {
           }
 
           this.loadingCompanies = false;
+          this.cdr.detectChanges();
         },
         error: () => {
           this.loadingCompanies = false;
+          this.cdr.detectChanges();
         },
       });
   }
