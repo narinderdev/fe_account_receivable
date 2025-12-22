@@ -14,6 +14,8 @@ import { SignupService } from '../../services/signup-service';
 export class Signup {
   form: FormGroup;
   loading: boolean = false;
+  passwordVisible = false;
+  confirmPasswordVisible = false;
 
   constructor(
     private fb: FormBuilder,
@@ -51,6 +53,14 @@ export class Signup {
     const pass = form.get('password')?.value;
     const confirm = form.get('confirmPassword')?.value;
     return pass === confirm ? null : { mismatch: true };
+  }
+
+  togglePasswordVisibility(field: 'password' | 'confirmPassword') {
+    if (field === 'password') {
+      this.passwordVisible = !this.passwordVisible;
+    } else {
+      this.confirmPasswordVisible = !this.confirmPasswordVisible;
+    }
   }
 
   // Submit method
