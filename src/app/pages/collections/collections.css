@@ -233,6 +233,19 @@
   cursor: pointer;
 }
 
+.link-button {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
 .empty-text {
   text-align: center;
   padding: 40px;

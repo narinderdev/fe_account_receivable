@@ -26,6 +26,7 @@ import { Roles } from './pages/roles/roles';
 import { PaymentDetails } from './pages/payments/payment-details/payment-details';
 import { Aging } from './pages/aging/aging';
 import { Collections } from './pages/collections/collections';
+import { DisputeDetails } from './pages/collections/dispute-details/dispute-details';
 import { Login } from './pages/login/login';
 import { Signup } from './pages/signup/signup';
 import { AuthGuard } from './guards/auth.guard';
@@ -98,6 +99,7 @@ export const routes: Routes = [
 
       { path: 'ar-reports', component: Aging },
       { path: 'collections', component: Collections },
+      { path: 'collections/disputes/:disputeId', component: DisputeDetails },
     ],
   },
 ];

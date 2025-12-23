@@ -1,0 +1,97 @@
+<div class="dispute-details-page">
+  <div class="header-row">
+    <div>
+      <!-- <h1>Dispute Details</h1> -->
+      <p class="subtitle">Dispute ID: {{ dispute?.disputeId || disputeId }}</p>
+    </div>
+    <!-- <div class="header-buttons">
+      <button class="btn-secondary" routerLink="/admin/collections">Back to Collections</button>
+    </div> -->
+  </div>
+
+  <div *ngIf="loading" class="centered">
+    <app-spinner></app-spinner>
+  </div>
+
+  <div *ngIf="!loading && error" class="error-box">
+    {{ error }}
+  </div>
+
+  <ng-container *ngIf="!loading && !error && dispute">
+    <div class="summary-card">
+      <div class="summary-grid">
+        <div class="summary-item">
+          <label>Customer</label>
+          <div class="value">{{ customerName }}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-item">
+          <label>Invoice</label>
+          <div class="value">{{ invoiceNumber }}</div>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <label>Invoice Amount</label>
+          <div class="value">{{ dispute.invoiceOriginalAmount | currency }}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-item">
+          <label>Disputed Amount</label>
+          <div class="value highlight">{{ dispute.disputedAmount | currency }}</div>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <label>Status</label>
+          <div class="value status">{{ disputeStatus }}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-item">
+          <label>Dispute Code</label>
+          <div class="value">{{ dispute.disputeCode }}</div>
+        </div>
+      </div>
+
+      <div class="full-row">
+        <label>Reason</label>
+        <p>{{ dispute.reason || '--' }}</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Invoice Details</h3>
+      <div class="details-row">
+        <div>
+          <label>Invoice Date</label>
+          <p>{{ dispute.invoice.invoiceDate | date }}</p>
+        </div>
+        <div>
+          <label>Due Date</label>
+          <p>{{ dispute.invoice.dueDate | date }}</p>
+        </div>
+        <div>
+          <label>Status</label>
+          <p>{{ dispute.invoice.status || '--' }}</p>
+        </div>
+      </div>
+
+      <div class="details-row">
+        <div>
+          <label>Subtotal</label>
+          <p>{{ dispute.invoice.subTotal | currency }}</p>
+        </div>
+        <div>
+          <label>Total Amount</label>
+          <p>{{ dispute.invoice.totalAmount | currency }}</p>
+        </div>
+        <div>
+          <label>Balance Due</label>
+          <p>{{ dispute.invoice.balanceDue | currency }}</p>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
