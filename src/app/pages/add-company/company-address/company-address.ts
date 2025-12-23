@@ -1,9 +1,17 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CompanyService } from '../../../services/company-service';
 import { Spinner } from '../../../shared/spinner/spinner';
+import { CompanyEntity } from '../../../models/company.model';
 
 @Component({
   selector: 'app-company-address',
@@ -18,7 +26,7 @@ export class CompanyAddress implements OnInit, OnDestroy {
 
   companyId!: number;
   isEditMode = false;
-  companyData: any = null;
+  companyData: CompanyEntity | null = null;
   isSaving = false;
 
   constructor(
@@ -34,20 +42,19 @@ export class CompanyAddress implements OnInit, OnDestroy {
 
     this.companyId = id ? Number(id) : Number(localStorage.getItem('companyId'));
 
-    const saved = localStorage.getItem('editingCompany');
-    if (saved) this.companyData = JSON.parse(saved);
+    this.companyData = this.parseCompany(localStorage.getItem('editingCompany'));
 
     this.buildForm();
 
     if (this.companyData?.companyAddress) {
-    this.addressForm.patchValue(this.companyData.companyAddress);
-  } else if (this.companyData) {
-    this.addressForm.patchValue(this.companyData);
-  }
+      this.addressForm.patchValue(this.companyData.companyAddress);
+    } else if (this.companyData) {
+      this.addressForm.patchValue(this.companyData);
+    }
   }
 
   wordLimitValidator(limit: number) {
-    return (control: any) => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) return null;
       const words = control.value.trim().split(/\s+/);
       return words.length > limit ? { wordLimit: true } : null;
@@ -152,7 +159,7 @@ export class CompanyAddress implements OnInit, OnDestroy {
       next: (res) => {
         this.isSaving = false; // STOP SPINNER
 
-        const updated = { ...(this.companyData || {}), ...payload };
+        const updated: CompanyEntity = { ...(this.companyData || ({} as CompanyEntity)), ...payload };
         localStorage.setItem('editingCompany', JSON.stringify(updated));
         this.companyService.setEditingCompany(updated);
         this.companyData = updated;
@@ -170,10 +177,14 @@ export class CompanyAddress implements OnInit, OnDestroy {
     if (!this.isEditMode || !this.addressForm) return;
     if (!force && !this.addressForm.dirty) return;
 
-    const updated = {
-      ...(this.companyData || {}),
+    if (!this.companyData) {
+      return;
+    }
+
+    const updated: CompanyEntity = {
+      ...this.companyData,
       ...this.addressForm.value,
-    };
+    } as CompanyEntity;
 
     localStorage.setItem('editingCompany', JSON.stringify(updated));
     this.companyService.setEditingCompany(updated);
@@ -182,5 +193,16 @@ export class CompanyAddress implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.persistEditAddress();
+  }
+
+  private parseCompany(value: string | null): CompanyEntity | null {
+    if (!value) {
+      return null;
+    }
+    try {
+      return JSON.parse(value) as CompanyEntity;
+    } catch {
+      return null;
+    }
   }
 }

@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PaymentPage } from '../models/payment.model';
 import { environment } from '../../environments/environment';
+import { AgingResponse, AgingFilters } from '../models/aging.model';
 
 @Injectable({
   providedIn: 'root',
@@ -15,11 +15,7 @@ export class AgingService {
     'ngrok-skip-browser-warning': 'true',
   });
 
-  getAging(companyId: number, filters?: {
-    customerId?: number;
-    status?: string;
-    asOfDate?: string;
-  }): Observable<PaymentPage> {
+  getAging(companyId: number, filters?: AgingFilters): Observable<AgingResponse> {
     let params = new HttpParams();
 
     if (filters) {
@@ -34,7 +30,7 @@ export class AgingService {
       }
     }
 
-    return this.http.get<PaymentPage>(`${this.baseUrl}/reports/aging/company/${companyId}`, {
+    return this.http.get<AgingResponse>(`${this.baseUrl}/reports/aging/company/${companyId}`, {
       headers: this.headers,
       params,
     });

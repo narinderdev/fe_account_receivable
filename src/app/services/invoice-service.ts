@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { HttpHeaders } from '@angular/common/http';
-import { InvoicePage } from '../models/invoice.model';
+import { InvoiceListResponse, InvoicePage } from '../models/invoice.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -31,11 +31,13 @@ export class InvoiceService {
     return this.http.post(`${this.baseUrl}/invoice/send/${invoiceId}`, null);
   }
 
-  getUnpaidInvoices(customerId: number): Observable<any> {
+  getUnpaidInvoices(customerId: number): Observable<InvoiceListResponse> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
 
-    return this.http.get(`${this.baseUrl}/invoice/unpaid/${customerId}`, {headers});
+    return this.http.get<InvoiceListResponse>(`${this.baseUrl}/invoice/unpaid/${customerId}`, {
+      headers,
+    });
   }
 }

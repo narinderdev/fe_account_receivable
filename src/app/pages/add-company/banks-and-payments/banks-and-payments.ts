@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { CompanyService } from '../../../services/company-service';
 import { Subject, takeUntil } from 'rxjs';
 import { Spinner } from '../../../shared/spinner/spinner';
+import { CompanyEntity } from '../../../models/company.model';
 
 function atLeastOnePaymentValidator(group: FormGroup) {
   const methods = [
@@ -29,7 +30,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
   isSaving = false;
   isEditMode = false;
   companyId!: number;
-  companyData: any = null;
+  companyData: CompanyEntity | null = null;
 
   private destroy$ = new Subject<void>();
 
@@ -47,12 +48,9 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       this.isEditMode = true;
       this.companyId = Number(id);
 
-      const saved = localStorage.getItem('editingCompany');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.id === this.companyId) {
-          this.companyData = parsed;
-        }
+      const parsed = this.parseCompany(localStorage.getItem('editingCompany'));
+      if (parsed?.id === this.companyId) {
+        this.companyData = parsed;
       }
     } else {
       // ADD MODE companyId comes from step-1
@@ -95,7 +93,9 @@ export class BanksAndPayments implements OnInit, OnDestroy {
   }
 
   prefillEditData() {
-    if (!this.companyData) return;
+    if (!this.companyData) {
+      return;
+    }
 
     // Patch payment settings (support both payment and paymentSettings)
     const paymentSource = this.companyData.payment || this.companyData.paymentSettings;
@@ -178,8 +178,9 @@ export class BanksAndPayments implements OnInit, OnDestroy {
     const form = this.paymentForm.value;
 
     // Update working local companyData object
-    const updated = {
-      ...(this.companyData || {}),
+    const baseData = this.companyData ?? ({} as CompanyEntity);
+    const updated: CompanyEntity = {
+      ...baseData,
       payment: {
         acceptCheck: form.acceptCheck,
         acceptCreditCard: form.acceptCreditCard,
@@ -189,12 +190,12 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       },
       bankAccounts: [
         {
-          ...(this.companyData.bankAccounts?.[0] || {}),
+          ...(baseData.bankAccounts?.[0] || {}),
           bankName: form.bankName,
           accountNumber: form.accountNumber,
         },
       ],
-    };
+    } as CompanyEntity;
 
     // Persist locally
     localStorage.setItem('editingCompany', JSON.stringify(updated));
@@ -230,5 +231,16 @@ export class BanksAndPayments implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private parseCompany(value: string | null): CompanyEntity | null {
+    if (!value) {
+      return null;
+    }
+    try {
+      return JSON.parse(value) as CompanyEntity;
+    } catch {
+      return null;
+    }
   }
 }

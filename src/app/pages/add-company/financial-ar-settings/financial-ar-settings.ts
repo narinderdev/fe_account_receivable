@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { CompanyService } from '../../../services/company-service';
 import { Subject, takeUntil } from 'rxjs';
 import { Spinner } from '../../../shared/spinner/spinner';
+import { CompanyEntity } from '../../../models/company.model';
 
 @Component({
   selector: 'app-financial-ar-settings',
@@ -18,7 +19,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
   submitted = false;
   isEditMode = false;
   companyId!: number;
-  companyData: any = null;
+  companyData: CompanyEntity | null = null;
   isSaving = false;
   private destroy$ = new Subject<void>();
 
@@ -36,12 +37,9 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       this.isEditMode = true;
       this.companyId = Number(id);
 
-      const saved = localStorage.getItem('editingCompany');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.id === this.companyId) {
-          this.companyData = parsed;
-        }
+      const parsed = this.parseCompany(localStorage.getItem('editingCompany'));
+      if (parsed?.id === this.companyId) {
+        this.companyData = parsed;
       }
     } else {
       this.companyId = Number(localStorage.getItem('companyId'));
@@ -131,12 +129,16 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     if (!this.isEditMode || !this.financialForm) return;
     if (!force && !this.financialForm.dirty) return;
 
-    const updated = {
-      ...(this.companyData || {}),
+    if (!this.companyData) {
+      return;
+    }
+
+    const updated: CompanyEntity = {
+      ...this.companyData,
       financial: {
         ...this.financialForm.value,
       },
-    };
+    } as CompanyEntity;
 
     localStorage.setItem('editingCompany', JSON.stringify(updated));
     this.companyService.setEditingCompany(updated);
@@ -147,5 +149,16 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     this.persistFinancialEdit();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private parseCompany(value: string | null): CompanyEntity | null {
+    if (!value) {
+      return null;
+    }
+    try {
+      return JSON.parse(value) as CompanyEntity;
+    } catch {
+      return null;
+    }
   }
 }

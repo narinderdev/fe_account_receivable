@@ -3,22 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-
-interface Invoice {
-  id: number;
-  invoiceNumber: string;
-  invoiceDate: string;
-  dueDate: string;
-  balanceDue: number;
-  totalAmount: number;
-  customer: { customerName: string };
-}
-
-interface Application {
-  invoice: Invoice;
-  appliedAmount: number;
-  openAmount: number;
-}
+import { Payment, PaymentApplication } from '../../../models/payment.model';
 
 @Component({
   selector: 'app-payment-details',
@@ -33,17 +18,17 @@ export class PaymentDetails implements OnInit {
   customerName = '';
   paymentDate = '';
   paymentAmount = 0;
-  invoices: Application[] = [];
-  notes: string = "No Notes Yet…";  // 👈 Default
+  invoices: PaymentApplication[] = [];
+  notes = 'No Notes Yet';
 
   constructor(private route: ActivatedRoute) {}
 
   ngOnInit() {
     this.paymentId = Number(this.route.snapshot.paramMap.get('paymentId'));
 
-    const paymentsData = JSON.parse(localStorage.getItem('paymentsData') || '[]');
+    const paymentsData: Payment[] = JSON.parse(localStorage.getItem('paymentsData') || '[]');
 
-    const payment = paymentsData.find((p: any) => p.id === this.paymentId);
+    const payment = paymentsData.find((p) => p.id === this.paymentId);
 
     if (payment) {
       this.customerName = payment.applications?.[0]?.invoice?.customer?.customerName || '--';
@@ -51,9 +36,9 @@ export class PaymentDetails implements OnInit {
       this.paymentAmount = payment.paymentAmount;
       this.invoices = payment.applications || [];
 
-      // ⭐ Correct Notes Logic
-      if (payment.notes && payment.notes.trim() !== "") {
-        this.notes = payment.notes;
+      const trimmedNotes = payment.notes?.trim();
+      if (trimmedNotes) {
+        this.notes = trimmedNotes;
       }
     }
   }
