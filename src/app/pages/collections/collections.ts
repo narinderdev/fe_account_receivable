@@ -4,10 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { Customer } from '../../services/customer';
 import { CollectionService } from '../../services/collection-service';
 import { Spinner } from '../../shared/spinner/spinner';
-import { Invoice } from '../../models/invoice.model';
-import { PromiseToPayRecord } from '../../models/promise-to-pay.model';
+import { InvoiceWithItems, CustomerInvoiceListResponse } from '../../models/invoice.model';
+import { PromiseToPayRecord, PromiseToPayResponse } from '../../models/promise-to-pay.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import {
+  PendingCustomerResponse,
+  PendingCustomerSummary,
+  PendingAmountResponse,
+  CreatePromiseToPayRequest,
+} from '../../models/collection.model';
 
 interface CreditItem {
   customer: string;
@@ -29,16 +35,16 @@ interface ReminderItem {
   styleUrls: ['./collections.css'],
 })
 export class Collections implements OnInit, OnDestroy {
-  customers: any[] = [];
+  customers: PendingCustomerSummary[] = [];
   selectedCustomerId: string = '';
 
   selectedCompanyId: number | null = null;
   companyOverdueAmount = 0;
   loadingCompanyOverdue = false;
 
-  customerInvoices: Invoice[] = [];
+  customerInvoices: InvoiceWithItems[] = [];
   selectedInvoiceId: number | null = null;
-  selectedInvoice: Invoice | null = null;
+  selectedInvoice: InvoiceWithItems | null = null;
   loadingInvoices = false;
 
   overdueAmount = 0;
@@ -104,7 +110,7 @@ export class Collections implements OnInit, OnDestroy {
     }
 
     this.collectionService.getPendingCustomer(companyId).subscribe({
-      next: (res) => {
+      next: (res: PendingCustomerResponse) => {
         this.customers = Array.isArray(res?.data) ? res.data : [];
         this.cdr.detectChanges();
       },
@@ -153,7 +159,7 @@ export class Collections implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     this.collectionService.getCompanyOverdue(companyId).subscribe({
-      next: (res) => {
+      next: (res: PendingAmountResponse) => {
         this.companyOverdueAmount = res?.data ?? 0;
         this.loadingCompanyOverdue = false;
         this.cdr.detectChanges();
@@ -176,7 +182,7 @@ export class Collections implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     this.collectionService.getPromiseToPay(this.selectedCompanyId).subscribe({
-      next: (res) => {
+      next: (res: PromiseToPayResponse) => {
         this.promiseToPayList = Array.isArray(res?.data) ? res.data : [];
 
         console.log('Promise To Pay:', this.promiseToPayList);
@@ -202,7 +208,7 @@ export class Collections implements OnInit, OnDestroy {
     this.loadingInvoices = true;
 
     this.collectionService.getOverdueBalance(+this.selectedCustomerId).subscribe({
-      next: (res) => {
+      next: (res: PendingAmountResponse) => {
         this.overdueAmount = res?.data ?? 0;
         this.loadingOverdue = false;
         this.cdr.detectChanges();
@@ -215,7 +221,7 @@ export class Collections implements OnInit, OnDestroy {
     });
 
     this.customerService.getCustomerInvoicesById(+this.selectedCustomerId).subscribe({
-      next: (res) => {
+      next: (res: CustomerInvoiceListResponse) => {
         this.customerInvoices = Array.isArray(res?.data) ? res.data : [];
         this.selectedInvoiceId = null;
         this.selectedInvoice = null;
@@ -300,7 +306,7 @@ export class Collections implements OnInit, OnDestroy {
       return;
     }
 
-    const payload = {
+    const payload: CreatePromiseToPayRequest = {
       customerId: +this.selectedCustomerId,
       // invoiceId: this.selectedInvoiceId,
       amountPromised: this.amountPromised,

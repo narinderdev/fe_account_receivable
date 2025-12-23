@@ -57,3 +57,10 @@ export interface InvoiceDetailResponse {
   message: string;
   data: InvoiceWithItems;
 }
+
+export interface InvoiceListResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: Invoice[];
+}

@@ -28,6 +28,7 @@ export interface PaymentApplication {
   id: number;
   invoice: PaymentInvoice;
   appliedAmount: number;
+  openAmount?: number;
 }
 
 // Main Payment interface
@@ -48,4 +49,18 @@ export interface PaymentPage {
   status: string;
   message: string;
   data: PaginatedResponse<Payment>;
+}
+
+export interface ApplyPaymentRequest {
+  paymentAmount: number;
+  paymentMethod: string;
+  notes: string;
+  invoiceIds: number[];
+}
+
+export interface ApplyPaymentResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data?: Payment;
 }

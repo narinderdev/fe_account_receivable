@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { RoleService } from '../../services/role-service';
 import { Spinner } from '../../shared/spinner/spinner';
-import { Role } from '../../models/company-users.model';
+import { CreateRoleRequest, Role } from '../../models/company-users.model';
 import { ToastrService } from 'ngx-toastr';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
@@ -189,12 +189,16 @@ export class Roles implements OnInit, OnDestroy {
     if (this.addRoleForm.invalid) return;
 
     this.isSaving = true;
-    const formValue = this.addRoleForm.value;
+    const formValue = this.addRoleForm.value as {
+      name?: string | null;
+      description?: string | null;
+      permissions?: string[] | null;
+    };
 
-    const payload = {
-      name: formValue.name,
-      description: formValue.description,
-      permissions: formValue.permissions || [],
+    const payload: CreateRoleRequest = {
+      name: formValue.name ?? '',
+      description: formValue.description ?? '',
+      permissions: formValue.permissions ?? [],
     };
 
     if (!this.activeCompanyId) return;
@@ -220,8 +224,7 @@ export class Roles implements OnInit, OnDestroy {
 
   isPermissionSelected(code: string | undefined): boolean {
     if (!code) return false;
-    const selected = this.addRoleForm.get('permissions')?.value || [];
-    return selected.includes(code);
+    return this.getSelectedPermissions().includes(code);
   }
 
   togglePermissionSelection(code: string | undefined) {
@@ -230,17 +233,22 @@ export class Roles implements OnInit, OnDestroy {
     const control = this.addRoleForm.get('permissions');
     if (!control) return;
 
-    const current = control.value || [];
+    const current = this.getSelectedPermissions();
     if (current.includes(code)) {
-      control.setValue(current.filter((val: any) => val !== code));
+      control.setValue(current.filter((val) => val !== code));
     } else {
       control.setValue([...current, code]);
     }
   }
 
   getSelectedCount(): number {
-    const selected = this.addRoleForm.get('permissions')?.value || [];
-    return selected.length;
+    return this.getSelectedPermissions().length;
+  }
+
+  private getSelectedPermissions(): string[] {
+    const control = this.addRoleForm.get('permissions');
+    const value = control?.value;
+    return Array.isArray(value) ? (value as string[]) : [];
   }
 
   ngOnDestroy() {

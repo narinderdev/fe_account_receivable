@@ -24,7 +24,6 @@ export class AddCompany implements OnInit {
     // { key: 'step-5', label: 'Users & Roles' },
   ];
 
-  // Add mode → only step-1 unlocked initially
   allowedTabs: string[] = ['step-1'];
 
   constructor(

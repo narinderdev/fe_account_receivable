@@ -11,9 +11,11 @@ import {
 
 import { CurrencyPipe, NgIf, isPlatformBrowser } from '@angular/common';
 import Chart from 'chart.js/auto';
+import { ScriptableContext, TooltipItem } from 'chart.js';
 import { DashboardService } from '../../services/dashboard-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { DashboardSummaryData, DashboardSummaryResponse } from '../../models/dashboard.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -28,7 +30,7 @@ export class Dashboard implements OnInit, AfterViewInit {
   isBrowser = false;
   chart!: Chart;
 
-  dashboardData = {
+  dashboardData: DashboardSummaryData = {
     totalReceivables: 0,
     currentReceivables: 0,
     totalPaymentReceived: 0,
@@ -42,7 +44,7 @@ export class Dashboard implements OnInit, AfterViewInit {
   private activeCompanyId: number | null = null;
 
   constructor(
-    @Inject(PLATFORM_ID) platformId: any,
+    @Inject(PLATFORM_ID) platformId: object,
     private dashboardService: DashboardService,
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService
@@ -97,7 +99,7 @@ export class Dashboard implements OnInit, AfterViewInit {
   ========================= */
   loadDashboardSummary(companyId: number): void {
     this.dashboardService.getDashboardCardData(companyId).subscribe({
-      next: (res) => {
+      next: (res: DashboardSummaryResponse) => {
         const data = res?.data;
 
         if (data) {
@@ -136,7 +138,7 @@ export class Dashboard implements OnInit, AfterViewInit {
           {
             data: [80, 200, 150, 70, 40, 90],
             borderColor: '#3b82f6',
-            backgroundColor: (context: any) => {
+            backgroundColor: (context: ScriptableContext<'line'>) => {
               const ctx = context.chart.ctx;
               const gradient = ctx.createLinearGradient(0, 0, 0, 400);
               gradient.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
@@ -173,7 +175,7 @@ export class Dashboard implements OnInit, AfterViewInit {
             borderWidth: 1,
             displayColors: false,
             callbacks: {
-              label: (context) => {
+              label: (context: TooltipItem<'line'>) => {
                 const value = context.parsed.y;
                 return value !== null ? `$${value.toFixed(2)}` : '$0.00';
               },

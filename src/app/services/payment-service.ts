@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { HttpHeaders } from '@angular/common/http';
-import { PaymentPage } from '../models/payment.model';
+import { ApplyPaymentRequest, ApplyPaymentResponse, PaymentPage } from '../models/payment.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -23,7 +23,10 @@ export class PaymentService {
     );
   }
 
-  applyPayment(customerId: number, data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/payment/apply/${customerId}`, data);
+  applyPayment(customerId: number, data: ApplyPaymentRequest): Observable<ApplyPaymentResponse> {
+    return this.http.post<ApplyPaymentResponse>(
+      `${this.baseUrl}/payment/apply/${customerId}`,
+      data
+    );
   }
 }

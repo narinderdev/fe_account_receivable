@@ -8,6 +8,41 @@ import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
+import { InvoiceDetailResponse } from '../../models/invoice.model';
+
+interface InvoiceItemDraft {
+  itemName: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  tax: number;
+}
+
+interface InvoiceDraft {
+  customerId: number | '';
+  invoiceNumber: string;
+  isGenerated: boolean;
+  invoiceDate: string;
+  dueDate: string;
+  note: string;
+  items: InvoiceItemDraft[];
+}
+
+interface CreateInvoicePayload {
+  invoiceNumber?: string;
+  isGenerated: boolean;
+  invoiceDate: string;
+  dueDate: string;
+  note: string | null;
+  items: Array<{
+    itemName: string;
+    rate: number;
+    description: string;
+    quantity: number;
+    tax: number;
+  }>;
+}
 
 @Component({
   selector: 'app-create-invoice',
@@ -17,14 +52,14 @@ import { Subject, takeUntil } from 'rxjs';
   styleUrl: './create-invoice.css',
 })
 export class CreateInvoice implements OnInit, OnDestroy {
-  customers: any[] = [];
+  customers: CustomerEntity[] = [];
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
 
   formSubmitted = false;
   loading = false;
 
-  invoice: any = {
+  invoice: InvoiceDraft = {
     customerId: '',
     invoiceNumber: '',
     isGenerated: false,
@@ -71,7 +106,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
   // ---------------------------
   loadCustomers(companyId: number): void {
     this.customerService.getCustomers(companyId, 0, 100).subscribe({
-      next: (res: any) => {
+      next: (res: { data?: PaginatedResponse<CustomerEntity> }) => {
         this.customers = res?.data?.content || [];
         this.cdr.detectChanges();
       },
@@ -107,13 +142,13 @@ export class CreateInvoice implements OnInit, OnDestroy {
 
   get subtotal(): number {
     return this.invoice.items.reduce(
-      (sum: number, item: any) => sum + item.quantity * item.rate,
+      (sum: number, item: InvoiceItemDraft) => sum + item.quantity * item.rate,
       0
     );
   }
 
   get taxAmount(): number {
-    return this.invoice.items.reduce((sum: number, item: any) => {
+    return this.invoice.items.reduce((sum: number, item: InvoiceItemDraft) => {
       const st = item.quantity * item.rate;
       return sum + (st * (item.tax || 0)) / 100;
     }, 0);
@@ -155,13 +190,13 @@ export class CreateInvoice implements OnInit, OnDestroy {
     // ---------------------------
     // PAYLOAD CONSTRUCTION
     // ---------------------------
-    const payload: any = {
+    const payload: CreateInvoicePayload = {
       isGenerated: !!this.invoice.isGenerated,
       invoiceDate: this.invoice.invoiceDate,
       dueDate: this.invoice.dueDate,
       note: this.invoice.note || null,
 
-      items: this.invoice.items.map((item: any) => ({
+      items: this.invoice.items.map((item: InvoiceItemDraft) => ({
         itemName: item.itemName,
         rate: item.rate,
         description: item.description,
@@ -174,13 +209,18 @@ export class CreateInvoice implements OnInit, OnDestroy {
       payload.invoiceNumber = `INV-${this.invoice.invoiceNumber}`;
     }
 
-    const customerId = this.invoice.customerId;
+    const customerId = Number(this.invoice.customerId);
+    if (!Number.isFinite(customerId)) {
+      this.toastr.error('Please select a valid customer.', 'Validation Error');
+      this.loading = false;
+      return;
+    }
 
     // ---------------------------
     // CREATE INVOICE
     // ---------------------------
     this.invoiceService.createInvoice(customerId, payload).subscribe({
-      next: (res) => {
+      next: (res: InvoiceDetailResponse) => {
         this.toastr.success('Invoice created successfully.', 'Success');
 
         const invoiceId = res?.data?.id;

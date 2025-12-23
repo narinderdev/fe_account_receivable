@@ -46,8 +46,9 @@ export class OpeningBalances implements OnInit {
   }
 
   // Handle file selection
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0] ?? null;
 
     if (!file) {
       this.fileError = 'Please select a CSV file.';

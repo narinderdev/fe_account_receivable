@@ -52,6 +52,12 @@ export interface RolesResponse {
   data: Role[];
 }
 
+export interface CreateRoleRequest {
+  name: string;
+  description: string;
+  permissions: string[];
+}
+
 
 // Payload sent when inviting a new user
 export interface InviteUserRequest {

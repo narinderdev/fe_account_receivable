@@ -5,6 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { Spinner } from '../../../shared/spinner/spinner';
+import { CompanyEntity } from '../../../models/company.model';
 
 @Component({
   selector: 'app-basic-info',
@@ -20,7 +21,7 @@ export class BasicInfo implements OnInit, OnDestroy {
 
   isEditMode = false;
   companyId: number | null = null;
-  companyData: any = null;
+  companyData: CompanyEntity | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -36,12 +37,9 @@ export class BasicInfo implements OnInit, OnDestroy {
     if (id) {
       this.isEditMode = true;
       this.companyId = Number(id);
-      const saved = localStorage.getItem('editingCompany');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.id === this.companyId) {
-          this.companyData = parsed;
-        }
+      const parsed = this.parseCompany(localStorage.getItem('editingCompany'));
+      if (parsed?.id === this.companyId) {
+        this.companyData = parsed;
       }
     }
 
@@ -72,6 +70,9 @@ export class BasicInfo implements OnInit, OnDestroy {
   }
 
   patchForm() {
+    if (!this.companyData) {
+      return;
+    }
     this.basicForm.patchValue({
       legalName: this.companyData.legalName,
       tradeName: this.companyData.tradeName,
@@ -136,14 +137,29 @@ export class BasicInfo implements OnInit, OnDestroy {
     if (!this.isEditMode || !this.basicForm) return;
     if (!force && !this.basicForm.dirty) return;
 
-    const updated = {
-      ...(this.companyData || {}),
+    if (!this.companyData) {
+      return;
+    }
+
+    const updated: CompanyEntity = {
+      ...this.companyData,
       ...this.basicForm.value,
-    };
+    } as CompanyEntity;
 
     localStorage.setItem('editingCompany', JSON.stringify(updated));
     this.companyService.setEditingCompany(updated);
     this.companyData = updated;
+  }
+
+  private parseCompany(value: string | null): CompanyEntity | null {
+    if (!value) {
+      return null;
+    }
+    try {
+      return JSON.parse(value) as CompanyEntity;
+    } catch {
+      return null;
+    }
   }
 
   ngOnDestroy() {

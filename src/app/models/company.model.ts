@@ -110,3 +110,29 @@ export interface CompanyResponse {
   message: string;
   data: CompanyEntity;
 }
+
+export interface BaseResponse<T = unknown> {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: T;
+}
+
+export type CreateCompanyPayload = Pick<
+  CompanyEntity,
+  'legalName' | 'tradeName' | 'companyCode' | 'country' | 'baseCurrency' | 'timeZone'
+>;
+
+export type CompanyAddressInput = Omit<CompanyAddress, 'id' | 'createdAt' | 'updatedAt'>;
+
+export type FinancialSettingsInput = Omit<FinancialSettings, 'id'>;
+
+export type PaymentSettingsInput = Omit<PaymentSettings, 'id'>;
+
+export type BankAccountInput = Pick<BankAccount, 'bankName' | 'accountNumber'> &
+  Partial<Omit<BankAccount, 'id' | 'bankName' | 'accountNumber'>>;
+
+export interface CreateBankingPayload {
+  paymentSettings: PaymentSettingsInput;
+  bankAccounts: BankAccountInput[];
+}

@@ -8,14 +8,21 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
+import { AgingResponse, AgingFilters, AgingRowDto } from '../../models/aging.model';
 
-interface AgingRow {
+interface AgingTableRow {
   customer: string;
   totalDue: number;
   current: number;
   days1to30: number;
   days31to60: number;
   days90plus: number;
+}
+
+interface SelectOption {
+  label: string;
+  value: string;
 }
 
 @Component({
@@ -28,9 +35,9 @@ interface AgingRow {
 export class Aging implements OnInit, OnDestroy {
   loading = false;
 
-  customers: any[] = [{ label: 'All Customers', value: '' }];
+  customers: SelectOption[] = [{ label: 'All Customers', value: '' }];
 
-  statuses = [
+  statuses: SelectOption[] = [
     { label: 'All Statuses', value: '' },
     { label: 'Open', value: 'OPEN' },
     { label: 'Partial', value: 'PARTIAL' },
@@ -38,7 +45,7 @@ export class Aging implements OnInit, OnDestroy {
 
   selectedCustomer = '';
   selectedStatus = '';
-  agingData: AgingRow[] = [];
+  agingData: AgingTableRow[] = [];
 
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
@@ -101,14 +108,14 @@ export class Aging implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     this.customerService.getCustomers(companyId, 0, 50).subscribe({
-      next: (res: any) => {
-        const content = res.data?.content || [];
+      next: (res: { data?: PaginatedResponse<CustomerEntity> }) => {
+        const content: CustomerEntity[] = res.data?.content ?? [];
 
         this.customers = [
           { label: 'All Customers', value: '' },
-          ...content.map((c: any) => ({
+          ...content.map((c: CustomerEntity) => ({
             label: c.customerName,
-            value: c.id,
+            value: String(c.id),
           })),
         ];
 
@@ -128,7 +135,7 @@ export class Aging implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     this.agingService.getAging(companyId).subscribe({
-      next: (res) => {
+      next: (res: AgingResponse) => {
         this.mapResponse(res);
         this.loading = false;
         this.cdr.detectChanges();
@@ -196,7 +203,7 @@ export class Aging implements OnInit, OnDestroy {
   }
 
   private fetchWithFilters() {
-    const filters: any = {};
+    const filters: AgingFilters = {};
 
     if (this.selectedCustomer) filters.customerId = Number(this.selectedCustomer);
     if (this.selectedStatus) filters.status = this.selectedStatus;
@@ -208,7 +215,7 @@ export class Aging implements OnInit, OnDestroy {
     }
 
     this.agingService.getAging(this.activeCompanyId, filters).subscribe({
-      next: (res) => {
+      next: (res: AgingResponse) => {
         this.mapResponse(res);
         this.loading = false;
         this.cdr.detectChanges();
@@ -220,10 +227,10 @@ export class Aging implements OnInit, OnDestroy {
     });
   }
 
-  private mapResponse(res: any) {
-    const rows = res.data?.rows || [];
+  private mapResponse(res: AgingResponse) {
+    const rows: AgingRowDto[] = res.data?.rows ?? [];
 
-    this.agingData = rows.map((r: any) => ({
+    this.agingData = rows.map((r: AgingRowDto) => ({
       customer: r.customerName,
       totalDue: r.totalDue,
       current: r.current,

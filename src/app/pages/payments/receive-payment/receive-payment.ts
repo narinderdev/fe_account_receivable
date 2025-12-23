@@ -8,6 +8,14 @@ import { InvoiceService } from '../../../services/invoice-service';
 import { PaymentService } from '../../../services/payment-service';
 import { CompanySelectionService } from '../../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { CustomerEntity, PaginatedResponse } from '../../../models/customer.model';
+import { Invoice, InvoiceListResponse } from '../../../models/invoice.model';
+import { ApplyPaymentRequest, ApplyPaymentResponse } from '../../../models/payment.model';
+
+interface SelectableInvoice extends Invoice {
+  selected?: boolean;
+  appliedAmount?: number;
+}
 
 @Component({
   selector: 'app-receive-payment',
@@ -17,11 +25,11 @@ import { Subject, takeUntil } from 'rxjs';
   styleUrl: './receive-payment.css',
 })
 export class ReceivePayment implements OnInit, OnDestroy {
-  customers: any[] = [];
+  customers: CustomerEntity[] = [];
   selectedCustomerId: number | null = null;
   amount: number | null = null;
   paymentMethod: string = '';
-  invoices: any[] = [];
+  invoices: SelectableInvoice[] = [];
   notes: string = '';
   showNotesError: boolean = false;
 
@@ -76,7 +84,7 @@ export class ReceivePayment implements OnInit, OnDestroy {
   loadCustomers(companyId: number): void {
     console.log('Loading customers...');
     this.customerService.getCustomers(companyId, 0, 100).subscribe({
-      next: (res: any) => {
+      next: (res: { data?: PaginatedResponse<CustomerEntity> }) => {
         this.customers = res?.data?.content || [];
         console.log('Customers loaded:', this.customers.length);
         this.cdr.detectChanges();
@@ -109,13 +117,14 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
     console.log('Fetching unpaid invoices for customer:', this.selectedCustomerId);
     this.invoiceService.getUnpaidInvoices(this.selectedCustomerId).subscribe({
-      next: (res) => {
+      next: (res: InvoiceListResponse) => {
         console.log('Unpaid invoices response:', res);
-        this.invoices = res?.data || res || [];
-        this.invoices.forEach((i) => {
-          i.selected = false;
-          i.appliedAmount = 0;
-        });
+        const baseInvoices = Array.isArray(res?.data) ? res.data : [];
+        this.invoices = baseInvoices.map((invoice) => ({
+          ...invoice,
+          selected: false,
+          appliedAmount: 0,
+        }));
         console.log('Loaded invoices:', this.invoices.length);
         this.cdr.detectChanges();
       },
@@ -127,11 +136,12 @@ export class ReceivePayment implements OnInit, OnDestroy {
   }
 
   /** Handle invoice checkbox selection */
-  toggleInvoice(inv: any, event: any) {
+  toggleInvoice(inv: SelectableInvoice, event: Event) {
     console.log('Toggle invoice called for:', inv.invoiceNumber || inv.id);
     this.showInvoiceError = false;
 
-    const isChecked = event.target.checked;
+    const checkbox = event.target as HTMLInputElement | null;
+    const isChecked = checkbox?.checked ?? false;
     console.log('Checkbox checked:', isChecked);
 
     if (isChecked) {
@@ -139,7 +149,9 @@ export class ReceivePayment implements OnInit, OnDestroy {
       if (!this.amount || this.amount <= 0) {
         console.log('Amount validation failed');
         this.toastr.warning('Please enter a payment amount first.');
-        event.target.checked = false;
+        if (checkbox) {
+          checkbox.checked = false;
+        }
         return;
       }
 
@@ -151,11 +163,13 @@ export class ReceivePayment implements OnInit, OnDestroy {
       const remaining = this.amount - alreadyApplied;
       console.log('Already applied:', alreadyApplied, 'Remaining:', remaining);
 
-      // Check if there's any amount left to apply
+      // Make sure there is remaining amount to allocate
       if (remaining <= 0) {
         console.log('No remaining amount to apply');
         this.toastr.warning('Payment amount fully allocated. Uncheck other invoices first.');
-        event.target.checked = false;
+        if (checkbox) {
+          checkbox.checked = false;
+        }
         return;
       }
 
@@ -176,12 +190,15 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
   /** Total applied = sum of applied amounts */
   get totalApplied() {
-    return this.amount || 0;
+    return this.invoices.reduce((sum, invoice) => sum + (invoice.appliedAmount || 0), 0);
   }
 
   /** Unapplied amount */
   get unappliedAmount() {
-    const totalInvoiceAmount = this.invoices.reduce((sum, i) => sum + (i.balanceDue || 0), 0);
+    const totalInvoiceAmount = this.invoices.reduce(
+      (sum, invoice) => sum + (invoice.balanceDue || 0),
+      0
+    );
 
     if (!this.amount) return totalInvoiceAmount;
 
@@ -201,7 +218,9 @@ export class ReceivePayment implements OnInit, OnDestroy {
     this.showAmountError = !this.amount || this.amount <= 0;
     this.showPaymentMethodError = !this.paymentMethod;
     this.showInvoiceError = this.selectedInvoicesCount === 0;
-    this.showNotesError = !this.notes || this.notes.trim().length === 0;
+    const trimmedNotes = this.notes.trim();
+    this.showNotesError = !trimmedNotes.length;
+    this.notes = trimmedNotes;
 
     if (
       this.showCustomerError ||
@@ -255,8 +274,8 @@ export class ReceivePayment implements OnInit, OnDestroy {
     const invoiceIds = selectedInvoices.map((inv) => inv.id);
 
     // Build final payload
-    const data = {
-      paymentAmount: this.amount,
+    const data: ApplyPaymentRequest = {
+      paymentAmount: this.amount!,
       paymentMethod: this.paymentMethod,
       notes: this.notes,
       invoiceIds: invoiceIds,
@@ -266,7 +285,7 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
     // Call the service to apply the payment
     this.paymentService.applyPayment(this.selectedCustomerId!, data).subscribe({
-      next: (response) => {
+      next: (response: ApplyPaymentResponse) => {
         console.log('PAYMENT SUCCESS:', response);
         this.toastr.success('Payment applied successfully!', 'Success');
 
