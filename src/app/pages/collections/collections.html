@@ -24,9 +24,9 @@
     </div>
 
     <div class="action-buttons">
-      <button class="btn-secondary" (click)="logCall()">Log Call</button>
-      <button class="btn-primary" (click)="newReminder()">New Reminder</button>
+      <!-- <button class="btn-secondary" (click)="logCall()">Log Call</button> -->
       <button class="btn-primary" (click)="openPromisePopup()">New Promise</button>
+      <button class="btn-primary" (click)="openDisputePopup()">New Dispute</button>
     </div>
   </div>
 
@@ -40,33 +40,14 @@
       Promise to Pay
     </button>
 
-    <button class="tab" [class.active]="activeTab === 'reminders'" (click)="setTab('reminders')">
-      Reminders
+    <button class="tab" [class.active]="activeTab === 'disputes'" (click)="setTab('disputes')">
+      Disputes
     </button>
+
+    <!-- <button class="tab" [class.active]="activeTab === 'reminders'" (click)="setTab('reminders')">
+      Reminders
+    </button> -->
   </div>
-
-  <!-- <div class="card" *ngIf="activeTab === 'credits'">
-    <h3>Credits to Apply</h3>
-
-    <div class="table-scroll">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Customer</th>
-            <th>Total Due</th>
-            <th>Last Activity</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let c of creditsToApply">
-            <td>{{ c.customer }}</td>
-            <td>${{ c.totalDue | number }}</td>
-            <td>{{ c.lastActivity }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div> -->
 
   <div class="card" *ngIf="activeTab === 'promise'">
     <!-- <h3>Promise to Pay</h3> -->
@@ -126,9 +107,67 @@
     </ng-container>
   </div>
 
-  <div class="card" *ngIf="activeTab === 'reminders'">
-    <!-- <h3>Follow-Up Reminders</h3> -->
+  <div class="card" *ngIf="activeTab === 'disputes'">
+    <div *ngIf="loadingDisputes" class="promise-loader">
+      <app-spinner></app-spinner>
+    </div>
 
+    <ng-container *ngIf="!loadingDisputes">
+      <div *ngIf="disputes.length === 0" class="empty-text">
+        No disputes have been logged.
+      </div>
+
+      <div class="table-scroll" *ngIf="disputes.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Dispute ID</th>
+              <th>Customer</th>
+              <th>Invoice</th>
+              <th>Invoice Amount</th>
+              <th>Disputed Amount</th>
+              <th>Status</th>
+              <th>Reason</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dispute of disputes; let i = index">
+              <td>{{ dispute.disputeId }}</td>
+              <td>
+                <div class="customer-info">
+                  <div
+                    class="customer-initial"
+                    [ngStyle]="{
+                      backgroundColor: getInitialColor(i).background,
+                      color: getInitialColor(i).color
+                    }"
+                  >
+                    {{ dispute.customer.customerName[0] || '?' }}
+                  </div>
+                  <span class="customer-name">{{ dispute.customer.customerName || '--' }}</span>
+                </div>
+              </td>
+              <td>{{ dispute.invoice.invoiceNumber }}</td>
+              <td>${{ dispute.invoiceOriginalAmount | number : '1.2-2' }}</td>
+              <td>${{ dispute.disputedAmount | number : '1.2-2' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(dispute.status)">
+                  {{ dispute.status || '--' }}
+                </span>
+              </td>
+              <td>{{ dispute.reason || '--' }}</td>
+              <td>
+                <button class="link-button" (click)="viewDisputeDetail(dispute.id)">View</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- <div class="card" *ngIf="activeTab === 'reminders'">
     <div class="table-scroll">
       <table class="data-table">
         <thead>
@@ -147,7 +186,7 @@
         </tbody>
       </table>
     </div>
-  </div>
+  </div> -->
 
   <div class="modal-overlay" *ngIf="showPromisePopup">
     <div class="promise-modal">
@@ -240,6 +279,139 @@
         <button class="btn-save" [disabled]="savingPromise" (click)="savePromise()">
           <app-spinner *ngIf="savingPromise"></app-spinner>
           <span *ngIf="!savingPromise">Save Promise</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showDisputePopup">
+    <div class="promise-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">New Dispute</h2>
+        <button class="btn-close" (click)="closeDisputePopup()">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-field">
+            <label>Customer <span class="color">*</span></label>
+            <select
+              [(ngModel)]="selectedDisputeCustomerId"
+              (change)="onDisputeCustomerChange()"
+              [disabled]="loadingDisputeCustomers"
+            >
+              <option value="">Select customer</option>
+              <option *ngFor="let customer of disputeCustomers" [value]="customer.id">
+                {{ customer.customerName }}
+              </option>
+            </select>
+            <p class="error" *ngIf="disputeSubmitted && !selectedDisputeCustomerId">
+              Customer is required
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>Invoice <span class="color">*</span></label>
+            <select
+              [(ngModel)]="selectedDisputeInvoiceId"
+              (change)="onDisputeInvoiceChange()"
+              [disabled]="loadingDisputeInvoices || !selectedDisputeCustomerId"
+            >
+              <option value="">Select invoice</option>
+              <option *ngFor="let invoice of disputeInvoices" [value]="invoice.id">
+                {{ invoice.invoiceNumber }}
+              </option>
+            </select>
+            <p class="error" *ngIf="disputeSubmitted && !selectedDisputeInvoiceId">
+              Invoice is required
+            </p>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label>Invoice Amount</label>
+            <input type="number" [value]="disputeInvoiceAmount || 0" placeholder="0.00" readonly />
+          </div>
+
+          <div class="form-field">
+            <label>Disputed Amount <span class="color">*</span></label>
+            <input
+              type="number"
+              [(ngModel)]="disputedAmount"
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+            />
+            <p class="error" *ngIf="disputeSubmitted && (!disputedAmount || disputedAmount <= 0)">
+              Amount must be greater than 0
+            </p>
+            <p
+              class="error"
+              *ngIf="
+                disputeSubmitted &&
+                disputeInvoiceAmount !== null &&
+                (disputedAmount || 0) > disputeInvoiceAmount
+              "
+            >
+              Amount cannot exceed invoice amount
+            </p>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label>Dispute Code <span class="color">*</span></label>
+            <select [(ngModel)]="selectedDisputeCode">
+              <option value="">Select dispute code</option>
+              <option *ngFor="let code of disputeCodes" [value]="code.code">
+                {{ code.label }}
+              </option>
+            </select>
+            <p class="error" *ngIf="disputeSubmitted && !selectedDisputeCode">
+              Dispute code is required
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>Resolution Date <span class="color">*</span></label>
+            <input type="date" [(ngModel)]="resolutionDate" [min]="minResolutionDate" />
+            <p class="error" *ngIf="disputeSubmitted && !resolutionDate">Resolution date is required</p>
+            <p
+              class="error"
+              *ngIf="disputeSubmitted && resolutionDate && isResolutionDatePast()"
+            >
+              Resolution date cannot be in the past
+            </p>
+          </div>
+        </div>
+
+        <div class="form-field full-width">
+          <label>Reason <span class="color">*</span></label>
+          <textarea [(ngModel)]="disputeReason" rows="4" placeholder="Enter dispute reason"></textarea>
+          <p class="error" *ngIf="disputeSubmitted && !disputeReason.trim()">Reason is required</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeDisputePopup()">Cancel</button>
+        <button class="btn-save" (click)="saveDispute()">
+          <span>Submit Dispute</span>
         </button>
       </div>
     </div>

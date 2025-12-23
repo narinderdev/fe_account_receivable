@@ -2,18 +2,25 @@ import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Customer } from '../../services/customer';
+import { Router } from '@angular/router';
 import { CollectionService } from '../../services/collection-service';
 import { Spinner } from '../../shared/spinner/spinner';
 import { InvoiceWithItems, CustomerInvoiceListResponse } from '../../models/invoice.model';
 import { PromiseToPayRecord, PromiseToPayResponse } from '../../models/promise-to-pay.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { ToastrService } from 'ngx-toastr';
 import {
   PendingCustomerResponse,
   PendingCustomerSummary,
   PendingAmountResponse,
   CreatePromiseToPayRequest,
+  DisputeCode,
+  CreateDisputeRequest,
+  DisputeRecord,
+  DisputeResponse,
 } from '../../models/collection.model';
+import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
 
 interface CreditItem {
   customer: string;
@@ -58,21 +65,36 @@ export class Collections implements OnInit, OnDestroy {
   savingPromise = false;
   submitted = false;
 
-  activeTab: 'promise' | 'reminders' = 'promise';
+  activeTab: 'promise' | 'disputes' = 'promise';
 
-  /** ✅ PROMISE TO PAY LIST */
   promiseToPayList: PromiseToPayRecord[] = [];
   loadingPromiseToPay = false;
+  disputes: DisputeRecord[] = [];
+  loadingDisputes = false;
+  showDisputePopup = false;
+  disputeSubmitted = false;
+  disputeCustomers: CustomerEntity[] = [];
+  disputeInvoices: InvoiceWithItems[] = [];
+  selectedDisputeCustomerId: number | null = null;
+  selectedDisputeInvoiceId: number | null = null;
+  disputeInvoiceAmount: number | null = null;
+  disputedAmount: number | null = null;
+  resolutionDate = '';
+  disputeReason = '';
+  loadingDisputeCustomers = false;
+  loadingDisputeInvoices = false;
+  disputeCodes: DisputeCode[] = [];
+  selectedDisputeCode: string = '';
 
   creditsToApply: CreditItem[] = [
     { customer: 'Acme Corp', totalDue: 32000, lastActivity: 'Note 2 days' },
     { customer: 'Global Enterprises', totalDue: 32000, lastActivity: 'Email 6 days ago' },
   ];
 
-  followUpReminders: ReminderItem[] = [
-    { customer: 'Acme Corp', dueDate: 'May 5, 2024', action: 'Call' },
-    { customer: 'Global Enterprises', dueDate: 'May 5, 2024', action: 'Call' },
-  ];
+  // followUpReminders: ReminderItem[] = [
+  //   { customer: 'Acme Corp', dueDate: 'May 5, 2024', action: 'Call' },
+  //   { customer: 'Global Enterprises', dueDate: 'May 5, 2024', action: 'Call' },
+  // ];
 
   promiseToPayMessage = 'No promises to pay have been logged.';
   private destroy$ = new Subject<void>();
@@ -81,7 +103,9 @@ export class Collections implements OnInit, OnDestroy {
     private customerService: Customer,
     private collectionService: CollectionService,
     private companySelection: CompanySelectionService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastr: ToastrService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -94,11 +118,13 @@ export class Collections implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  setTab(tab: 'promise' | 'reminders') {
+  setTab(tab: 'promise' | 'disputes') {
     this.activeTab = tab;
 
     if (tab === 'promise') {
       this.loadPromiseToPay();
+    } else if (tab === 'disputes' && this.selectedCompanyId) {
+      this.loadDisputes(this.selectedCompanyId);
     }
   }
 
@@ -137,11 +163,18 @@ export class Collections implements OnInit, OnDestroy {
         if (this.selectedCompanyId) {
           this.fetchCompanyOverdue(this.selectedCompanyId);
           this.loadCustomers(this.selectedCompanyId);
+          if (this.activeTab === 'disputes') {
+            this.loadDisputes(this.selectedCompanyId);
+          } else {
+            this.loadPromiseToPay();
+          }
         } else {
           this.companyOverdueAmount = 0;
           this.loadingCompanyOverdue = false;
           this.customers = [];
           this.selectedCustomerId = '';
+          this.promiseToPayList = [];
+          this.disputes = [];
           this.cdr.detectChanges();
         }
       });
@@ -184,9 +217,6 @@ export class Collections implements OnInit, OnDestroy {
     this.collectionService.getPromiseToPay(this.selectedCompanyId).subscribe({
       next: (res: PromiseToPayResponse) => {
         this.promiseToPayList = Array.isArray(res?.data) ? res.data : [];
-
-        console.log('Promise To Pay:', this.promiseToPayList);
-
         this.loadingPromiseToPay = false;
         this.cdr.detectChanges();
       },
@@ -331,6 +361,176 @@ export class Collections implements OnInit, OnDestroy {
     });
   }
 
+  openDisputePopup() {
+    if (!this.selectedCompanyId || this.loadingDisputeCustomers) {
+      this.selectedDisputeCustomerId = null;
+      this.disputeInvoices = [];
+    }
+
+    this.showDisputePopup = true;
+    this.disputeSubmitted = false;
+    this.disputedAmount = null;
+    this.resolutionDate = '';
+    this.disputeReason = '';
+    this.selectedDisputeCode = '';
+    this.selectedDisputeInvoiceId = null;
+    this.disputeInvoiceAmount = null;
+
+    if (this.selectedCompanyId) {
+      this.fetchDisputeCustomers(this.selectedCompanyId);
+    }
+
+    this.collectionService.getDisputeCode().subscribe({
+      next: (res) => {
+        this.disputeCodes = res.data ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.disputeCodes = [];
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  closeDisputePopup() {
+    this.resetDisputeState();
+    this.showDisputePopup = false;
+    this.cdr.detectChanges();
+  }
+
+  private fetchDisputeCustomers(companyId: number) {
+    this.loadingDisputeCustomers = true;
+    this.customerService.getCustomers(companyId, 0, 100).subscribe({
+      next: (res: { data?: PaginatedResponse<CustomerEntity> }) => {
+        this.disputeCustomers = res?.data?.content ?? [];
+        this.loadingDisputeCustomers = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.disputeCustomers = [];
+        this.loadingDisputeCustomers = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  onDisputeCustomerChange() {
+    if (!this.selectedDisputeCustomerId) {
+      this.disputeInvoices = [];
+      this.selectedDisputeInvoiceId = null;
+      this.disputeInvoiceAmount = null;
+      return;
+    }
+
+    this.loadingDisputeInvoices = true;
+    this.customerService.getCustomerInvoicesById(this.selectedDisputeCustomerId).subscribe({
+      next: (res: CustomerInvoiceListResponse) => {
+        this.disputeInvoices = Array.isArray(res.data) ? res.data : [];
+        this.loadingDisputeInvoices = false;
+        this.selectedDisputeInvoiceId = null;
+        this.disputeInvoiceAmount = null;
+        this.disputedAmount = null;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.disputeInvoices = [];
+        this.loadingDisputeInvoices = false;
+        this.selectedDisputeInvoiceId = null;
+        this.disputeInvoiceAmount = null;
+        this.disputedAmount = null;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  onDisputeInvoiceChange() {
+    const invoiceId = Number(this.selectedDisputeInvoiceId);
+    const invoice = this.disputeInvoices.find((item) => item.id === invoiceId);
+    this.disputeInvoiceAmount = invoice?.balanceDue ?? invoice?.totalAmount ?? null;
+    if (this.disputedAmount && this.disputeInvoiceAmount && this.disputedAmount > this.disputeInvoiceAmount) {
+      this.disputedAmount = this.disputeInvoiceAmount;
+    }
+    this.cdr.detectChanges();
+  }
+
+  saveDispute() {
+    this.disputeSubmitted = true;
+
+    const hasValidCustomer = !!this.selectedDisputeCustomerId;
+    const hasValidInvoice = !!this.selectedDisputeInvoiceId;
+    const invoiceAmount = this.disputeInvoiceAmount ?? 0;
+    const disputedAmount = this.disputedAmount ?? 0;
+    const hasValidAmount =
+      disputedAmount > 0 && (!this.disputeInvoiceAmount || disputedAmount <= invoiceAmount);
+    const hasReason = !!this.disputeReason.trim();
+    const hasCode = !!this.selectedDisputeCode;
+    const hasResolutionDate =
+      !!this.resolutionDate && new Date(this.resolutionDate) >= this.todayWithoutTime();
+
+    if (
+      !hasValidCustomer ||
+      !hasValidInvoice ||
+      !hasValidAmount ||
+      !hasReason ||
+      !hasCode ||
+      !hasResolutionDate
+    ) {
+      return;
+    }
+
+    const payload: CreateDisputeRequest = {
+      customerId: this.selectedDisputeCustomerId!,
+      invoiceId: this.selectedDisputeInvoiceId!,
+      disputeCode: this.selectedDisputeCode,
+      disputedAmount,
+      reason: this.disputeReason.trim(),
+      resolutionDate: this.resolutionDate,
+    };
+
+    this.collectionService.createDispute(payload).subscribe({
+      next: () => {
+        this.closeDisputePopup();
+      },
+      error: () => {
+        this.toastr.error('Failed to create dispute');
+      },
+    });
+  }
+
+  loadDisputes(companyId: number) {
+    this.loadingDisputes = true;
+    this.collectionService.getDisputes(companyId).subscribe({
+      next: (res: DisputeResponse) => {
+        this.disputes = Array.isArray(res.data) ? res.data : [];
+        this.loadingDisputes = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.disputes = [];
+        this.loadingDisputes = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  todayWithoutTime() {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now;
+  }
+
+  get minResolutionDate(): string {
+    return this.todayWithoutTime().toISOString().split('T')[0];
+  }
+
+  isResolutionDatePast(): boolean {
+    if (!this.resolutionDate) {
+      return false;
+    }
+    const selected = new Date(this.resolutionDate);
+    return selected < this.todayWithoutTime();
+  }
+
   resetCustomerDependentData() {
     this.overdueAmount = 0;
     this.customerInvoices = [];
@@ -354,11 +554,26 @@ export class Collections implements OnInit, OnDestroy {
     this.loadingInvoices = false;
   }
 
+  private resetDisputeState() {
+    this.disputeCustomers = [];
+    this.disputeInvoices = [];
+    this.selectedDisputeCustomerId = null;
+    this.selectedDisputeInvoiceId = null;
+    this.disputeInvoiceAmount = null;
+    this.disputedAmount = null;
+    this.resolutionDate = '';
+    this.disputeReason = '';
+    this.selectedDisputeCode = '';
+    this.disputeSubmitted = false;
+    this.loadingDisputeCustomers = false;
+    this.loadingDisputeInvoices = false;
+  }
+
   logCall() {
     console.log('Log Call clicked');
   }
 
-  newReminder() {
-    console.log('New Reminder clicked');
+  viewDisputeDetail(id: number) {
+    this.router.navigate(['/admin/collections/disputes', id]);
   }
 }

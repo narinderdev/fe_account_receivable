@@ -7,6 +7,10 @@ import {
   PendingAmountResponse,
   PendingCustomerResponse,
   CreatePromiseToPayRequest,
+  DisputeCodeResponse,
+  CreateDisputeRequest,
+  DisputeResponse,
+  DisputeDetailResponse,
 } from '../models/collection.model';
 
 @Injectable({
@@ -42,18 +46,55 @@ export class CollectionService {
     );
   }
 
+  getDisputeCode(): Observable<DisputeCodeResponse> {
+    const headers = new HttpHeaders({
+      'ngrok-skip-browser-warning': 'true',
+    });
+
+    return this.http.get<DisputeCodeResponse>(`${this.baseUrl}/api/disputes/codes`, {
+      headers,
+    });
+  }
+
+  getDisputes(companyId: number): Observable<DisputeResponse> {
+    const headers = new HttpHeaders({
+      'ngrok-skip-browser-warning': 'true',
+    });
+
+    return this.http.get<DisputeResponse>(`${this.baseUrl}/api/disputes/company/${companyId}`, {
+      headers,
+    });
+  }
+
+  createDispute(data: CreateDisputeRequest): Observable<PromiseToPayResponse> {
+    return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/api/disputes`, data);
+  }
+
+  getDisputeById(disputeId: number): Observable<DisputeDetailResponse> {
+    const headers = new HttpHeaders({
+      'ngrok-skip-browser-warning': 'true',
+    });
+
+    return this.http.get<DisputeDetailResponse>(`${this.baseUrl}/api/disputes/${disputeId}`, {
+      headers,
+    });
+  }
+
   createPromiseToPay(data: CreatePromiseToPayRequest): Observable<PromiseToPayResponse> {
     return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/collections/promise`, data);
   }
 
-  getPromiseToPay(companyId:number): Observable<PromiseToPayResponse> {
+  getPromiseToPay(companyId: number): Observable<PromiseToPayResponse> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
-    return this.http.get<PromiseToPayResponse>(`${this.baseUrl}/collections/promise/company/${companyId}`, { headers });
+    return this.http.get<PromiseToPayResponse>(
+      `${this.baseUrl}/collections/promise/company/${companyId}`,
+      { headers }
+    );
   }
 
-  getPendingCustomer(companyId:number): Observable<PendingCustomerResponse> {
+  getPendingCustomer(companyId: number): Observable<PendingCustomerResponse> {
     const headers = new HttpHeaders({
       'ngrok-skip-browser-warning': 'true',
     });
