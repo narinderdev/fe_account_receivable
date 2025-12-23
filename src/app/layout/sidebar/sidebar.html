@@ -72,10 +72,10 @@
           Collections & Dispute
         </a>
 
-        <a routerLink="integration" routerLinkActive="active" #integrationLink="routerLinkActive" class="nav-item">
+        <!-- <a routerLink="integration" routerLinkActive="active" #integrationLink="routerLinkActive" class="nav-item">
           <img [src]="integrationLink.isActive ? '/integration1.svg' : '/integration.svg'" class="nav-icon" />
           Integration
-        </a>
+        </a> -->
 
         <div class="nav-item setup-parent" *ngIf="showSetupLinks" (click)="toggleSetup()">
           <img src="/settings.svg" class="nav-icon" />
@@ -188,10 +188,10 @@
           Collections & Dispute
         </a>
 
-        <a routerLink="integration" routerLinkActive="active" #mobileIntegration="routerLinkActive" (click)="closeMobileMenu()">
+        <!-- <a routerLink="integration" routerLinkActive="active" #mobileIntegration="routerLinkActive" (click)="closeMobileMenu()">
           <img [src]="mobileIntegration.isActive ? '/integration1.svg' : '/integration.svg'" class="nav-icon" />
           Integration
-        </a>
+        </a> -->
 
         <button
           type="button"
