@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DashboardSummaryResponse } from '../models/dashboard.model';
+import { DashboardSummaryResponse, DashboardGraphResponse } from '../models/dashboard.model';
 
 @Injectable({
   providedIn: 'root',
@@ -24,6 +24,16 @@ export class DashboardService {
 
     return this.http.get<DashboardSummaryResponse>(
       `${this.baseUrl}/dashboard/summary/company/${companyId}`,
+      { headers }
+    );
+  }
+
+  // ✅ Fix return type to DashboardGraphResponse
+  getDashboardGraphData(companyId: number): Observable<DashboardGraphResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
+
+    return this.http.get<DashboardGraphResponse>(
+      `${this.baseUrl}/ar/company/${companyId}/balance-series`,
       { headers }
     );
   }

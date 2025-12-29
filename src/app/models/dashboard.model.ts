@@ -15,3 +15,20 @@ export interface DashboardSummaryResponse {
   message: string;
   data: DashboardSummaryData;
 }
+
+export interface MonthBalance {
+  month: string;
+  balance: number;
+}
+
+export interface GraphData {
+  companyId: number;
+  series: MonthBalance[];
+}
+
+export interface DashboardGraphResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: GraphData;
+}
