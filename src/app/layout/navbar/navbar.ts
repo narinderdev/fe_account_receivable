@@ -5,6 +5,7 @@ import { Subject, filter, takeUntil } from 'rxjs';
 import { CompanyService } from '../../services/company-service';
 import { CompanyEntity } from '../../models/company.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { MonthEndService } from '../../services/month-end-service';
 import { ChangeDetectorRef } from '@angular/core';
 
 type TitleRule = {
@@ -48,21 +49,32 @@ export class Navbar implements OnInit, OnDestroy {
   selectedCompanyId = '';
   companyDropdownOpen = false;
 
+  // ✅ Add month-end balance properties
+  monthEndBalance: number | null = null;
+  loadingMonthEnd = false;
+
   private destroy$ = new Subject<void>();
 
   constructor(
     private router: Router,
     private companyService: CompanyService,
+    private monthEndService: MonthEndService,
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService
   ) {
     this.selectedCompanyId = this.companySelection.getSelectedCompanyId() ?? '';
 
-    this.companySelection.selectedCompanyId$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((id) => {
-        this.selectedCompanyId = id ?? '';
-      });
+    // ✅ Watch for company changes and load month-end balance
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      this.selectedCompanyId = id ?? '';
+
+      // Load month-end balance when company changes
+      if (this.selectedCompanyId) {
+        this.loadMonthEndBalance(Number(this.selectedCompanyId));
+      } else {
+        this.monthEndBalance = null;
+      }
+    });
 
     this.setTitle(this.router.url);
 
@@ -134,6 +146,40 @@ export class Navbar implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  // ✅ Load month-end balance for selected company
+  private loadMonthEndBalance(companyId: number) {
+    this.loadingMonthEnd = true;
+
+    // Get current month in YYYY-MM format
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    this.monthEndService
+      .getCompanyMonthEnd(companyId, month)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.monthEndBalance = res?.data?.monthEndBalance ?? null;
+          this.loadingMonthEnd = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.monthEndBalance = null;
+          this.loadingMonthEnd = false;
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  // ✅ Format currency for display
+  formatCurrency(amount: number | null): string {
+    if (amount === null) return '$0.00';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   }
 
   toggleCompanyDropdown(event: Event) {

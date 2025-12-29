@@ -4,6 +4,7 @@ import { forkJoin } from 'rxjs';
 import { Customer } from '../../../services/customer';
 import { CommonModule } from '@angular/common';
 import { CollectionService } from '../../../services/collection-service';
+import { MonthEndService } from '../../../services/month-end-service';
 import { FormsModule } from '@angular/forms';
 import { CustomerDetail as CustomerDetailEntity } from '../../../models/customer.model';
 import { InvoiceWithItems } from '../../../models/invoice.model';
@@ -24,10 +25,15 @@ export class CustomerDetail implements OnInit {
   customerPromises: PromiseToPayRecord[] = [];
   loadingPromises = false;
 
+  // ✅ Add month-end balance properties
+  monthEndBalance: number | null = null;
+  loadingMonthEnd = false;
+
   constructor(
     private route: ActivatedRoute,
     private customerService: Customer,
     private collectionService: CollectionService,
+    private monthEndService: MonthEndService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -55,6 +61,8 @@ export class CustomerDetail implements OnInit {
         this.cdr.detectChanges();
 
         this.loadCustomerPromises();
+        // ✅ Load month-end balance
+        this.loadMonthEndBalance();
       },
       error: (err) => {
         console.error('Error loading customer detail:', err);
@@ -79,6 +87,38 @@ export class CustomerDetail implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  // ✅ Load month-end balance for customer
+  loadMonthEndBalance() {
+    this.loadingMonthEnd = true;
+
+    // Get current month in YYYY-MM format
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    this.monthEndService.getCustomerMonthEnd(this.customerId, month).subscribe({
+      next: (response) => {
+        this.monthEndBalance = response?.data?.monthEndBalance ?? null;
+        this.loadingMonthEnd = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading month-end balance:', err);
+        this.monthEndBalance = null;
+        this.loadingMonthEnd = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  // ✅ Format currency for display
+  formatCurrency(amount: number | null): string {
+    if (amount === null) return '$0.00';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   }
 
   getStatusLabel(status: string): string {

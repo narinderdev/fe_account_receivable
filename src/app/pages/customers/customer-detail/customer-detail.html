@@ -115,7 +115,6 @@
     <!-- ================= TAB CONTENT ================= -->
 
     <!-- BASIC -->
-    <!-- BASIC -->
     <div class="tab-content" *ngIf="activeTab === 'basic'">
       <div class="info-card">
         <h3 class="section-title">Contact Information</h3>
@@ -134,6 +133,13 @@
         <div class="info-row">
           <span class="info-row-label">Customer Type</span>
           <span class="info-row-value">{{ customerData?.customerType || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Month-End AR Balance</span>
+          <span class="info-row-value" *ngIf="!loadingMonthEnd">
+            {{ formatCurrency(monthEndBalance) }}
+          </span>
+          <span class="info-row-value" *ngIf="loadingMonthEnd">Loading...</span>
         </div>
       </div>
     </div>
