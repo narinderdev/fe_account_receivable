@@ -69,85 +69,105 @@ export class CompanyService {
     users: ['id', 'name', 'email', 'status', 'roleId'],
   } as const;
 
+  // ✅ Helper method to get authorization headers
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('logintoken');
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  }
+
+  private getAuthHeadersWithNgrok(): HttpHeaders {
+    const token = localStorage.getItem('logintoken');
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'ngrok-skip-browser-warning': 'true'
+    });
+  }
+
   private getStoredUserId(): number | null {
     const raw = localStorage.getItem('signupUserId');
     const parsed = raw ? Number(raw) : NaN;
     return Number.isFinite(parsed) ? parsed : null;
   }
 
+  // ✅ GET request - use headers with ngrok skip
   getCompany(
     page: number = 0,
     size: number = 10,
     userId?: number | null
   ): Observable<CompanyPageResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
-
+    const headers = this.getAuthHeadersWithNgrok();
     const resolvedUserId = userId ?? this.getStoredUserId();
 
-    // if (resolvedUserId) {
     return this.http.get<CompanyPageResponse>(
       `${this.baseUrl}/api/companies/user/${resolvedUserId}?page=${page}&size=${size}`,
       { headers }
     );
-    // }
   }
 
+  // ✅ POST request - use auth headers only
   createCompany(data: any, userId?: number | null): Observable<any> {
+    const headers = this.getAuthHeaders();
     const resolvedUserId = userId ?? this.getStoredUserId();
+    
     if (resolvedUserId) {
-      return this.http.post(`${this.baseUrl}/api/companies/${resolvedUserId}`, data);
+      return this.http.post(`${this.baseUrl}/api/companies/${resolvedUserId}`, data, { headers });
     }
-    return this.http.post(`${this.baseUrl}/api/companies`, data);
+    return this.http.post(`${this.baseUrl}/api/companies`, data, { headers });
   }
 
   createAddress(companyId: number, data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/api/companies/${companyId}/company-address`, data);
+    const headers = this.getAuthHeaders();
+    return this.http.post(`${this.baseUrl}/api/companies/${companyId}/company-address`, data, { headers });
   }
 
   createFinancialSettings(companyId: number, data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/api/companies/${companyId}/financial-settings`, data);
+    const headers = this.getAuthHeaders();
+    return this.http.post(`${this.baseUrl}/api/companies/${companyId}/financial-settings`, data, { headers });
   }
 
   createBanking(companyId: number, data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/api/companies/${companyId}/banking`, data);
+    const headers = this.getAuthHeaders();
+    return this.http.post(`${this.baseUrl}/api/companies/${companyId}/banking`, data, { headers });
   }
 
   inviteUser(companyId: number, data: InviteUserRequest): Observable<InviteUserResponse> {
+    const headers = this.getAuthHeaders();
     return this.http.post<InviteUserResponse>(
       `${this.baseUrl}/api/companies/${companyId}/users`,
-      data
+      data,
+      { headers }
     );
   }
 
+  // ✅ GET request - use headers with ngrok skip
   getUsers(companyId: number): Observable<CompanyUsersResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
-
+    const headers = this.getAuthHeadersWithNgrok();
     return this.http.get<CompanyUsersResponse>(`${this.baseUrl}/api/companies/users/${companyId}`, {
       headers,
     });
   }
 
   uploadBalance(companyId: number, data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/api/companies/${companyId}/opening-balance-file`, data);
+    const headers = this.getAuthHeaders();
+    return this.http.post(`${this.baseUrl}/api/companies/${companyId}/opening-balance-file`, data, { headers });
   }
 
+  // ✅ GET request - use headers with ngrok skip
   getCompanyById(id: number): Observable<CompanyResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
+    const headers = this.getAuthHeadersWithNgrok();
     return this.http.get<CompanyResponse>(`${this.baseUrl}/api/companies/${id}`, { headers });
   }
 
   updateCompany(id: number, data: any): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/api/companies/${id}/update`, data);
+    const headers = this.getAuthHeaders();
+    return this.http.patch(`${this.baseUrl}/api/companies/${id}/update`, data, { headers });
   }
 
   deleteCompany(id: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/api/companies/${id}`);
+    const headers = this.getAuthHeaders();
+    return this.http.delete(`${this.baseUrl}/api/companies/${id}`, { headers });
   }
 
   setEditingCompany(data: CompanyEntity | null) {

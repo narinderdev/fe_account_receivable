@@ -11,11 +11,17 @@ export class AgingService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  private headers = new HttpHeaders({
-    'ngrok-skip-browser-warning': 'true',
-  });
+  // ✅ Helper method to get headers with both auth and ngrok skip (for GET requests)
+  private getAuthHeadersWithNgrok(): HttpHeaders {
+    const token = localStorage.getItem('logintoken');
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'ngrok-skip-browser-warning': 'true'
+    });
+  }
 
   getAging(companyId: number, filters?: AgingFilters): Observable<AgingResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
     let params = new HttpParams();
 
     if (filters) {
@@ -31,7 +37,7 @@ export class AgingService {
     }
 
     return this.http.get<AgingResponse>(`${this.baseUrl}/reports/aging/company/${companyId}`, {
-      headers: this.headers,
+      headers,
       params,
     });
   }

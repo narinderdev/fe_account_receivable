@@ -20,10 +20,23 @@ export class CollectionService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  getOverdueBalance(customerId: number): Observable<PendingAmountResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('logintoken');
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
     });
+  }
+
+  private getAuthHeadersWithNgrok(): HttpHeaders {
+    const token = localStorage.getItem('logintoken');
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'ngrok-skip-browser-warning': 'true'
+    });
+  }
+
+  getOverdueBalance(customerId: number): Observable<PendingAmountResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
 
     return this.http.get<PendingAmountResponse>(
       `${this.baseUrl}/invoice/${customerId}/pending-amount-customer`,
@@ -34,9 +47,7 @@ export class CollectionService {
   }
 
   getCompanyOverdue(companyId: number): Observable<PendingAmountResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
+    const headers = this.getAuthHeadersWithNgrok();
 
     return this.http.get<PendingAmountResponse>(
       `${this.baseUrl}/invoice/${companyId}/pending-amount-company`,
@@ -46,48 +57,48 @@ export class CollectionService {
     );
   }
 
+  // ✅ GET request
   getDisputeCode(): Observable<DisputeCodeResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
+    const headers = this.getAuthHeadersWithNgrok();
 
     return this.http.get<DisputeCodeResponse>(`${this.baseUrl}/api/disputes/codes`, {
       headers,
     });
   }
 
+  // ✅ GET request
   getDisputes(companyId: number): Observable<DisputeResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
+    const headers = this.getAuthHeadersWithNgrok();
 
     return this.http.get<DisputeResponse>(`${this.baseUrl}/api/disputes/company/${companyId}`, {
       headers,
     });
   }
 
+  // ✅ POST request
   createDispute(data: CreateDisputeRequest): Observable<PromiseToPayResponse> {
-    return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/api/disputes`, data);
+    const headers = this.getAuthHeaders();
+    return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/api/disputes`, data, { headers });
   }
 
+  // ✅ GET request
   getDisputeById(disputeId: number): Observable<DisputeDetailResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
+    const headers = this.getAuthHeadersWithNgrok();
 
     return this.http.get<DisputeDetailResponse>(`${this.baseUrl}/api/disputes/${disputeId}`, {
       headers,
     });
   }
 
+  // ✅ POST request
   createPromiseToPay(data: CreatePromiseToPayRequest): Observable<PromiseToPayResponse> {
-    return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/collections/promise`, data);
+    const headers = this.getAuthHeaders();
+    return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/collections/promise`, data, { headers });
   }
 
+  // ✅ GET request
   getPromiseToPay(companyId: number): Observable<PromiseToPayResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
+    const headers = this.getAuthHeadersWithNgrok();
     return this.http.get<PromiseToPayResponse>(
       `${this.baseUrl}/collections/promise/company/${companyId}`,
       { headers }
@@ -95,9 +106,7 @@ export class CollectionService {
   }
 
   getPendingCustomer(companyId: number): Observable<PendingCustomerResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
+    const headers = this.getAuthHeadersWithNgrok();
     return this.http.get<PendingCustomerResponse>(
       `${this.baseUrl}/invoice/company/${companyId}/with-pending-amounts`,
       { headers }
@@ -105,9 +114,7 @@ export class CollectionService {
   }
 
   getCustomerPromise(customerId: number): Observable<PromiseToPayResponse> {
-    const headers = new HttpHeaders({
-      'ngrok-skip-browser-warning': 'true',
-    });
+    const headers = this.getAuthHeadersWithNgrok();
     return this.http.get<PromiseToPayResponse>(
       `${this.baseUrl}/collections/promise/customer/${customerId}`,
       { headers }

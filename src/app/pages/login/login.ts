@@ -60,14 +60,14 @@ export class Login {
     };
 
     this.loading = true;
-    this.cdr.detectChanges(); // Ensure spinner shows immediately
+    this.cdr.detectChanges();
 
     this.loginService
       .login(payload)
       .pipe(
         finalize(() => {
           this.loading = false;
-          this.cdr.detectChanges(); // Ensure spinner stops immediately
+          this.cdr.detectChanges();
         })
       )
       .subscribe({
@@ -77,7 +77,15 @@ export class Login {
 
           if (statusCode === 200 || statusCode === 201) {
             this.toastr.success(message);
-            const user = response?.data;
+
+
+            const token = response?.data?.token;
+            const user = response?.data?.user;
+
+            if (token) {
+              localStorage.setItem('logintoken', token);
+            }
+
             if (user?.id) {
               localStorage.setItem('signupUserId', String(user.id));
             }

@@ -11,10 +11,16 @@ export class DashboardService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  getDashboardCardData(companyId: number): Observable<DashboardSummaryResponse> {
-    const headers = new HttpHeaders({
+  private getAuthHeadersWithNgrok(): HttpHeaders {
+    const token = localStorage.getItem('logintoken');
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`,
       'ngrok-skip-browser-warning': 'true',
     });
+  }
+
+  getDashboardCardData(companyId: number): Observable<DashboardSummaryResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
 
     return this.http.get<DashboardSummaryResponse>(
       `${this.baseUrl}/dashboard/summary/company/${companyId}`,
