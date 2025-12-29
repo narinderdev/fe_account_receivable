@@ -30,19 +30,22 @@ import { DisputeDetails } from './pages/collections/dispute-details/dispute-deta
 import { Login } from './pages/login/login';
 import { Signup } from './pages/signup/signup';
 import { AuthGuard } from './guards/auth.guard';
+import { CompanyGuard } from './guards/company.guard';
 import { SetPassword } from './pages/set-password/set-password';
+import { VerifyOtp } from './pages/verify-otp/verify-otp';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
 
   { path: 'login', component: Login },
   { path: 'signup', component: Signup },
+  { path: 'verify-otp', component: VerifyOtp },
   { path: 'set-password', component: SetPassword },
   {
     path: 'admin',
     component: Main,
-    canActivate: [AuthGuard],
-    canActivateChild: [AuthGuard],
+    canActivate: [AuthGuard, CompanyGuard],
+    canActivateChild: [AuthGuard, CompanyGuard],
     children: [
       { path: 'dashboard', component: Dashboard },
       { path: 'customers', component: Customers },

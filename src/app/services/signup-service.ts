@@ -12,10 +12,14 @@ export class SignupService {
   private http = inject(HttpClient);
 
   signup(data: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/users`, data);
+    return this.http.post<any>(`${this.baseUrl}/auth/signup`, data);
   }
 
   setPassword(data: { email: string; password: string }): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/api/companies/user/set-password`, data);
+  }
+
+  verifyOtp(data: {email : string; otp: string}): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/auth/signup/verify`, data)
   }
 }

@@ -27,7 +27,12 @@
     <div class="form-group">
       <label>Email Address</label>
       <div class="input-wrapper">
-        <input type="email" formControlName="email" placeholder="name@company.com" />
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="name@company.com"
+          (input)="forceLowercase('email')"
+        />
         <img src="/mail.svg" class="input-icon-left" />
       </div>
 
@@ -80,7 +85,12 @@
       </small>
     </div>
 
-    <button class="btn-create" (click)="submit()">Create Account</button>
+    <button class="btn-create" (click)="submit()" [disabled]="loading">
+      <ng-container *ngIf="!loading; else signupLoadingTpl">Create Account</ng-container>
+      <ng-template #signupLoadingTpl>
+        <app-spinner></app-spinner>
+      </ng-template>
+    </button>
 
     <!-- LOGIN LINK -->
     <p class="login-text">

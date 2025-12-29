@@ -2,13 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { SignupService } from '../../services/signup-service'; 
-import { UserContextService } from '../../services/user-context.service';
+import { SignupService } from '../../services/signup-service';
+import { ToastrService } from 'ngx-toastr';
+import { Spinner } from '../../shared/spinner/spinner';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, Spinner],
   templateUrl: './signup.html',
   styleUrl: './signup.css',
 })
@@ -22,7 +23,7 @@ export class Signup {
     private fb: FormBuilder,
     private signupService: SignupService,
     private router: Router,
-    private userContext: UserContextService
+    private toastr: ToastrService
   ) {
     this.form = this.fb.group(
       {
@@ -50,7 +51,6 @@ export class Signup {
     );
   }
 
-  // Match password & confirm password
   passwordMatchValidator(form: FormGroup) {
     const pass = form.get('password')?.value;
     const confirm = form.get('confirmPassword')?.value;
@@ -62,6 +62,23 @@ export class Signup {
       this.passwordVisible = !this.passwordVisible;
     } else {
       this.confirmPasswordVisible = !this.confirmPasswordVisible;
+    }
+  }
+
+  forceLowercase(controlName: string) {
+    const control = this.form.get(controlName);
+    if (!control) {
+      return;
+    }
+
+    const rawValue = control.value ?? '';
+    if (typeof rawValue !== 'string') {
+      return;
+    }
+
+    const lower = rawValue.toLowerCase();
+    if (rawValue !== lower) {
+      control.setValue(lower, { emitEvent: false });
     }
   }
 
@@ -83,17 +100,32 @@ export class Signup {
     this.signupService.signup(signUpData).subscribe({
       next: (response) => {
         this.loading = false;
-          if (response.statusCode === 201) {
-            const userId = response?.data?.id;
-            if (userId) {
-              localStorage.setItem('signupUserId', String(userId));
-            }
-            this.userContext.setAdminDefaults(response?.data?.id);
-            this.router.navigate(['/admin/company/add/step-1']);
+        const statusCode = response?.statusCode;
+        const message = response?.message || 'Signup successful';
+        if (statusCode === 201 || statusCode === 202) {
+          this.toastr.success(message);
+
+          const userId = response?.data?.id;
+          if (userId) {
+            localStorage.setItem('signupUserId', String(userId));
           }
+
+          if (this.form.value.email) {
+            localStorage.setItem('signupEmail', this.form.value.email);
+          }
+
+          this.router.navigate(['/verify-otp'], {
+            queryParams: { email: this.form.value.email },
+          });
+        } else {
+          this.toastr.error(message || 'Signup failed');
+        }
       },
       error: (err) => {
         this.loading = false;
+        const errorMessage =
+          err?.error?.message || 'An error occurred during signup. Please try again.';
+        this.toastr.error(errorMessage);
         console.error('Sign Up Error:', err);
       },
     });
