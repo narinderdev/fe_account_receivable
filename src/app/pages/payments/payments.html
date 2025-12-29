@@ -1,7 +1,13 @@
 <div class="payments-page">
   <div class="button-receive">
     <!-- <h1 class="page-title">Payments</h1> -->
-    <button class="action-button" routerLink="receive-payment">Receive Payments</button>
+    <button
+      class="action-button"
+      routerLink="receive-payment"
+      *ngIf="canApplyPayment"
+    >
+      Receive Payments
+    </button>
   </div>
 
   <!-- FULL SCREEN LOADER -->

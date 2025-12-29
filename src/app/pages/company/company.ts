@@ -5,6 +5,7 @@ import { CompanyService } from '../../services/company-service';
 import { Loader } from '../../shared/loader/loader';
 import { Spinner } from '../../shared/spinner/spinner';
 import { CompanyEntity } from '../../models/company.model';
+import { UserContextService } from '../../services/user-context.service';
 
 @Component({
   selector: 'app-company',
@@ -27,12 +28,22 @@ export class Company implements OnInit {
   isDeleteModalOpen = false;
   deleteId: number | null = null;
   deleting = false;
+  canCreateCompany = false;
+  canUpdateCompany = false;
+  canDeleteCompany = false;
+  showActionsColumn = false;
 
   constructor(
     private companyService: CompanyService,
     private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private userContext: UserContextService
+  ) {
+    this.canCreateCompany = this.userContext.hasPermission('CREATE_COMPANY');
+    this.canUpdateCompany = this.userContext.hasPermission('UPDATE_COMPANY');
+    this.canDeleteCompany = this.userContext.hasPermission('DELETE_COMPANY');
+    this.showActionsColumn = this.canUpdateCompany || this.canDeleteCompany;
+  }
 
   ngOnInit() {
     this.loadCompanies();
@@ -74,10 +85,16 @@ export class Company implements OnInit {
 
   // EDIT COMPANY
   editCompany(id: number) {
+    if (!this.canUpdateCompany) {
+      return;
+    }
     this.router.navigate(['/admin/company/edit', id, 'step-1']);
   }
 
   openDeleteModal(id: number) {
+    if (!this.canDeleteCompany) {
+      return;
+    }
     this.deleteId = id;
 
     // Hide page loader while modal is open

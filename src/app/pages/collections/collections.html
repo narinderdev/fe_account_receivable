@@ -25,7 +25,13 @@
 
     <div class="action-buttons">
       <!-- <button class="btn-secondary" (click)="logCall()">Log Call</button> -->
-      <button class="btn-primary" (click)="openPromisePopup()">New Promise</button>
+      <button
+        class="btn-primary"
+        (click)="openPromisePopup()"
+        *ngIf="canCreatePromise"
+      >
+        New Promise
+      </button>
       <button class="btn-primary" (click)="openDisputePopup()">New Dispute</button>
     </div>
   </div>

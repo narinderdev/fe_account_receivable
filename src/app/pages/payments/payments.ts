@@ -5,6 +5,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Loader } from '../../shared/loader/loader';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { UserContextService } from '../../services/user-context.service';
 
 interface InvoiceCustomer {
   customerName: string;
@@ -47,13 +48,17 @@ export class Payments implements OnInit, OnDestroy {
   loading = false;
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
+  canApplyPayment = false;
 
   constructor(
     private paymentService: PaymentService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private companySelection: CompanySelectionService
-  ) {}
+    private companySelection: CompanySelectionService,
+    private userContext: UserContextService
+  ) {
+    this.canApplyPayment = this.userContext.hasPermission('APPLY_PAYMENT');
+  }
 
   ngOnInit() {
     this.companySelection.selectedCompanyId$

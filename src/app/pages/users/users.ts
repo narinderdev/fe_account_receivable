@@ -13,6 +13,7 @@ import { CompanySelectionService } from '../../services/company-selection.servic
 import { Subject, takeUntil } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
+import { UserContextService } from '../../services/user-context.service';
 
 @Component({
   selector: 'app-users',
@@ -31,6 +32,7 @@ export class Users implements OnInit, OnDestroy {
   users: CompanyUser[] = [];
 
   companyId: number | null = null;
+  canInviteUser = false;
 
   private destroy$ = new Subject<void>();
 
@@ -40,8 +42,11 @@ export class Users implements OnInit, OnDestroy {
     private companySelection: CompanySelectionService,
     private roleService: RoleService,
     private toastr: ToastrService,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private userContext: UserContextService
+  ) {
+    this.canInviteUser = this.userContext.hasPermission('INVITE_USER');
+  }
 
   ngOnInit() {
     this.inviteForm = this.fb.group({
@@ -106,6 +111,9 @@ export class Users implements OnInit, OnDestroy {
   }
 
   openModal() {
+    if (!this.canInviteUser) {
+      return;
+    }
     if (!this.companyId) {
       this.toastr.error('Please select a company first.');
       return;

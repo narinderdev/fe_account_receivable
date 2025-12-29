@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { Invoice, InvoicePage } from '../../models/invoice.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { UserContextService } from '../../services/user-context.service';
 
 @Component({
   selector: 'app-invoices',
@@ -28,13 +29,17 @@ export class Invoices implements OnInit, OnDestroy {
   Math = Math;
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
+  canCreateInvoice = false;
 
   constructor(
     private invoiceService: InvoiceService,
     private cdr: ChangeDetectorRef,
     private router: Router,
-    private companySelection: CompanySelectionService
-  ) {}
+    private companySelection: CompanySelectionService,
+    private userContext: UserContextService
+  ) {
+    this.canCreateInvoice = this.userContext.hasPermission('CREATE_INVOICE');
+  }
 
   ngOnInit() {
     this.companySelection.selectedCompanyId$

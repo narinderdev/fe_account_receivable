@@ -10,7 +10,7 @@
       Select a company from the navbar to view & invite users.
     </p> -->
 
-    <div class="actions" *ngIf="companyId">
+    <div class="actions" *ngIf="companyId && canInviteUser">
       <!-- <h2 class="section-title">Invite Users</h2> -->
       <div class="invite-user">
         <button class="invite-user-btn" (click)="openModal()">Invite User</button>

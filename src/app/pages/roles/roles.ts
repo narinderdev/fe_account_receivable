@@ -7,6 +7,7 @@ import { CreateRoleRequest, Role } from '../../models/company-users.model';
 import { ToastrService } from 'ngx-toastr';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { UserContextService } from '../../services/user-context.service';
 
 interface PermissionColumn {
   view?: string;
@@ -35,6 +36,7 @@ export class Roles implements OnInit, OnDestroy {
   isSaving = false;
   submitted = false;
   addRoleForm!: FormGroup;
+  canCreateRoles = false;
 
   // ✅ Add constant for the required permission
   readonly REQUIRED_VIEW_COMPANY = 'VIEW_COMPANY';
@@ -68,7 +70,7 @@ export class Roles implements OnInit, OnDestroy {
       label: 'Payments',
       permissions: {
         view: 'VIEW_PAYMENTS',
-        create: 'APPLY_PAYMENT', // Receive treated as Create
+        create: 'APPLY_PAYMENT',
       },
     },
     {
@@ -122,8 +124,11 @@ export class Roles implements OnInit, OnDestroy {
     private roleService: RoleService,
     private cdr: ChangeDetectorRef,
     private toastr: ToastrService,
-    private companySelection: CompanySelectionService
-  ) {}
+    private companySelection: CompanySelectionService,
+    private userContext: UserContextService
+  ) {
+    this.canCreateRoles = this.userContext.hasPermission('CREATE_ROLES');
+  }
 
   ngOnInit() {
     this.addRoleForm = this.fb.group({
@@ -171,6 +176,9 @@ export class Roles implements OnInit, OnDestroy {
   }
 
   openModal() {
+    if (!this.canCreateRoles) {
+      return;
+    }
     // ✅ Reset form with VIEW_COMPANY already selected
     this.addRoleForm.reset({
       name: '',

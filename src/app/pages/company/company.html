@@ -4,7 +4,7 @@
 <div class="customers-container">
   <div class="customers-actions">
     <!-- <h1 class="customers-title">Company</h1> -->
-    <button class="add-customer-btn" routerLink="add">+ Add Company</button>
+    <button class="add-customer-btn" routerLink="add" *ngIf="canCreateCompany">+ Add Company</button>
   </div>
 
   <div class="customers-table-wrapper">
@@ -16,13 +16,13 @@
             <th>Company Code</th>
             <th>Email</th>
             <th>Address</th>
-            <th>Actions</th>
+            <th *ngIf="showActionsColumn">Actions</th>
           </tr>
         </thead>
 
         <tbody *ngIf="loading">
           <tr>
-            <td colspan="5" style="text-align: center; padding: 40px">
+            <td [attr.colspan]="showActionsColumn ? 5 : 4" style="text-align: center; padding: 40px">
               <app-loader [visible]="loading"></app-loader>
             </td>
           </tr>
@@ -53,11 +53,11 @@
               {{ c.companyAddress.addressCountry }}
             </td>
 
-            <td class="actions">
-              <span class="btn-right"
+            <td class="actions" *ngIf="showActionsColumn">
+              <span class="btn-right" *ngIf="canUpdateCompany"
                 ><img src="/editIcn.svg" class="action-icon" (click)="editCompany(c.id)"
               /></span>
-              <span
+              <span *ngIf="canDeleteCompany"
                 ><img
                   src="/deleteIcn.svg"
                   class="action-icon delete"
@@ -68,7 +68,9 @@
         </tbody>
         <tbody *ngIf="!loading && !companies.length">
           <tr>
-            <td colspan="5" class="no-data-row">No companies added yet.</td>
+            <td [attr.colspan]="showActionsColumn ? 5 : 4" class="no-data-row">
+              No companies added yet.
+            </td>
           </tr>
         </tbody>
       </table>

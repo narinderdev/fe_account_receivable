@@ -17,7 +17,7 @@
         />
       </div>
 
-      <button class="btn-new" routerLink="create">
+      <button class="btn-new" routerLink="create" *ngIf="canCreateInvoice">
         <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
         New Invoice
       </button>

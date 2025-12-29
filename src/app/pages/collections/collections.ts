@@ -21,6 +21,7 @@ import {
   DisputeResponse,
 } from '../../models/collection.model';
 import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
+import { UserContextService } from '../../services/user-context.service';
 
 interface CreditItem {
   customer: string;
@@ -98,6 +99,7 @@ export class Collections implements OnInit, OnDestroy {
 
   promiseToPayMessage = 'No promises to pay have been logged.';
   private destroy$ = new Subject<void>();
+  canCreatePromise = false;
 
   constructor(
     private customerService: Customer,
@@ -105,8 +107,11 @@ export class Collections implements OnInit, OnDestroy {
     private companySelection: CompanySelectionService,
     private cdr: ChangeDetectorRef,
     private toastr: ToastrService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private userContext: UserContextService
+  ) {
+    this.canCreatePromise = this.userContext.hasPermission('CREATE_PROMISE_TO_PAY');
+  }
 
   ngOnInit() {
     this.watchCompanySelection();
@@ -313,6 +318,9 @@ export class Collections implements OnInit, OnDestroy {
   }
 
   openPromisePopup() {
+    if (!this.canCreatePromise) {
+      return;
+    }
     this.showPromisePopup = true;
     this.submitted = false;
   }

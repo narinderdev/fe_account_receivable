@@ -1,5 +1,5 @@
 <div class="roles-container">
-  <div class="roles-header">
+  <div class="roles-header" *ngIf="canCreateRoles">
     <button class="btn-add" (click)="openModal()">Add Role</button>
   </div>
 
