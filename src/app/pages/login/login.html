@@ -12,6 +12,7 @@
             type="email"
             formControlName="email"
             placeholder="Enter your email"
+            (input)="forceLowercase('email')"
           />
           <img src="mail.svg" class="input-icon" alt="email icon" />
         </div>
