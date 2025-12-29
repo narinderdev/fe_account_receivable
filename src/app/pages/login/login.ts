@@ -44,6 +44,23 @@ export class Login {
     this.passwordVisible = !this.passwordVisible;
   }
 
+  forceLowercase(controlName: string) {
+    const control = this.form.get(controlName);
+    if (!control) {
+      return;
+    }
+
+    const rawValue = control.value ?? '';
+    if (typeof rawValue !== 'string') {
+      return;
+    }
+
+    const lower = rawValue.toLowerCase();
+    if (rawValue !== lower) {
+      control.setValue(lower, { emitEvent: false });
+    }
+  }
+
   submit() {
     if (!this.form.valid) {
       this.form.markAllAsTouched();
@@ -83,24 +100,27 @@ export class Login {
             const user = response?.data?.user;
 
             if (token) {
-              localStorage.setItem('logintoken', token);
-            }
+            localStorage.setItem('logintoken', token);
+          }
 
-            if (user?.id) {
-              localStorage.setItem('signupUserId', String(user.id));
-            }
+          if (user?.id) {
+            localStorage.setItem('signupUserId', String(user.id));
+          }
 
-            localStorage.setItem('isLoggedIn', 'true');
-            this.userContext.setFromLogin(user);
+          localStorage.setItem('isLoggedIn', 'true');
+          this.userContext.setFromLogin(user);
 
-            const userCompanies = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
-
-            if (userCompanies.length > 0) {
-              this.router.navigate(['/admin/dashboard']);
-            } else {
-              this.router.navigate(['/admin/company/add/step-1']);
-            }
+          const userCompanies = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
+          if (userCompanies.length > 0) {
+            localStorage.setItem('hasCompanies', 'true');
           } else {
+            localStorage.removeItem('hasCompanies');
+          }
+
+          const nextUrl =
+            userCompanies.length > 0 ? this.getLandingRoute() : '/admin/company/add/step-1';
+          this.router.navigate([nextUrl]);
+        } else {
             this.toastr.error(message || 'Login failed.');
           }
         },
@@ -110,5 +130,27 @@ export class Login {
           console.error('Login error:', err);
         },
       });
+  }
+
+  private getLandingRoute(): string {
+    if (this.userContext.isAdmin()) {
+      return '/admin/dashboard';
+    }
+
+    const permissions = this.userContext.getPermissions();
+    const permissionRoutes = [
+      { permission: 'VIEW_DASHBOARD', path: '/admin/dashboard' },
+      { permission: 'VIEW_CUSTOMERS', path: '/admin/customers' },
+      { permission: 'VIEW_INVOICES', path: '/admin/invoices' },
+      { permission: 'VIEW_PAYMENTS', path: '/admin/payments' },
+      { permission: 'VIEW_AGING_REPORTS', path: '/admin/ar-reports' },
+      { permission: 'VIEW_PROMISE_TO_PAY', path: '/admin/collections' },
+      { permission: 'VIEW_COMPANY', path: '/admin/company' },
+      { permission: 'VIEW_USER', path: '/admin/users' },
+      { permission: 'VIEW_ROLES', path: '/admin/roles' },
+    ];
+
+    const match = permissionRoutes.find((entry) => permissions.includes(entry.permission));
+    return match ? match.path : '/admin/dashboard';
   }
 }
