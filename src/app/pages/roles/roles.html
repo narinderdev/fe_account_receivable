@@ -83,6 +83,7 @@
                     <input
                       type="checkbox"
                       [checked]="isPermissionSelected(row.permissions.view)"
+                      [disabled]="isPermissionRequired(row.permissions.view)"
                       (change)="togglePermissionSelection(row.permissions.view)"
                     />
                   </label>

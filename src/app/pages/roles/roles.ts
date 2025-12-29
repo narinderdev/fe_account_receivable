@@ -36,6 +36,9 @@ export class Roles implements OnInit, OnDestroy {
   submitted = false;
   addRoleForm!: FormGroup;
 
+  // ✅ Add constant for the required permission
+  readonly REQUIRED_VIEW_COMPANY = 'VIEW_COMPANY';
+
   permissionRows: PermissionRow[] = [
     {
       label: 'Dashboard',
@@ -57,8 +60,8 @@ export class Roles implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_INVOICES',
         create: 'CREATE_INVOICE',
-        update: 'EDIT_INVOICE',
-        delete: 'DELETE_INVOICE',
+        // update: 'EDIT_INVOICE',
+        // delete: 'DELETE_INVOICE',
       },
     },
     {
@@ -168,10 +171,11 @@ export class Roles implements OnInit, OnDestroy {
   }
 
   openModal() {
+    // ✅ Reset form with VIEW_COMPANY already selected
     this.addRoleForm.reset({
       name: '',
       description: '',
-      permissions: [],
+      permissions: [this.REQUIRED_VIEW_COMPANY],
     });
 
     this.submitted = false;
@@ -227,8 +231,16 @@ export class Roles implements OnInit, OnDestroy {
     return this.getSelectedPermissions().includes(code);
   }
 
+  // ✅ Check if permission is required (can't be unchecked)
+  isPermissionRequired(code: string | undefined): boolean {
+    return code === this.REQUIRED_VIEW_COMPANY;
+  }
+
   togglePermissionSelection(code: string | undefined) {
     if (!code) return;
+
+    // ✅ Prevent toggling required permissions
+    if (this.isPermissionRequired(code)) return;
 
     const control = this.addRoleForm.get('permissions');
     if (!control) return;
