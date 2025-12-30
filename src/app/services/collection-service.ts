@@ -106,7 +106,7 @@ export class CollectionService {
     );
   }
 
-  getPendingCustomer(companyId: number): Observable<PendingCustomerResponse> {
+  getOverdueBalanceList(companyId: number): Observable<PendingCustomerResponse> {
     const headers = this.getAuthHeadersWithNgrok();
     return this.http.get<PendingCustomerResponse>(
       `${this.baseUrl}/invoice/company/${companyId}/with-pending-amounts`,

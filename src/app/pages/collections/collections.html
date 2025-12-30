@@ -42,6 +42,15 @@
 
     <button
       class="tab"
+      [class.active]="activeTab === 'reminders'"
+      (click)="setTab('reminders')"
+      *ngIf="canViewReminders"
+    >
+      Follow-up Reminders
+    </button>
+
+    <button
+      class="tab"
       [class.active]="activeTab === 'promise'"
       (click)="setTab('promise')"
       *ngIf="canViewPromise"
@@ -57,10 +66,56 @@
     >
       Disputes
     </button>
+  </div>
 
-    <!-- <button class="tab" [class.active]="activeTab === 'reminders'" (click)="setTab('reminders')">
-      Reminders
-    </button> -->
+  <div class="card" *ngIf="activeTab === 'reminders' && canViewReminders">
+    <div *ngIf="loadingFollowUp" class="promise-loader">
+      <app-spinner></app-spinner>
+    </div>
+
+    <ng-container *ngIf="!loadingFollowUp">
+      <div *ngIf="followUpReminders.length === 0" class="empty-text">
+        No customers need follow ups.
+      </div>
+
+      <div class="table-scroll" *ngIf="followUpReminders.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <!-- <th>Customer ID</th> -->
+              <th>Overdue Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let reminder of followUpReminders; let i = index">
+              <td>
+                <div class="customer-info">
+                  <div
+                    class="customer-initial"
+                    [ngStyle]="{
+                      backgroundColor: getInitialColor(i).background,
+                      color: getInitialColor(i).color
+                    }"
+                  >
+                    {{ reminder.customerName ? reminder.customerName[0] : '?' }}
+                  </div>
+                  <span class="customer-name">{{ reminder.customerName }}</span>
+                </div>
+              </td>
+              <!-- <td>{{ reminder.id }}</td> -->
+              <td><strong>${{ (reminder.overdueAmount || 0) | number : '1.2-2' }}</strong></td>
+              <td>
+                <button class="link-button" type="button" (click)="sendReminder(reminder.id)">
+                  Send Reminder
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
   </div>
 
   <div class="card" *ngIf="activeTab === 'promise' && canViewPromise">
