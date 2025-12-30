@@ -1,3 +1,6 @@
+<!-- Global Loader -->
+<app-loader [visible]="isComponentLoading"></app-loader>
+
 <div class="collections-container">
   <div class="company-overdue-group">
     <!-- <div class="company-field">
@@ -42,8 +45,17 @@
 
     <button
       class="tab"
-      [class.active]="activeTab === 'reminders'"
-      (click)="setTab('reminders')"
+      [class.active]="activeTab === 'collections'"
+      (click)="setTab('collections')"
+      *ngIf="canViewReminders"
+    >
+      Collections
+    </button>
+
+    <button
+      class="tab"
+      [class.active]="activeTab === 'followUps'"
+      (click)="setTab('followUps')"
       *ngIf="canViewReminders"
     >
       Follow-up Reminders
@@ -68,24 +80,24 @@
     </button>
   </div>
 
-  <div class="card" *ngIf="activeTab === 'reminders' && canViewReminders">
+  <div class="card" *ngIf="activeTab === 'collections' && canViewReminders">
     <div *ngIf="loadingFollowUp" class="promise-loader">
       <app-spinner></app-spinner>
     </div>
 
     <ng-container *ngIf="!loadingFollowUp">
-      <div *ngIf="followUpReminders.length === 0" class="empty-text">
+      <div *ngIf="collectionsPagination.totalItems === 0" class="empty-text">
         No customers need follow ups.
       </div>
 
-      <div class="table-scroll" *ngIf="followUpReminders.length > 0">
+      <div class="table-scroll" *ngIf="collectionsPagination.totalItems > 0">
         <table class="data-table">
           <thead>
             <tr>
               <th>Customer</th>
               <!-- <th>Customer ID</th> -->
               <th>Overdue Amount</th>
-              <th>Actions</th>
+              <!-- <th>Actions</th> -->
             </tr>
           </thead>
           <tbody>
@@ -106,14 +118,174 @@
               </td>
               <!-- <td>{{ reminder.id }}</td> -->
               <td><strong>${{ (reminder.overdueAmount || 0) | number : '1.2-2' }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div
+        class="tab-pagination"
+        *ngIf="collectionsPagination.totalPages > 1 && collectionsPagination.totalItems > 0"
+      >
+        <div class="pagination-wrapper">
+          <div class="pagination-info">
+            Showing {{ collectionsPagination.currentPage * collectionsPagination.pageSize + 1 }} to
+            {{
+              Math.min(
+                (collectionsPagination.currentPage + 1) * collectionsPagination.pageSize,
+                collectionsPagination.totalItems
+              )
+            }}
+            of {{ collectionsPagination.totalItems }} results
+          </div>
+
+          <div class="pagination-controls">
+            <button
+              class="page-nav-btn"
+              (click)="collectionsPrevPage()"
+              [disabled]="collectionsPagination.currentPage === 0"
+            >
+              <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+            </button>
+
+            <button
+              *ngFor="let page of getPageNumbers(collectionsPagination)"
+              class="page-number-btn"
+              [class.active]="page === collectionsPagination.currentPage + 1"
+              [class.ellipsis]="page === -1"
+              (click)="page !== -1 && goToCollectionsPage(page - 1)"
+              [disabled]="page === -1"
+            >
+              {{ page === -1 ? '...' : page }}
+            </button>
+
+            <button
+              class="page-nav-btn"
+              (click)="collectionsNextPage()"
+              [disabled]="collectionsPagination.currentPage === collectionsPagination.totalPages - 1"
+            >
+              <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+
+  <div class="card" *ngIf="activeTab === 'followUps' && canViewReminders">
+    <div *ngIf="loadingOverdueInvoices" class="promise-loader">
+      <app-spinner></app-spinner>
+    </div>
+
+    <ng-container *ngIf="!loadingOverdueInvoices">
+      <div *ngIf="followUpsPagination.totalItems === 0" class="empty-text">
+        No overdue invoices found.
+      </div>
+
+      <div class="table-scroll" *ngIf="followUpsPagination.totalItems > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Customer</th>
+              <th>Invoice Date</th>
+              <th>Due Date</th>
+              <th>Total Amount</th>
+              <th>Balance Due</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let invoice of overdueInvoices; let i = index">
+              <td>{{ invoice.invoiceNumber }}</td>
               <td>
-                <button class="link-button" type="button" (click)="sendReminder(reminder.id)">
-                  Send Reminder
+                <div class="customer-info">
+                  <div
+                    class="customer-initial"
+                    [ngStyle]="{
+                      backgroundColor: getInitialColor(i).background,
+                      color: getInitialColor(i).color
+                    }"
+                  >
+                    {{ invoice.customerName ? invoice.customerName[0] : '?' }}
+                  </div>
+                  <span class="customer-name">{{ invoice.customerName }}</span>
+                </div>
+              </td>
+              <td>{{ invoice.invoiceDate | date : 'MMM d, y' }}</td>
+              <td>{{ invoice.dueDate | date : 'MMM d, y' }}</td>
+              <td>${{ invoice.totalAmount | number : '1.2-2' }}</td>
+              <td>${{ invoice.balanceDue | number : '1.2-2' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(invoice.status)">
+                  {{ getStatusLabel(invoice.status) }}
+                </span>
+              </td>
+              <td>
+                <button
+                  class="link-button"
+                  *ngIf="!reminderSent[invoice.invoiceId]"
+                  (click)="sendReminder(invoice.invoiceId)"
+                >
+                  <ng-container *ngIf="!reminderSending[invoice.invoiceId]; else reminderLoading">
+                    Reminder
+                  </ng-container>
+                  <ng-template #reminderLoading>
+                    <app-spinner></app-spinner>
+                  </ng-template>
                 </button>
+                <span class="sent-text" *ngIf="reminderSent[invoice.invoiceId]">Sent</span>
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+      <div
+        class="tab-pagination"
+        *ngIf="followUpsPagination.totalPages > 1 && followUpsPagination.totalItems > 0"
+      >
+        <div class="pagination-wrapper">
+          <div class="pagination-info">
+            Showing {{ followUpsPagination.currentPage * followUpsPagination.pageSize + 1 }} to
+            {{
+              Math.min(
+                (followUpsPagination.currentPage + 1) * followUpsPagination.pageSize,
+                followUpsPagination.totalItems
+              )
+            }}
+            of {{ followUpsPagination.totalItems }} results
+          </div>
+
+          <div class="pagination-controls">
+            <button
+              class="page-nav-btn"
+              (click)="followUpsPrevPage()"
+              [disabled]="followUpsPagination.currentPage === 0"
+            >
+              <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+            </button>
+
+            <button
+              *ngFor="let page of getPageNumbers(followUpsPagination)"
+              class="page-number-btn"
+              [class.active]="page === followUpsPagination.currentPage + 1"
+              [class.ellipsis]="page === -1"
+              (click)="page !== -1 && goToFollowUpsPage(page - 1)"
+              [disabled]="page === -1"
+            >
+              {{ page === -1 ? '...' : page }}
+            </button>
+
+            <button
+              class="page-nav-btn"
+              (click)="followUpsNextPage()"
+              [disabled]="followUpsPagination.currentPage === followUpsPagination.totalPages - 1"
+            >
+              <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+            </button>
+          </div>
+        </div>
       </div>
     </ng-container>
   </div>
@@ -126,11 +298,11 @@
     </div>
 
     <ng-container *ngIf="!loadingPromiseToPay">
-      <div *ngIf="promiseToPayList.length === 0" class="empty-text">
+      <div *ngIf="promisePagination.totalItems === 0" class="empty-text">
         No promises to pay have been logged.
       </div>
 
-      <div class="table-scroll" *ngIf="promiseToPayList.length > 0">
+      <div class="table-scroll" *ngIf="promisePagination.totalItems > 0">
         <table class="data-table">
           <thead>
             <tr>
@@ -173,6 +345,52 @@
           </tbody>
         </table>
       </div>
+      <div
+        class="tab-pagination"
+        *ngIf="promisePagination.totalPages > 1 && promisePagination.totalItems > 0"
+      >
+        <div class="pagination-wrapper">
+          <div class="pagination-info">
+            Showing {{ promisePagination.currentPage * promisePagination.pageSize + 1 }} to
+            {{
+              Math.min(
+                (promisePagination.currentPage + 1) * promisePagination.pageSize,
+                promisePagination.totalItems
+              )
+            }}
+            of {{ promisePagination.totalItems }} results
+          </div>
+
+          <div class="pagination-controls">
+            <button
+              class="page-nav-btn"
+              (click)="promisePrevPage()"
+              [disabled]="promisePagination.currentPage === 0"
+            >
+              <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+            </button>
+
+            <button
+              *ngFor="let page of getPageNumbers(promisePagination)"
+              class="page-number-btn"
+              [class.active]="page === promisePagination.currentPage + 1"
+              [class.ellipsis]="page === -1"
+              (click)="page !== -1 && goToPromisePage(page - 1)"
+              [disabled]="page === -1"
+            >
+              {{ page === -1 ? '...' : page }}
+            </button>
+
+            <button
+              class="page-nav-btn"
+              (click)="promiseNextPage()"
+              [disabled]="promisePagination.currentPage === promisePagination.totalPages - 1"
+            >
+              <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+            </button>
+          </div>
+        </div>
+      </div>
     </ng-container>
   </div>
 
@@ -182,9 +400,11 @@
     </div>
 
     <ng-container *ngIf="!loadingDisputes">
-      <div *ngIf="disputes.length === 0" class="empty-text">No disputes have been logged.</div>
+      <div *ngIf="disputesPagination.totalItems === 0" class="empty-text">
+        No disputes have been logged.
+      </div>
 
-      <div class="table-scroll" *ngIf="disputes.length > 0">
+      <div class="table-scroll" *ngIf="disputesPagination.totalItems > 0">
         <table class="data-table">
           <thead>
             <tr>
@@ -230,6 +450,52 @@
             </tr>
           </tbody>
         </table>
+      </div>
+      <div
+        class="tab-pagination"
+        *ngIf="disputesPagination.totalPages > 1 && disputesPagination.totalItems > 0"
+      >
+        <div class="pagination-wrapper">
+          <div class="pagination-info">
+            Showing {{ disputesPagination.currentPage * disputesPagination.pageSize + 1 }} to
+            {{
+              Math.min(
+                (disputesPagination.currentPage + 1) * disputesPagination.pageSize,
+                disputesPagination.totalItems
+              )
+            }}
+            of {{ disputesPagination.totalItems }} results
+          </div>
+
+          <div class="pagination-controls">
+            <button
+              class="page-nav-btn"
+              (click)="disputesPrevPage()"
+              [disabled]="disputesPagination.currentPage === 0"
+            >
+              <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+            </button>
+
+            <button
+              *ngFor="let page of getPageNumbers(disputesPagination)"
+              class="page-number-btn"
+              [class.active]="page === disputesPagination.currentPage + 1"
+              [class.ellipsis]="page === -1"
+              (click)="page !== -1 && goToDisputesPage(page - 1)"
+              [disabled]="page === -1"
+            >
+              {{ page === -1 ? '...' : page }}
+            </button>
+
+            <button
+              class="page-nav-btn"
+              (click)="disputesNextPage()"
+              [disabled]="disputesPagination.currentPage === disputesPagination.totalPages - 1"
+            >
+              <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+            </button>
+          </div>
+        </div>
       </div>
     </ng-container>
   </div>
