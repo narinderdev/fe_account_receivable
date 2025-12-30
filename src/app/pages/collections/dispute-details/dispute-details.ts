@@ -6,6 +6,8 @@ import { DisputeRecord } from '../../../models/collection.model';
 import { Spinner } from '../../../shared/spinner/spinner';
 import { ChangeDetectorRef } from '@angular/core';
 
+type DisputeStatus = 'OPEN' | 'UNDER_REVIEW' | 'RESOLVED' | 'REJECTED';
+
 @Component({
   selector: 'app-dispute-details',
   standalone: true,
@@ -18,6 +20,7 @@ export class DisputeDetails implements OnInit {
   dispute: DisputeRecord | null = null;
   loading = true;
   error = '';
+  updatingStatus = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -39,23 +42,21 @@ export class DisputeDetails implements OnInit {
   }
 
   private fetchDispute() {
-  this.loading = true;
+    this.loading = true;
 
-  this.collectionService.getDisputeById(this.disputeId).subscribe({
-    next: (res) => {
-      this.dispute = res.data;
-      this.loading = false;
-      this.cdr.detectChanges();
-    },
-    error: () => {
-      this.error = 'Failed to load dispute details.';
-      this.loading = false;
-
-      this.cdr.detectChanges();
-    },
-  });
-}
-
+    this.collectionService.getDisputeById(this.disputeId).subscribe({
+      next: (res) => {
+        this.dispute = res.data;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.error = 'Failed to load dispute details.';
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
   get customerName(): string {
     return this.dispute?.customer?.customerName || '--';
@@ -66,6 +67,65 @@ export class DisputeDetails implements OnInit {
   }
 
   get disputeStatus(): string {
-    return this.dispute?.status || '--';
+    return this.formatStatus(this.dispute?.status);
+  }
+
+  formatStatus(status: string | undefined): string {
+    if (!status) return '--';
+
+    const statusMap: { [key: string]: string } = {
+      OPEN: 'Open',
+      UNDER_REVIEW: 'Under Review',
+      RESOLVED: 'Resolved',
+      REJECTED: 'Rejected',
+    };
+
+    return statusMap[status] || status;
+  }
+
+  // Button visibility logic
+  get showUnderReviewButton(): boolean {
+    return this.dispute?.status === 'OPEN';
+  }
+
+  get showResolvedButton(): boolean {
+    return this.dispute?.status === 'UNDER_REVIEW';
+  }
+
+  get showRejectedButton(): boolean {
+    return this.dispute?.status === 'OPEN' || this.dispute?.status === 'UNDER_REVIEW';
+  }
+
+  updateStatus(newStatus: DisputeStatus) {
+    if (!this.dispute || this.updatingStatus) return;
+
+    this.updatingStatus = true;
+    this.collectionService.changeDisputeStatus({ status: newStatus }, this.dispute.id).subscribe({
+      next: (res) => {
+        if (this.dispute) {
+          this.dispute.status = newStatus;
+        }
+        this.updatingStatus = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to update status:', err);
+        this.error = 'Failed to update dispute status.';
+        this.updatingStatus = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  onUnderReviewClick() {
+    this.updateStatus('UNDER_REVIEW');
+  }
+
+  onResolvedClick() {
+    this.updateStatus('RESOLVED');
+  }
+
+  onRejectedClick() {
+    this.updateStatus('REJECTED');
   }
 }

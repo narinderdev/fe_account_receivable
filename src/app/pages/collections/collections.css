@@ -266,10 +266,10 @@
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
+/* Promise to Pay Status Badges */
 .status-pending {
   background: #fef3c7;
   color: #d97706;
@@ -288,6 +288,27 @@
 .status-completed {
   background: #d1fae5;
   color: #059669;
+}
+
+/* Dispute Status Badges */
+.status-open {
+  background: #dbeafe;
+  color: #0369a1;
+}
+
+.status-under-review {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-resolved {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .status-default {

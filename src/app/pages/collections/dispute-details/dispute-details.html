@@ -1,12 +1,38 @@
 <div class="dispute-details-page">
   <div class="header-row">
-    <div>
-      <!-- <h1>Dispute Details</h1> -->
-      <p class="subtitle">Dispute ID: {{ dispute?.disputeId || disputeId }}</p>
+    <h2>Dispute Details</h2>
+    <!-- Status Action Buttons in Header -->
+    <div
+      class="action-buttons"
+      *ngIf="!loading && !error && dispute && (showUnderReviewButton || showResolvedButton || showRejectedButton)"
+    >
+      <button
+        *ngIf="showUnderReviewButton"
+        class="btn-primary"
+        (click)="onUnderReviewClick()"
+        [disabled]="updatingStatus"
+      >
+        {{ updatingStatus ? 'Updating...' : 'Under Review' }}
+      </button>
+
+      <button
+        *ngIf="showResolvedButton"
+        class="btn-success"
+        (click)="onResolvedClick()"
+        [disabled]="updatingStatus"
+      >
+        {{ updatingStatus ? 'Updating...' : 'Resolved' }}
+      </button>
+
+      <button
+        *ngIf="showRejectedButton"
+        class="btn-danger"
+        (click)="onRejectedClick()"
+        [disabled]="updatingStatus"
+      >
+        {{ updatingStatus ? 'Updating...' : 'Rejected' }}
+      </button>
     </div>
-    <!-- <div class="header-buttons">
-      <button class="btn-secondary" routerLink="/admin/collections">Back to Collections</button>
-    </div> -->
   </div>
 
   <div *ngIf="loading" class="centered">
@@ -19,6 +45,14 @@
 
   <ng-container *ngIf="!loading && !error && dispute">
     <div class="summary-card">
+      <!-- Dispute ID inside the card -->
+      <div class="dispute-id-row">
+        <div class="summary-item">
+          <label>Dispute ID</label>
+          <div class="value">{{ dispute.disputeId || disputeId }}</div>
+        </div>
+      </div>
+
       <div class="summary-grid">
         <div class="summary-item">
           <label>Customer</label>

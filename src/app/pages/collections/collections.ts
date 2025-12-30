@@ -163,17 +163,15 @@ export class Collections implements OnInit, OnDestroy {
   }
 
   private watchCompanySelection() {
-    this.companySelection.selectedCompanyId$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((id) => {
-        const parsed = id ? Number(id) : NaN;
-        const nextId = Number.isFinite(parsed) ? parsed : null;
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      const parsed = id ? Number(id) : NaN;
+      const nextId = Number.isFinite(parsed) ? parsed : null;
 
-        if (this.selectedCompanyId === nextId) {
-          return;
-        }
+      if (this.selectedCompanyId === nextId) {
+        return;
+      }
 
-        this.selectedCompanyId = nextId;
+      this.selectedCompanyId = nextId;
 
         if (this.selectedCompanyId) {
           this.fetchCompanyOverdue(this.selectedCompanyId);
@@ -289,6 +287,10 @@ export class Collections implements OnInit, OnDestroy {
       DUE_TODAY: 'Due Today',
       BROKEN: 'Broken',
       COMPLETED: 'Completed',
+      OPEN: 'Open',
+      UNDER_REVIEW: 'Under Review',
+      RESOLVED: 'Resolved',
+      REJECTED: 'Rejected',
     };
     return labels[status] || status;
   }
@@ -299,6 +301,10 @@ export class Collections implements OnInit, OnDestroy {
       DUE_TODAY: 'status-due-today',
       BROKEN: 'status-broken',
       COMPLETED: 'status-completed',
+      OPEN: 'status-open',
+      UNDER_REVIEW: 'status-under-review',
+      RESOLVED: 'status-resolved',
+      REJECTED: 'status-rejected',
     };
     return classes[status] || 'status-default';
   }
@@ -470,7 +476,11 @@ export class Collections implements OnInit, OnDestroy {
     const invoiceId = Number(this.selectedDisputeInvoiceId);
     const invoice = this.disputeInvoices.find((item) => item.id === invoiceId);
     this.disputeInvoiceAmount = invoice?.balanceDue ?? invoice?.totalAmount ?? null;
-    if (this.disputedAmount && this.disputeInvoiceAmount && this.disputedAmount > this.disputeInvoiceAmount) {
+    if (
+      this.disputedAmount &&
+      this.disputeInvoiceAmount &&
+      this.disputedAmount > this.disputeInvoiceAmount
+    ) {
       this.disputedAmount = this.disputeInvoiceAmount;
     }
     this.cdr.detectChanges();

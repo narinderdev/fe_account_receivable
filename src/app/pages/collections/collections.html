@@ -25,11 +25,7 @@
 
     <div class="action-buttons">
       <!-- <button class="btn-secondary" (click)="logCall()">Log Call</button> -->
-      <button
-        class="btn-primary"
-        (click)="openPromisePopup()"
-        *ngIf="canCreatePromise"
-      >
+      <button class="btn-primary" (click)="openPromisePopup()" *ngIf="canCreatePromise">
         New Promise
       </button>
       <button class="btn-primary" (click)="openDisputePopup()" *ngIf="canCreateDispute">
@@ -131,9 +127,7 @@
     </div>
 
     <ng-container *ngIf="!loadingDisputes">
-      <div *ngIf="disputes.length === 0" class="empty-text">
-        No disputes have been logged.
-      </div>
+      <div *ngIf="disputes.length === 0" class="empty-text">No disputes have been logged.</div>
 
       <div class="table-scroll" *ngIf="disputes.length > 0">
         <table class="data-table">
@@ -171,7 +165,7 @@
               <td>${{ dispute.disputedAmount | number : '1.2-2' }}</td>
               <td>
                 <span class="status-badge" [ngClass]="getStatusClass(dispute.status)">
-                  {{ dispute.status || '--' }}
+                  {{ getStatusLabel(dispute.status) }}
                 </span>
               </td>
               <td>{{ dispute.reason || '--' }}</td>
@@ -409,11 +403,10 @@
           <div class="form-field">
             <label>Resolution Date <span class="color">*</span></label>
             <input type="date" [(ngModel)]="resolutionDate" [min]="minResolutionDate" />
-            <p class="error" *ngIf="disputeSubmitted && !resolutionDate">Resolution date is required</p>
-            <p
-              class="error"
-              *ngIf="disputeSubmitted && resolutionDate && isResolutionDatePast()"
-            >
+            <p class="error" *ngIf="disputeSubmitted && !resolutionDate">
+              Resolution date is required
+            </p>
+            <p class="error" *ngIf="disputeSubmitted && resolutionDate && isResolutionDatePast()">
               Resolution date cannot be in the past
             </p>
           </div>
@@ -421,7 +414,11 @@
 
         <div class="form-field full-width">
           <label>Reason <span class="color">*</span></label>
-          <textarea [(ngModel)]="disputeReason" rows="4" placeholder="Enter dispute reason"></textarea>
+          <textarea
+            [(ngModel)]="disputeReason"
+            rows="4"
+            placeholder="Enter dispute reason"
+          ></textarea>
           <p class="error" *ngIf="disputeSubmitted && !disputeReason.trim()">Reason is required</p>
         </div>
       </div>
