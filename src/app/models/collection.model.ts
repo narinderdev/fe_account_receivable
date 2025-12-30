@@ -78,3 +78,42 @@ export interface DisputeDetailResponse {
   message: string;
   data: DisputeRecord;
 }
+
+export interface FollowUpInvoice {
+  invoiceId: number;
+  invoiceNumber: string;
+  customerId: number;
+  customerName: string;
+  invoiceDate: string;
+  dueDate: string;
+  balanceDue: number;
+  totalAmount: number;
+  status: string;
+}
+
+export interface OverdueInvoicesResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: FollowUpInvoice[];
+}
+
+
+export interface OverdueInvoice {
+  balanceDue: number;
+  customerId: number;
+  customerName: string;
+  dueDate: string;
+  invoiceDate: string;
+  invoiceId: number;
+  invoiceNumber: string;
+  status: string;
+  totalAmount: number;
+}
+
+export interface OverdueInvoicesResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: OverdueInvoice[];
+}

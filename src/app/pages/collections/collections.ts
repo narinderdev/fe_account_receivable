@@ -5,6 +5,7 @@ import { Customer } from '../../services/customer';
 import { Router } from '@angular/router';
 import { CollectionService } from '../../services/collection-service';
 import { Spinner } from '../../shared/spinner/spinner';
+import { Loader } from '../../shared/loader/loader';
 import { InvoiceWithItems, CustomerInvoiceListResponse } from '../../models/invoice.model';
 import { PromiseToPayRecord, PromiseToPayResponse } from '../../models/promise-to-pay.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
@@ -19,6 +20,8 @@ import {
   CreateDisputeRequest,
   DisputeRecord,
   DisputeResponse,
+  OverdueInvoice,
+  OverdueInvoicesResponse,
 } from '../../models/collection.model';
 import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
 import { UserContextService } from '../../services/user-context.service';
@@ -38,7 +41,7 @@ interface ReminderItem {
 @Component({
   selector: 'app-collections',
   standalone: true,
-  imports: [CommonModule, FormsModule, Spinner],
+  imports: [CommonModule, FormsModule, Spinner, Loader],
   templateUrl: './collections.html',
   styleUrls: ['./collections.css'],
 })
@@ -66,7 +69,7 @@ export class Collections implements OnInit, OnDestroy {
   savingPromise = false;
   submitted = false;
 
-  activeTab: 'reminders' | 'promise' | 'disputes' = 'reminders';
+  activeTab: 'collections' | 'promise' | 'disputes' | 'followUps' = 'collections';
 
   promiseToPayList: PromiseToPayRecord[] = [];
   loadingPromiseToPay = false;
@@ -101,11 +104,24 @@ export class Collections implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   followUpReminders: PendingCustomerSummary[] = [];
   loadingFollowUp = false;
+  overdueInvoices: OverdueInvoice[] = [];
+  loadingOverdueInvoices = false;
   canViewReminders = true;
   canCreatePromise = false;
   canViewPromise = false;
   canViewDisputes = false;
   canCreateDispute = false;
+  allFollowUpReminders: PendingCustomerSummary[] = [];
+  allPromiseToPay: PromiseToPayRecord[] = [];
+  allDisputes: DisputeRecord[] = [];
+  allOverdueInvoices: OverdueInvoice[] = [];
+  collectionsPagination = this.createPagination();
+  promisePagination = this.createPagination();
+  disputesPagination = this.createPagination();
+  followUpsPagination = this.createPagination();
+  Math = Math;
+  reminderSending: { [invoiceId: number]: boolean } = {};
+  reminderSent: { [invoiceId: number]: boolean } = {};
 
   constructor(
     private customerService: Customer,
@@ -121,12 +137,29 @@ export class Collections implements OnInit, OnDestroy {
     this.canViewDisputes = this.userContext.hasPermission('VIEW_DISPUTE');
     this.canCreateDispute = this.userContext.hasPermission('CREATE_DISPUTE');
     this.activeTab = this.canViewReminders
-      ? 'reminders'
+      ? 'collections'
       : this.canViewPromise
         ? 'promise'
         : this.canViewDisputes
           ? 'disputes'
-          : 'reminders';
+          : 'collections';
+  }
+
+  get isComponentLoading(): boolean {
+    const reminderActive = Object.values(this.reminderSending).some((value) => value);
+    return (
+      this.loadingCompanyOverdue ||
+      this.loadingFollowUp ||
+      this.loadingPromiseToPay ||
+      this.loadingDisputes ||
+      this.loadingOverdueInvoices ||
+      this.loadingOverdue ||
+      this.loadingInvoices ||
+      this.loadingDisputeCustomers ||
+      this.loadingDisputeInvoices ||
+      this.savingPromise ||
+      reminderActive
+    );
   }
 
   ngOnInit() {
@@ -139,17 +172,18 @@ export class Collections implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  setTab(tab: 'reminders' | 'promise' | 'disputes') {
+  setTab(tab: 'collections' | 'promise' | 'disputes' | 'followUps') {
     if (
-      (tab === 'reminders' && !this.canViewReminders) ||
+      (tab === 'collections' && !this.canViewReminders) ||
       (tab === 'promise' && !this.canViewPromise) ||
-      (tab === 'disputes' && !this.canViewDisputes)
+      (tab === 'disputes' && !this.canViewDisputes) ||
+      (tab === 'followUps' && !this.canViewReminders)
     ) {
       return;
     }
     this.activeTab = tab;
 
-    if (tab === 'reminders') {
+    if (tab === 'collections') {
       if (this.selectedCompanyId) {
         this.loadPendingCustomers(this.selectedCompanyId);
       }
@@ -157,13 +191,17 @@ export class Collections implements OnInit, OnDestroy {
       this.loadPromiseToPay();
     } else if (tab === 'disputes' && this.selectedCompanyId) {
       this.loadDisputes(this.selectedCompanyId);
+    } else if (tab === 'followUps') {
+      this.loadOverdueInvoices(this.selectedCompanyId);
     }
   }
 
   private loadPendingCustomers(companyId: number) {
     if (!companyId) {
       this.customers = [];
+      this.allFollowUpReminders = [];
       this.followUpReminders = [];
+      this.collectionsPagination = this.createPagination();
       this.loadingFollowUp = false;
       this.cdr.detectChanges();
       return;
@@ -176,14 +214,64 @@ export class Collections implements OnInit, OnDestroy {
       next: (res: PendingCustomerResponse) => {
         const list = Array.isArray(res?.data) ? res.data : [];
         this.customers = list;
-        this.followUpReminders = list;
+        this.allFollowUpReminders = list;
+        this.collectionsPagination = this.createPagination();
+        this.followUpReminders = this.applyPagination(
+          this.allFollowUpReminders,
+          this.collectionsPagination,
+          0
+        );
         this.loadingFollowUp = false;
         this.cdr.detectChanges();
       },
       error: () => {
         this.customers = [];
+        this.allFollowUpReminders = [];
         this.followUpReminders = [];
+        this.collectionsPagination = this.createPagination();
         this.loadingFollowUp = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private loadOverdueInvoices(companyId: number | null) {
+    if (!companyId || !this.canViewReminders) {
+      this.overdueInvoices = [];
+      this.allOverdueInvoices = [];
+      this.followUpsPagination = this.createPagination();
+      this.loadingOverdueInvoices = false;
+      this.cdr.detectChanges();
+      this.reminderSending = {};
+      this.reminderSent = {};
+      return;
+    }
+
+    this.reminderSending = {};
+    this.reminderSent = {};
+    this.loadingOverdueInvoices = true;
+    this.cdr.detectChanges();
+
+    this.collectionService.getOverdueInvoices(companyId).subscribe({
+      next: (res: OverdueInvoicesResponse) => {
+        this.allOverdueInvoices = Array.isArray(res?.data) ? res.data : [];
+        this.followUpsPagination = this.createPagination();
+        this.overdueInvoices = this.applyPagination(
+          this.allOverdueInvoices,
+          this.followUpsPagination,
+          0
+        );
+        this.loadingOverdueInvoices = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.allOverdueInvoices = [];
+        this.overdueInvoices = [];
+        this.followUpsPagination = this.createPagination();
+        this.loadingOverdueInvoices = false;
+        this.cdr.detectChanges();
+      },
+      complete: () => {
         this.cdr.detectChanges();
       },
     });
@@ -203,6 +291,7 @@ export class Collections implements OnInit, OnDestroy {
         if (this.selectedCompanyId) {
           this.fetchCompanyOverdue(this.selectedCompanyId);
           this.loadPendingCustomers(this.selectedCompanyId);
+          this.loadOverdueInvoices(this.selectedCompanyId);
           if (this.activeTab === 'disputes' && this.canViewDisputes) {
             this.loadDisputes(this.selectedCompanyId);
           } else if (this.activeTab === 'promise' && this.canViewPromise) {
@@ -212,11 +301,23 @@ export class Collections implements OnInit, OnDestroy {
           this.companyOverdueAmount = 0;
           this.loadingCompanyOverdue = false;
           this.customers = [];
+          this.allFollowUpReminders = [];
           this.followUpReminders = [];
           this.loadingFollowUp = false;
+          this.overdueInvoices = [];
+          this.allOverdueInvoices = [];
+          this.loadingOverdueInvoices = false;
           this.selectedCustomerId = '';
+          this.allPromiseToPay = [];
           this.promiseToPayList = [];
+          this.allDisputes = [];
           this.disputes = [];
+          this.collectionsPagination = this.createPagination();
+          this.promisePagination = this.createPagination();
+          this.disputesPagination = this.createPagination();
+          this.followUpsPagination = this.createPagination();
+          this.reminderSending = {};
+          this.reminderSent = {};
           this.cdr.detectChanges();
         }
       });
@@ -250,6 +351,8 @@ export class Collections implements OnInit, OnDestroy {
   loadPromiseToPay() {
     if (!this.selectedCompanyId || !this.canViewPromise) {
       this.promiseToPayList = [];
+      this.allPromiseToPay = [];
+      this.promisePagination = this.createPagination();
       this.loadingPromiseToPay = false;
       this.cdr.detectChanges();
       return;
@@ -260,12 +363,20 @@ export class Collections implements OnInit, OnDestroy {
 
     this.collectionService.getPromiseToPay(this.selectedCompanyId).subscribe({
       next: (res: PromiseToPayResponse) => {
-        this.promiseToPayList = Array.isArray(res?.data) ? res.data : [];
+        this.allPromiseToPay = Array.isArray(res?.data) ? res.data : [];
+        this.promisePagination = this.createPagination();
+        this.promiseToPayList = this.applyPagination(
+          this.allPromiseToPay,
+          this.promisePagination,
+          0
+        );
         this.loadingPromiseToPay = false;
         this.cdr.detectChanges();
       },
       error: () => {
+        this.allPromiseToPay = [];
         this.promiseToPayList = [];
+        this.promisePagination = this.createPagination();
         this.loadingPromiseToPay = false;
         this.cdr.detectChanges();
       },
@@ -317,6 +428,7 @@ export class Collections implements OnInit, OnDestroy {
       BROKEN: 'Broken',
       COMPLETED: 'Completed',
       OPEN: 'Open',
+      PARTIAL: 'Partial',
       UNDER_REVIEW: 'Under Review',
       RESOLVED: 'Resolved',
       REJECTED: 'Rejected',
@@ -327,6 +439,7 @@ export class Collections implements OnInit, OnDestroy {
   getStatusClass(status: string): string {
     const classes: { [key: string]: string } = {
       PENDING: 'status-pending',
+      PARTIAL: 'status-partial',
       DUE_TODAY: 'status-due-today',
       BROKEN: 'status-broken',
       COMPLETED: 'status-completed',
@@ -562,6 +675,8 @@ export class Collections implements OnInit, OnDestroy {
   loadDisputes(companyId: number) {
     if (!this.canViewDisputes) {
       this.disputes = [];
+      this.allDisputes = [];
+      this.disputesPagination = this.createPagination();
       this.loadingDisputes = false;
       this.cdr.detectChanges();
       return;
@@ -569,12 +684,16 @@ export class Collections implements OnInit, OnDestroy {
     this.loadingDisputes = true;
     this.collectionService.getDisputes(companyId).subscribe({
       next: (res: DisputeResponse) => {
-        this.disputes = Array.isArray(res.data) ? res.data : [];
+        this.allDisputes = Array.isArray(res.data) ? res.data : [];
+        this.disputesPagination = this.createPagination();
+        this.disputes = this.applyPagination(this.allDisputes, this.disputesPagination, 0);
         this.loadingDisputes = false;
         this.cdr.detectChanges();
       },
       error: () => {
+        this.allDisputes = [];
         this.disputes = [];
+        this.disputesPagination = this.createPagination();
         this.loadingDisputes = false;
         this.cdr.detectChanges();
       },
@@ -645,8 +764,163 @@ export class Collections implements OnInit, OnDestroy {
     this.router.navigate(['/admin/collections/disputes', id]);
   }
 
-  sendReminder(customerId: number) {
-    this.toastr.success('Reminder sent successfully.');
-    console.log('Send reminder triggered for customer', customerId);
+  sendReminder(invoiceId: number) {
+    if (!invoiceId || this.reminderSending[invoiceId]) {
+      return;
+    }
+
+    this.reminderSending[invoiceId] = true;
+    this.collectionService.sendReminders(invoiceId).subscribe({
+      next: (res) => {
+        const message = res?.message || 'Reminder sent successfully.';
+        this.toastr.success(message);
+        this.reminderSent[invoiceId] = true;
+        this.reminderSending[invoiceId] = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.toastr.error('Failed to send reminder.');
+        this.reminderSending[invoiceId] = false;
+        this.cdr.detectChanges();
+      },
+      complete: () => {
+        this.cdr.detectChanges();
+      },
+    });
   }
+
+  getPageNumbers(pagination: PaginationState): number[] {
+    const pages: number[] = [];
+    const current = pagination.currentPage + 1;
+    const total = pagination.totalPages;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current <= 3) {
+        pages.push(2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(-1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(-1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
+  }
+
+  goToCollectionsPage(page: number) {
+    this.followUpReminders = this.applyPagination(
+      this.allFollowUpReminders,
+      this.collectionsPagination,
+      page
+    );
+  }
+
+  collectionsNextPage() {
+    if (this.collectionsPagination.currentPage < this.collectionsPagination.totalPages - 1) {
+      this.goToCollectionsPage(this.collectionsPagination.currentPage + 1);
+    }
+  }
+
+  collectionsPrevPage() {
+    if (this.collectionsPagination.currentPage > 0) {
+      this.goToCollectionsPage(this.collectionsPagination.currentPage - 1);
+    }
+  }
+
+  goToFollowUpsPage(page: number) {
+    this.overdueInvoices = this.applyPagination(
+      this.allOverdueInvoices,
+      this.followUpsPagination,
+      page
+    );
+  }
+
+  followUpsNextPage() {
+    if (this.followUpsPagination.currentPage < this.followUpsPagination.totalPages - 1) {
+      this.goToFollowUpsPage(this.followUpsPagination.currentPage + 1);
+    }
+  }
+
+  followUpsPrevPage() {
+    if (this.followUpsPagination.currentPage > 0) {
+      this.goToFollowUpsPage(this.followUpsPagination.currentPage - 1);
+    }
+  }
+
+  goToPromisePage(page: number) {
+    this.promiseToPayList = this.applyPagination(this.allPromiseToPay, this.promisePagination, page);
+  }
+
+  promiseNextPage() {
+    if (this.promisePagination.currentPage < this.promisePagination.totalPages - 1) {
+      this.goToPromisePage(this.promisePagination.currentPage + 1);
+    }
+  }
+
+  promisePrevPage() {
+    if (this.promisePagination.currentPage > 0) {
+      this.goToPromisePage(this.promisePagination.currentPage - 1);
+    }
+  }
+
+  goToDisputesPage(page: number) {
+    this.disputes = this.applyPagination(this.allDisputes, this.disputesPagination, page);
+  }
+
+  disputesNextPage() {
+    if (this.disputesPagination.currentPage < this.disputesPagination.totalPages - 1) {
+      this.goToDisputesPage(this.disputesPagination.currentPage + 1);
+    }
+  }
+
+  disputesPrevPage() {
+    if (this.disputesPagination.currentPage > 0) {
+      this.goToDisputesPage(this.disputesPagination.currentPage - 1);
+    }
+  }
+
+  private createPagination(pageSize = 10): PaginationState {
+    return {
+      pageSize,
+      currentPage: 0,
+      totalPages: 0,
+      totalItems: 0,
+    };
+  }
+
+  private applyPagination<T>(
+    source: T[],
+    pagination: PaginationState,
+    page: number
+  ): T[] {
+    pagination.totalItems = source.length;
+    pagination.totalPages = pagination.totalItems
+      ? Math.ceil(pagination.totalItems / pagination.pageSize)
+      : 0;
+
+    if (pagination.totalPages === 0) {
+      pagination.currentPage = 0;
+      return [];
+    }
+
+    pagination.currentPage = Math.min(
+      Math.max(page, 0),
+      pagination.totalPages - 1
+    );
+
+    const start = pagination.currentPage * pagination.pageSize;
+    return source.slice(start, start + pagination.pageSize);
+  }
+}
+
+interface PaginationState {
+  pageSize: number;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
 }

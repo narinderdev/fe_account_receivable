@@ -11,6 +11,7 @@ import {
   CreateDisputeRequest,
   DisputeResponse,
   DisputeDetailResponse,
+  OverdueInvoicesResponse,
 } from '../models/collection.model';
 
 @Injectable({
@@ -118,6 +119,23 @@ export class CollectionService {
     const headers = this.getAuthHeadersWithNgrok();
     return this.http.get<PromiseToPayResponse>(
       `${this.baseUrl}/collections/promise/customer/${customerId}`,
+      { headers }
+    );
+  }
+
+  getOverdueInvoices(companyId: number): Observable<OverdueInvoicesResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.get<OverdueInvoicesResponse>(
+      `${this.baseUrl}/invoice/company/${companyId}/overdue-invoices`,
+      { headers }
+    );
+  }
+
+  sendReminders(invoiceId: number): Observable<any> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.post<any>(
+      `${this.baseUrl}/api/reminders/invoice/${invoiceId}`,
+      {},
       { headers }
     );
   }
