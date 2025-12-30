@@ -52,6 +52,7 @@ export interface CreateDisputeRequest {
 export interface DisputeRecord {
   id: number;
   disputeId: string;
+  companyId: number;
   customer: CustomerEntity;
   invoice: Invoice;
   invoiceOriginalAmount: number;
