@@ -23,6 +23,7 @@ import { CustomerDetail } from './pages/customers/customer-detail/customer-detai
 import { ReceivePayment } from './pages/payments/receive-payment/receive-payment';
 import { Users } from './pages/users/users';
 import { Roles } from './pages/roles/roles';
+import { RolesDetail } from './pages/roles/roles-detail/roles-detail';
 import { PaymentDetails } from './pages/payments/payment-details/payment-details';
 import { Aging } from './pages/aging/aging';
 import { Collections } from './pages/collections/collections';
@@ -99,6 +100,7 @@ export const routes: Routes = [
 
       { path: 'users', component: Users },
       { path: 'roles', component: Roles },
+      { path: 'roles/details/:roleId', component: RolesDetail },
 
       { path: 'ar-reports', component: Aging },
       { path: 'collections', component: Collections },

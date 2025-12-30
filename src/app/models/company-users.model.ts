@@ -42,6 +42,7 @@ export interface Role {
   id: number;
   name: string;
   description: string;
+  permissions?: string[];
 }
 
 // Response for GET /api/roles
