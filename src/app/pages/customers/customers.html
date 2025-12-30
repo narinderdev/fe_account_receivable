@@ -105,17 +105,37 @@
         </tr>
       </tbody>
     </table>
-  </div>
+    <div class="pagination-wrapper" *ngIf="totalPages > 1 && !loading">
+      <div class="pagination-info">
+        Showing {{ currentPage * pageSize + 1 }} to
+        {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
+      </div>
 
-  <!-- PAGINATION -->
-  <div class="pagination-container" *ngIf="totalPages > 1 && !loading">
-    <button class="page-btn" (click)="prevPage()" [disabled]="currentPage === 0">Previous</button>
+      <div class="pagination-controls">
+        <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
+          <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+        </button>
 
-    <span class="page-info"> Page {{ currentPage + 1 }} of {{ totalPages }} </span>
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number-btn"
+          [class.active]="page === currentPage + 1"
+          [class.ellipsis]="page === -1"
+          (click)="page !== -1 && goToPage(page - 1)"
+          [disabled]="page === -1"
+        >
+          {{ page === -1 ? '...' : page }}
+        </button>
 
-    <button class="page-btn" (click)="nextPage()" [disabled]="currentPage === totalPages - 1">
-      Next
-    </button>
+        <button
+          class="page-nav-btn"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages - 1"
+        >
+          <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
