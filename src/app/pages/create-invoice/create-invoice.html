@@ -1,7 +1,6 @@
 <div class="invoice-create-container">
   <!-- Header -->
   <div class="page-header">
-    <!-- <h1 class="page-title">Create Invoice</h1> -->
     <div class="header-actions">
       <button class="btn-cancel" routerLink="/admin/invoices">Cancel</button>
       <button class="btn-save-send" type="button" (click)="submitInvoice()" [disabled]="loading">
@@ -24,7 +23,7 @@
           <!-- Customer -->
           <div class="form-field">
             <label>Customer</label>
-            <select [(ngModel)]="invoice.customerId">
+            <select [(ngModel)]="invoice.customerId" (change)="onCustomerChange()">
               <option value="">Select Customer</option>
               <option *ngFor="let c of customers" [value]="c.id">
                 {{ c.customerName }}
@@ -174,6 +173,35 @@
           <div class="total-row total-final">
             <span class="label">Total Due</span>
             <span class="value">{{ totalAmount | currency }}</span>
+          </div>
+        </div>
+
+        <!-- Credit Limit Warning -->
+        <div class="credit-limit-warning" *ngIf="selectedCustomer && customerCreditLimit > 0">
+          <div class="credit-info">
+            <span class="credit-label">Customer Credit Limit:</span>
+            <span class="credit-value">{{ customerCreditLimit | currency }}</span>
+          </div>
+
+          <div class="credit-alert" *ngIf="exceedsCreditLimit">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              class="alert-icon"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <div class="alert-content">
+              <span class="alert-title">Credit Limit Exceeded</span>
+              <span class="alert-message">
+                Invoice total exceeds credit limit by {{ creditLimitExceededAmount | currency }}
+              </span>
+            </div>
           </div>
         </div>
       </div>

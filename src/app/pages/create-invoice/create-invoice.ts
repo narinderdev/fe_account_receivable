@@ -58,6 +58,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
 
   formSubmitted = false;
   loading = false;
+  selectedCustomer: CustomerEntity | null = null;
 
   invoice: InvoiceDraft = {
     customerId: '',
@@ -79,26 +80,25 @@ export class CreateInvoice implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.companySelection.selectedCompanyId$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((id) => {
-        const parsed = id ? Number(id) : NaN;
-        const nextId = Number.isFinite(parsed) ? parsed : null;
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      const parsed = id ? Number(id) : NaN;
+      const nextId = Number.isFinite(parsed) ? parsed : null;
 
-        if (this.activeCompanyId === nextId) {
-          return;
-        }
+      if (this.activeCompanyId === nextId) {
+        return;
+      }
 
-        this.activeCompanyId = nextId;
+      this.activeCompanyId = nextId;
 
-        if (this.activeCompanyId) {
-          this.loadCustomers(this.activeCompanyId);
-        } else {
-          this.customers = [];
-          this.invoice.customerId = '';
-          this.cdr.detectChanges();
-        }
-      });
+      if (this.activeCompanyId) {
+        this.loadCustomers(this.activeCompanyId);
+      } else {
+        this.customers = [];
+        this.invoice.customerId = '';
+        this.selectedCustomer = null;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // ---------------------------
@@ -114,6 +114,38 @@ export class CreateInvoice implements OnInit, OnDestroy {
         this.toastr.error('Could not load customers. Please try again.', 'Error');
       },
     });
+  }
+
+  // ---------------------------
+  // CUSTOMER SELECTION
+  // ---------------------------
+  onCustomerChange(): void {
+    if (!this.invoice.customerId) {
+      this.selectedCustomer = null;
+      return;
+    }
+
+    const customerId = Number(this.invoice.customerId);
+    this.selectedCustomer = this.customers.find((c) => c.id === customerId) || null;
+    this.cdr.detectChanges();
+  }
+
+  // ---------------------------
+  // CREDIT LIMIT CHECK
+  // ---------------------------
+  get customerCreditLimit(): number {
+    return this.selectedCustomer?.dunning?.creditLimit || 0;
+  }
+
+  get exceedsCreditLimit(): boolean {
+    if (!this.selectedCustomer || !this.customerCreditLimit) {
+      return false;
+    }
+    return this.totalAmount > this.customerCreditLimit;
+  }
+
+  get creditLimitExceededAmount(): number {
+    return this.totalAmount - this.customerCreditLimit;
   }
 
   // ---------------------------
@@ -172,6 +204,17 @@ export class CreateInvoice implements OnInit, OnDestroy {
       !this.invoice.note ||
       (!this.invoice.isGenerated && !this.invoice.invoiceNumber)
     ) {
+      return;
+    }
+
+    // Check credit limit
+    if (this.exceedsCreditLimit) {
+      this.toastr.error(
+        `Invoice total ($${this.totalAmount.toFixed(
+          2
+        )}) exceeds customer's credit limit ($${this.customerCreditLimit.toFixed(2)})`,
+        'Credit Limit Exceeded'
+      );
       return;
     }
 

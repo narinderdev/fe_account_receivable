@@ -619,3 +619,66 @@
     font-size: 13px;
   }
 }
+
+/* Credit Limit Warning Section */
+.credit-limit-warning {
+  margin-top: 20px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.credit-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.credit-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.credit-value {
+  font-size: 16px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.credit-alert {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+}
+
+.alert-icon {
+  width: 24px;
+  height: 24px;
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alert-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.alert-message {
+  font-size: 13px;
+  color: #991b1b;
+}
