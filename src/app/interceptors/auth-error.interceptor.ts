@@ -10,7 +10,7 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error) => {
       if (error?.status === 403) {
-        session.signOut('Session expired or invalid. Please log in again.');
+        session.signOut('Session expired. Please log in again.');
       }
       return throwError(() => error);
     })
