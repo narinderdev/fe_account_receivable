@@ -92,6 +92,14 @@ export class Roles implements OnInit, OnDestroy {
       isSubRow: true,
     },
     {
+      label: 'Disputes',
+      permissions: {
+        view: 'VIEW_DISPUTE',
+        create: 'CREATE_DISPUTE',
+      },
+      isSubRow: true,
+    },
+    {
       label: 'Company',
       permissions: {
         view: 'VIEW_COMPANY',

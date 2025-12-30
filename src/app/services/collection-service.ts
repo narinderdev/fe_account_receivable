@@ -23,15 +23,15 @@ export class CollectionService {
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('logintoken');
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     });
   }
 
   private getAuthHeadersWithNgrok(): HttpHeaders {
     const token = localStorage.getItem('logintoken');
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'ngrok-skip-browser-warning': 'true'
+      Authorization: `Bearer ${token}`,
+      'ngrok-skip-browser-warning': 'true',
     });
   }
 
@@ -57,7 +57,6 @@ export class CollectionService {
     );
   }
 
-  // ✅ GET request
   getDisputeCode(): Observable<DisputeCodeResponse> {
     const headers = this.getAuthHeadersWithNgrok();
 
@@ -66,7 +65,6 @@ export class CollectionService {
     });
   }
 
-  // ✅ GET request
   getDisputes(companyId: number): Observable<DisputeResponse> {
     const headers = this.getAuthHeadersWithNgrok();
 
@@ -75,13 +73,11 @@ export class CollectionService {
     });
   }
 
-  // ✅ POST request
   createDispute(data: CreateDisputeRequest): Observable<PromiseToPayResponse> {
     const headers = this.getAuthHeaders();
     return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/api/disputes`, data, { headers });
   }
 
-  // ✅ GET request
   getDisputeById(disputeId: number): Observable<DisputeDetailResponse> {
     const headers = this.getAuthHeadersWithNgrok();
 
@@ -90,13 +86,18 @@ export class CollectionService {
     });
   }
 
-  // ✅ POST request
-  createPromiseToPay(data: CreatePromiseToPayRequest): Observable<PromiseToPayResponse> {
-    const headers = this.getAuthHeaders();
-    return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/collections/promise`, data, { headers });
+  changeDisputeStatus(data: { status: string }, disputeId: number): Observable<any> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.patch<any>(`${this.baseUrl}/api/disputes/${disputeId}/status`, data, { headers });
   }
 
-  // ✅ GET request
+  createPromiseToPay(data: CreatePromiseToPayRequest): Observable<PromiseToPayResponse> {
+    const headers = this.getAuthHeaders();
+    return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/collections/promise`, data, {
+      headers,
+    });
+  }
+
   getPromiseToPay(companyId: number): Observable<PromiseToPayResponse> {
     const headers = this.getAuthHeadersWithNgrok();
     return this.http.get<PromiseToPayResponse>(
