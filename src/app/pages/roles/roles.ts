@@ -8,6 +8,7 @@ import { ToastrService } from 'ngx-toastr';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
+import { Router } from '@angular/router';
 
 interface PermissionColumn {
   view?: string;
@@ -37,6 +38,9 @@ export class Roles implements OnInit, OnDestroy {
   submitted = false;
   addRoleForm!: FormGroup;
   canCreateRoles = false;
+  private allRoles: Role[] = [];
+  pagination = this.createPagination();
+  Math = Math;
 
   // ✅ Add constant for the required permission
   readonly REQUIRED_VIEW_COMPANY = 'VIEW_COMPANY';
@@ -82,6 +86,21 @@ export class Roles implements OnInit, OnDestroy {
     {
       label: 'Collections',
       permissions: {},
+    },
+    {
+      label: 'Collections',
+      permissions: {
+        view: 'VIEW_COLLECTIONS',
+      },
+      isSubRow: true,
+    },
+    {
+      label: 'Follow-up Reminders',
+      permissions: {
+        view: 'VIEW_REMINDER',
+        create: 'SEND_REMINDER',
+      },
+      isSubRow: true,
     },
     {
       label: 'Promise to Pay',
@@ -133,7 +152,8 @@ export class Roles implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private toastr: ToastrService,
     private companySelection: CompanySelectionService,
-    private userContext: UserContextService
+    private userContext: UserContextService,
+    private router: Router
   ) {
     this.canCreateRoles = this.userContext.hasPermission('CREATE_ROLES');
   }
@@ -170,13 +190,17 @@ export class Roles implements OnInit, OnDestroy {
 
     this.roleService.getRoles(companyId).subscribe({
       next: (res) => {
-        this.roles = res.data;
+        this.allRoles = res.data || [];
+        this.pagination = this.createPagination();
+        this.roles = this.applyPagination(this.allRoles, 0);
         this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load roles', err);
+        this.allRoles = [];
         this.roles = [];
+        this.pagination = this.createPagination();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -279,8 +303,83 @@ export class Roles implements OnInit, OnDestroy {
     return Array.isArray(value) ? (value as string[]) : [];
   }
 
+  viewRole(role: Role) {
+    if (!role?.id) {
+      return;
+    }
+    this.router.navigate(['/admin/roles/details', role.id]);
+  }
+
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const current = this.pagination.currentPage + 1;
+    const total = this.pagination.totalPages;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current <= 3) {
+        pages.push(2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(-1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(-1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
+  }
+
+  goToPage(page: number) {
+    this.roles = this.applyPagination(this.allRoles, page);
+  }
+
+  nextPage() {
+    if (this.pagination.currentPage < this.pagination.totalPages - 1) {
+      this.roles = this.applyPagination(this.allRoles, this.pagination.currentPage + 1);
+    }
+  }
+
+  prevPage() {
+    if (this.pagination.currentPage > 0) {
+      this.roles = this.applyPagination(this.allRoles, this.pagination.currentPage - 1);
+    }
+  }
+
+  private createPagination(pageSize = 10) {
+    return {
+      pageSize,
+      currentPage: 0,
+      totalPages: 0,
+      totalItems: 0,
+    };
+  }
+
+  private applyPagination(source: Role[], page: number): Role[] {
+    this.pagination.totalItems = source.length;
+    this.pagination.totalPages = this.pagination.totalItems
+      ? Math.ceil(this.pagination.totalItems / this.pagination.pageSize)
+      : 0;
+
+    if (this.pagination.totalPages === 0) {
+      this.pagination.currentPage = 0;
+      return [];
+    }
+
+    this.pagination.currentPage = Math.min(
+      Math.max(page, 0),
+      this.pagination.totalPages - 1
+    );
+
+    const start = this.pagination.currentPage * this.pagination.pageSize;
+    return source.slice(start, start + this.pagination.pageSize);
   }
 }

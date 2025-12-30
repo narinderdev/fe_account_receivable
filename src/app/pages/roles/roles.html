@@ -6,12 +6,13 @@
   <app-spinner *ngIf="isLoading"></app-spinner>
 
   <!-- ROLES TABLE -->
-  <div class="roles-table-wrapper" *ngIf="!isLoading && roles.length > 0">
+  <div class="roles-table-wrapper" *ngIf="!isLoading && pagination.totalItems > 0">
     <table class="roles-table">
       <thead>
         <tr>
           <th>Role Name</th>
           <th>Description</th>
+          <th>Actions</th>
         </tr>
       </thead>
 
@@ -19,12 +20,53 @@
         <tr *ngFor="let r of roles">
           <td>{{ r.name }}</td>
           <td>{{ r.description }}</td>
+          <td>
+            <button class="link-button" type="button" (click)="viewRole(r)">View</button>
+          </td>
         </tr>
       </tbody>
     </table>
+
+    <div class="pagination-wrapper" *ngIf="pagination.totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ pagination.currentPage * pagination.pageSize + 1 }} to
+        {{
+          Math.min(
+            (pagination.currentPage + 1) * pagination.pageSize,
+            pagination.totalItems
+          )
+        }}
+        of {{ pagination.totalItems }} results
+      </div>
+
+      <div class="pagination-controls">
+        <button class="page-nav-btn" (click)="prevPage()" [disabled]="pagination.currentPage === 0">
+          <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+        </button>
+
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number-btn"
+          [class.active]="page === pagination.currentPage + 1"
+          [class.ellipsis]="page === -1"
+          (click)="page !== -1 && goToPage(page - 1)"
+          [disabled]="page === -1"
+        >
+          {{ page === -1 ? '...' : page }}
+        </button>
+
+        <button
+          class="page-nav-btn"
+          (click)="nextPage()"
+          [disabled]="pagination.currentPage === pagination.totalPages - 1"
+        >
+          <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+        </button>
+      </div>
+    </div>
   </div>
 
-  <p *ngIf="!isLoading && roles.length === 0" class="section-description">No roles found.</p>
+  <p *ngIf="!isLoading && pagination.totalItems === 0" class="section-description">No roles found.</p>
 </div>
 
 <!-- ADD ROLE MODAL -->

@@ -1,0 +1,105 @@
+<div class="role-details-page">
+  <!-- <div class="header-row">
+    <div class="header-buttons">
+      <button class="btn-secondary" routerLink="/admin/roles">Back to Roles</button>
+    </div>
+  </div> -->
+
+  <div class="loading-card" *ngIf="loading">
+    <app-spinner></app-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && role; else noRole">
+    <div class="summary-card">
+      <!-- <h1>Role Details</h1> -->
+      <div class="summary-title">{{ role.name }}</div>
+      <p class="summary-description">{{ role.description || 'No description provided.' }}</p>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <label>Total Permissions</label>
+          <div class="value">{{ totalPermissions }}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-item">
+          <label>Accessible Tabs</label>
+          <div class="value">{{ accessibleTabs.length }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Accessible Tabs</h3>
+          <p>Modules the user can view</p>
+        </div>
+      </div>
+      <div *ngIf="accessibleTabs.length > 0; else noTabs" class="chip-group">
+        <span class="chip" *ngFor="let tab of accessibleTabs">{{ tab }}</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Permissions by Module</h3>
+          <p>View the actions enabled for this role.</p>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="permissions-detail-table">
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>View</th>
+              <th>Create</th>
+              <th>Update</th>
+              <th>Delete</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of permissionRows" [class.sub-row]="row.isSubRow">
+              <td [class.sub-module]="row.isSubRow">{{ row.label }}</td>
+              <td>
+                <span class="perm-pill" [class.active]="hasPermission(row.permissions.view)">
+                  {{ row.permissions.view ? (hasPermission(row.permissions.view) ? 'Allowed' : 'No Access') : '--' }}
+                </span>
+              </td>
+              <td>
+                <span class="perm-pill" [class.active]="hasPermission(row.permissions.create)">
+                  {{ row.permissions.create ? (hasPermission(row.permissions.create) ? 'Allowed' : 'No Access') : '--' }}
+                </span>
+              </td>
+              <td>
+                <span class="perm-pill" [class.active]="hasPermission(row.permissions.update)">
+                  {{ row.permissions.update ? (hasPermission(row.permissions.update) ? 'Allowed' : 'No Access') : '--' }}
+                </span>
+              </td>
+              <td>
+                <span class="perm-pill" [class.active]="hasPermission(row.permissions.delete)">
+                  {{ row.permissions.delete ? (hasPermission(row.permissions.delete) ? 'Allowed' : 'No Access') : '--' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #noTabs>
+    <p class="empty-state">No primary tabs available for this role.</p>
+  </ng-template>
+
+  <ng-template #noRole>
+    <div class="empty-card">
+      <p class="empty-title">Role details unavailable</p>
+      <p class="empty-text">
+        We couldn’t find this role for the selected company. Please go back to the Roles list and try again.
+      </p>
+      <button class="btn-secondary" routerLink="/admin/roles">Go Back</button>
+    </div>
+  </ng-template>
+</div>
