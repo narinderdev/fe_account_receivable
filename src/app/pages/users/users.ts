@@ -30,6 +30,9 @@ export class Users implements OnInit, OnDestroy {
 
   roles: Role[] = [];
   users: CompanyUser[] = [];
+  private allUsers: CompanyUser[] = [];
+  pagination = this.createPagination();
+  Math = Math;
 
   companyId: number | null = null;
   canInviteUser = false;
@@ -78,7 +81,9 @@ export class Users implements OnInit, OnDestroy {
           this.loadUsers();
         } else {
           this.users = [];
+          this.allUsers = [];
           this.roles = [];
+          this.pagination = this.createPagination();
           this.cdr.detectChanges();
         }
       });
@@ -89,12 +94,16 @@ export class Users implements OnInit, OnDestroy {
 
     this.companyService.getUsers(this.companyId).subscribe({
       next: (res) => {
-        this.users = res.data || [];
+        this.allUsers = res.data || [];
+        this.pagination = this.createPagination();
+        this.users = this.applyPagination(this.allUsers, 0);
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load users', err);
+        this.allUsers = [];
         this.users = [];
+        this.pagination = this.createPagination();
         this.cdr.detectChanges();
       },
     });
@@ -154,7 +163,8 @@ export class Users implements OnInit, OnDestroy {
       next: (res) => {
         const newUser = res.data;
 
-        this.users = [...this.users, newUser];
+        this.allUsers = [...this.allUsers, newUser];
+        this.users = this.applyPagination(this.allUsers, this.pagination.currentPage);
         this.isSavingInvite = false;
         this.submitted = false;
         this.inviteForm.reset();
@@ -247,5 +257,73 @@ export class Users implements OnInit, OnDestroy {
       return 'status-paid';
     }
     return 'status-default';
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const current = this.pagination.currentPage + 1;
+    const total = this.pagination.totalPages;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current <= 3) {
+        pages.push(2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(-1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(-1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
+  }
+
+  goToPage(page: number) {
+    this.users = this.applyPagination(this.allUsers, page);
+  }
+
+  nextPage() {
+    if (this.pagination.currentPage < this.pagination.totalPages - 1) {
+      this.users = this.applyPagination(this.allUsers, this.pagination.currentPage + 1);
+    }
+  }
+
+  prevPage() {
+    if (this.pagination.currentPage > 0) {
+      this.users = this.applyPagination(this.allUsers, this.pagination.currentPage - 1);
+    }
+  }
+
+  private createPagination(pageSize = 10) {
+    return {
+      pageSize,
+      currentPage: 0,
+      totalPages: 0,
+      totalItems: 0,
+    };
+  }
+
+  private applyPagination(source: CompanyUser[], page: number): CompanyUser[] {
+    this.pagination.totalItems = source.length;
+    this.pagination.totalPages = this.pagination.totalItems
+      ? Math.ceil(this.pagination.totalItems / this.pagination.pageSize)
+      : 0;
+
+    if (this.pagination.totalPages === 0) {
+      this.pagination.currentPage = 0;
+      return [];
+    }
+
+    this.pagination.currentPage = Math.min(
+      Math.max(page, 0),
+      this.pagination.totalPages - 1
+    );
+
+    const start = this.pagination.currentPage * this.pagination.pageSize;
+    return source.slice(start, start + this.pagination.pageSize);
   }
 }

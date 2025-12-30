@@ -1,14 +1,5 @@
 <div class="company-container">
   <div class="form-section">
-    <!-- <h2 class="section-title">Company Users</h2>
-
-    <p class="section-description">
-      Use the navbar company dropdown to switch between companies.
-    </p>
-
-    <p class="section-description" *ngIf="!companyId">
-      Select a company from the navbar to view & invite users.
-    </p> -->
 
     <div class="actions" *ngIf="companyId && canInviteUser">
       <!-- <h2 class="section-title">Invite Users</h2> -->
@@ -17,11 +8,8 @@
       </div>
     </div>
 
-    <!-- <p class="section-description" *ngIf="companyId">
-      Send email invitations to users you want to add to this company.
-    </p> -->
 
-    <div class="users-table-wrapper" *ngIf="companyId && users.length > 0">
+    <div class="users-table-wrapper" *ngIf="companyId && pagination.totalItems > 0">
       <table class="users-table">
         <thead>
           <tr>
@@ -58,9 +46,46 @@
           </tr>
         </tbody>
       </table>
+      <div
+        class="pagination-wrapper"
+        *ngIf="pagination.totalPages > 1 && pagination.totalItems > 0"
+      >
+        <div class="pagination-info">
+          Showing {{ pagination.currentPage * pagination.pageSize + 1 }} to
+          {{
+            Math.min((pagination.currentPage + 1) * pagination.pageSize, pagination.totalItems)
+          }}
+          of {{ pagination.totalItems }} results
+        </div>
+
+        <div class="pagination-controls">
+          <button class="page-nav-btn" (click)="prevPage()" [disabled]="pagination.currentPage === 0">
+            <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+          </button>
+
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number-btn"
+            [class.active]="page === pagination.currentPage + 1"
+            [class.ellipsis]="page === -1"
+            (click)="page !== -1 && goToPage(page - 1)"
+            [disabled]="page === -1"
+          >
+            {{ page === -1 ? '...' : page }}
+          </button>
+
+          <button
+            class="page-nav-btn"
+            (click)="nextPage()"
+            [disabled]="pagination.currentPage === pagination.totalPages - 1"
+          >
+            <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+          </button>
+        </div>
+      </div>
     </div>
 
-    <p *ngIf="companyId && users.length === 0" class="section-description">
+    <p *ngIf="companyId && pagination.totalItems === 0" class="section-description">
       No users found for this company.
     </p>
   </div>

@@ -49,6 +49,11 @@ export class Payments implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   canApplyPayment = false;
+  currentPage = 0;
+  totalPages = 0;
+  pageSize = 10;
+  totalItems = 0;
+  Math = Math;
 
   constructor(
     private paymentService: PaymentService,
@@ -74,22 +79,29 @@ export class Payments implements OnInit, OnDestroy {
         this.activeCompanyId = nextId;
 
         if (this.activeCompanyId) {
-          this.loadPayments(this.activeCompanyId);
+          this.loadPayments(this.activeCompanyId, 0);
         } else {
           this.payments = [];
+          this.totalPages = 0;
+          this.currentPage = 0;
+          this.totalItems = 0;
           this.loading = false;
           this.cdr.detectChanges();
         }
       });
   }
 
-  loadPayments(companyId: number): void {
+  loadPayments(companyId: number, page: number = 0): void {
     this.loading = true;
     this.cdr.detectChanges();
 
-    this.paymentService.getPayments(companyId).subscribe({
+    this.paymentService.getPayments(companyId, page, this.pageSize).subscribe({
       next: (response) => {
-        this.payments = response?.data?.content || [];
+        const pageData = response?.data;
+        this.payments = pageData?.content || [];
+        this.totalPages = pageData?.totalPages || 0;
+        this.currentPage = pageData?.number || 0;
+        this.totalItems = pageData?.totalElements || 0;
         localStorage.setItem('paymentsData', JSON.stringify(this.payments));
 
         this.loading = false;
@@ -165,6 +177,52 @@ export class Payments implements OnInit, OnDestroy {
 
   openPaymentDetails(paymentId: number) {
     this.router.navigate(['/admin/payments/details', paymentId]);
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const current = this.currentPage + 1;
+    const total = this.totalPages;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current <= 3) {
+        pages.push(2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(-1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(-1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
+  }
+
+  goToPage(page: number) {
+    if (
+      this.activeCompanyId &&
+      page >= 0 &&
+      page < this.totalPages &&
+      page !== this.currentPage
+    ) {
+      this.loadPayments(this.activeCompanyId, page);
+    }
+  }
+
+  nextPage() {
+    if (this.activeCompanyId && this.currentPage < this.totalPages - 1) {
+      this.loadPayments(this.activeCompanyId, this.currentPage + 1);
+    }
+  }
+
+  prevPage() {
+    if (this.activeCompanyId && this.currentPage > 0) {
+      this.loadPayments(this.activeCompanyId, this.currentPage - 1);
+    }
   }
 
   ngOnDestroy() {

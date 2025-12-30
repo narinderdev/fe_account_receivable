@@ -42,13 +42,15 @@ export class Customers implements OnInit, OnDestroy {
   // Pagination
   currentPage = 0;
   totalPages = 0;
-  pageSize = 6;
+  pageSize = 10;
+  totalItems = 0;
   activeCompanyId: number | null = null;
   private destroy$ = new Subject<void>();
   canViewCustomers = false;
   canCreateCustomer = false;
   canEditCustomer = false;
   canDeleteCustomer = false;
+  Math = Math;
 
   constructor(
     private customerService: Customer,
@@ -86,6 +88,7 @@ export class Customers implements OnInit, OnDestroy {
           this.customers = [];
           this.totalPages = 0;
           this.currentPage = 0;
+          this.totalItems = 0;
           this.loading = false;
           this.cdr.detectChanges();
         }
@@ -103,6 +106,7 @@ export class Customers implements OnInit, OnDestroy {
         this.customers = data.content;
         this.totalPages = data.totalPages;
         this.currentPage = data.number;
+        this.totalItems = data.totalElements ?? this.customers.length;
 
         this.loading = false;
         this.cdr.detectChanges();
@@ -206,6 +210,40 @@ export class Customers implements OnInit, OnDestroy {
   }
 
   /* ---------------- PAGINATION ---------------- */
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const current = this.currentPage + 1;
+    const total = this.totalPages;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current <= 3) {
+        pages.push(2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(-1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(-1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
+  }
+
+  goToPage(page: number) {
+    if (
+      this.activeCompanyId &&
+      page >= 0 &&
+      page < this.totalPages &&
+      page !== this.currentPage
+    ) {
+      this.loadCustomers(this.activeCompanyId, page);
+    }
+  }
 
   nextPage() {
     if (this.activeCompanyId && this.currentPage < this.totalPages - 1) {

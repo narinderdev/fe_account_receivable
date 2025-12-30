@@ -4,7 +4,9 @@
 <div class="customers-container">
   <div class="customers-actions">
     <!-- <h1 class="customers-title">Company</h1> -->
-    <button class="add-customer-btn" routerLink="add" *ngIf="canCreateCompany">+ Add Company</button>
+    <button class="add-customer-btn" routerLink="add" *ngIf="canCreateCompany">
+      + Add Company
+    </button>
   </div>
 
   <div class="customers-table-wrapper">
@@ -22,7 +24,10 @@
 
         <tbody *ngIf="loading">
           <tr>
-            <td [attr.colspan]="showActionsColumn ? 5 : 4" style="text-align: center; padding: 40px">
+            <td
+              [attr.colspan]="showActionsColumn ? 5 : 4"
+              style="text-align: center; padding: 40px"
+            >
               <app-loader [visible]="loading"></app-loader>
             </td>
           </tr>
@@ -75,17 +80,39 @@
         </tbody>
       </table>
     </div>
-  </div>
 
-  <!-- Pagination -->
-  <div class="pagination-container" *ngIf="totalPages > 1 && !loading">
-    <button class="page-btn" (click)="prevPage()" [disabled]="currentPage === 0">Previous</button>
+    <!-- Pagination - Moved inside table wrapper -->
+    <div class="pagination-wrapper" *ngIf="totalPages > 1 && !loading">
+      <div class="pagination-info">
+        Showing {{ currentPage * pageSize + 1 }} to
+        {{ Math.min((currentPage + 1) * pageSize, totalElements) }} of {{ totalElements }} results
+      </div>
 
-    <span class="page-info"> Page {{ currentPage + 1 }} of {{ totalPages }} </span>
+      <div class="pagination-controls">
+        <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
+          <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+        </button>
 
-    <button class="page-btn" (click)="nextPage()" [disabled]="currentPage === totalPages - 1">
-      Next
-    </button>
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number-btn"
+          [class.active]="page === currentPage + 1"
+          [class.ellipsis]="page === -1"
+          (click)="page !== -1 && goToPage(page - 1)"
+          [disabled]="page === -1"
+        >
+          {{ page === -1 ? '...' : page }}
+        </button>
+
+        <button
+          class="page-nav-btn"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages - 1"
+        >
+          <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
