@@ -6,7 +6,6 @@
     <h3 class="section-title">Payment Details</h3>
 
     <div class="grid">
-      <!-- CUSTOMER DROPDOWN -->
       <div class="form-group">
         <label>Customer <span style="color: red">*</span></label>
         <select
@@ -139,10 +138,15 @@
       </div>
     </div>
 
-    <!-- Buttons -->
     <div class="action-buttons">
-      <button type="button" class="btn back" (click)="resetForm()">Cancel</button>
-      <button type="button" class="btn continue" (click)="onSubmit($event)">Save</button>
+      <button type="button" class="btn back" (click)="resetForm()" [disabled]="isSaving">
+        Cancel
+      </button>
+      <button type="button" class="btn continue" (click)="onSubmit($event)" [disabled]="isSaving">
+        <app-spinner *ngIf="isSaving"></app-spinner>
+        <span *ngIf="!isSaving">Save</span>
+        <span *ngIf="isSaving">Saving...</span>
+      </button>
     </div>
   </div>
 </div>
