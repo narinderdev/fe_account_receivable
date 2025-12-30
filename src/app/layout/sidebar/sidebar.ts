@@ -34,7 +34,13 @@ export class Sidebar {
     this.canViewInvoices = this.userContext.hasPermission('VIEW_INVOICES');
     this.canViewPayments = this.userContext.hasPermission('VIEW_PAYMENTS');
     this.canViewReports = this.userContext.hasPermission('VIEW_AGING_REPORTS');
-    this.canViewCollections = this.userContext.hasPermission('VIEW_PROMISE_TO_PAY');
+    const collectionsPerms = [
+      'VIEW_PROMISE_TO_PAY',
+      'CREATE_PROMISE_TO_PAY',
+      'VIEW_DISPUTE',
+      'CREATE_DISPUTE',
+    ];
+    this.canViewCollections = collectionsPerms.some((perm) => this.userContext.hasPermission(perm));
     this.canViewCompany = this.userContext.hasPermission('VIEW_COMPANY');
     this.canViewUsers = this.userContext.hasPermission('VIEW_USER');
     this.canViewRoles = this.userContext.hasPermission('VIEW_ROLES');

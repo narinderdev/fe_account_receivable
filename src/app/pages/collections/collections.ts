@@ -100,6 +100,9 @@ export class Collections implements OnInit, OnDestroy {
   promiseToPayMessage = 'No promises to pay have been logged.';
   private destroy$ = new Subject<void>();
   canCreatePromise = false;
+  canViewPromise = false;
+  canViewDisputes = false;
+  canCreateDispute = false;
 
   constructor(
     private customerService: Customer,
@@ -111,6 +114,10 @@ export class Collections implements OnInit, OnDestroy {
     private userContext: UserContextService
   ) {
     this.canCreatePromise = this.userContext.hasPermission('CREATE_PROMISE_TO_PAY');
+    this.canViewPromise = this.userContext.hasPermission('VIEW_PROMISE_TO_PAY');
+    this.canViewDisputes = this.userContext.hasPermission('VIEW_DISPUTE');
+    this.canCreateDispute = this.userContext.hasPermission('CREATE_DISPUTE');
+    this.activeTab = this.canViewPromise ? 'promise' : this.canViewDisputes ? 'disputes' : 'promise';
   }
 
   ngOnInit() {
@@ -124,6 +131,9 @@ export class Collections implements OnInit, OnDestroy {
   }
 
   setTab(tab: 'promise' | 'disputes') {
+    if ((tab === 'promise' && !this.canViewPromise) || (tab === 'disputes' && !this.canViewDisputes)) {
+      return;
+    }
     this.activeTab = tab;
 
     if (tab === 'promise') {
@@ -168,21 +178,21 @@ export class Collections implements OnInit, OnDestroy {
         if (this.selectedCompanyId) {
           this.fetchCompanyOverdue(this.selectedCompanyId);
           this.loadCustomers(this.selectedCompanyId);
-          if (this.activeTab === 'disputes') {
+          if (this.activeTab === 'disputes' && this.canViewDisputes) {
             this.loadDisputes(this.selectedCompanyId);
-          } else {
+          } else if (this.canViewPromise) {
             this.loadPromiseToPay();
           }
         } else {
           this.companyOverdueAmount = 0;
-          this.loadingCompanyOverdue = false;
-          this.customers = [];
-          this.selectedCustomerId = '';
-          this.promiseToPayList = [];
-          this.disputes = [];
-          this.cdr.detectChanges();
-        }
-      });
+        this.loadingCompanyOverdue = false;
+        this.customers = [];
+        this.selectedCustomerId = '';
+        this.promiseToPayList = [];
+        this.disputes = [];
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   fetchCompanyOverdue(companyId: number) {
@@ -211,8 +221,10 @@ export class Collections implements OnInit, OnDestroy {
   }
 
   loadPromiseToPay() {
-    if (!this.selectedCompanyId) {
+    if (!this.selectedCompanyId || !this.canViewPromise) {
       this.promiseToPayList = [];
+      this.loadingPromiseToPay = false;
+      this.cdr.detectChanges();
       return;
     }
 
@@ -370,6 +382,9 @@ export class Collections implements OnInit, OnDestroy {
   }
 
   openDisputePopup() {
+    if (!this.canCreateDispute) {
+      return;
+    }
     if (!this.selectedCompanyId || this.loadingDisputeCustomers) {
       this.selectedDisputeCustomerId = null;
       this.disputeInvoices = [];
@@ -506,6 +521,12 @@ export class Collections implements OnInit, OnDestroy {
   }
 
   loadDisputes(companyId: number) {
+    if (!this.canViewDisputes) {
+      this.disputes = [];
+      this.loadingDisputes = false;
+      this.cdr.detectChanges();
+      return;
+    }
     this.loadingDisputes = true;
     this.collectionService.getDisputes(companyId).subscribe({
       next: (res: DisputeResponse) => {

@@ -32,7 +32,9 @@
       >
         New Promise
       </button>
-      <button class="btn-primary" (click)="openDisputePopup()">New Dispute</button>
+      <button class="btn-primary" (click)="openDisputePopup()" *ngIf="canCreateDispute">
+        New Dispute
+      </button>
     </div>
   </div>
 
@@ -42,11 +44,21 @@
       Credits to Apply
     </button> -->
 
-    <button class="tab" [class.active]="activeTab === 'promise'" (click)="setTab('promise')">
+    <button
+      class="tab"
+      [class.active]="activeTab === 'promise'"
+      (click)="setTab('promise')"
+      *ngIf="canViewPromise"
+    >
       Promise to Pay
     </button>
 
-    <button class="tab" [class.active]="activeTab === 'disputes'" (click)="setTab('disputes')">
+    <button
+      class="tab"
+      [class.active]="activeTab === 'disputes'"
+      (click)="setTab('disputes')"
+      *ngIf="canViewDisputes"
+    >
       Disputes
     </button>
 
@@ -55,7 +67,7 @@
     </button> -->
   </div>
 
-  <div class="card" *ngIf="activeTab === 'promise'">
+  <div class="card" *ngIf="activeTab === 'promise' && canViewPromise">
     <!-- <h3>Promise to Pay</h3> -->
 
     <div *ngIf="loadingPromiseToPay" class="promise-loader">
@@ -113,7 +125,7 @@
     </ng-container>
   </div>
 
-  <div class="card" *ngIf="activeTab === 'disputes'">
+  <div class="card" *ngIf="activeTab === 'disputes' && canViewDisputes">
     <div *ngIf="loadingDisputes" class="promise-loader">
       <app-spinner></app-spinner>
     </div>
