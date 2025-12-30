@@ -11,6 +11,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { CustomerEntity, PaginatedResponse } from '../../../models/customer.model';
 import { Invoice, InvoiceListResponse } from '../../../models/invoice.model';
 import { ApplyPaymentRequest, ApplyPaymentResponse } from '../../../models/payment.model';
+import { Spinner } from '../../../shared/spinner/spinner';
 
 interface SelectableInvoice extends Invoice {
   selected?: boolean;
@@ -20,7 +21,7 @@ interface SelectableInvoice extends Invoice {
 @Component({
   selector: 'app-receive-payment',
   standalone: true,
-  imports: [CurrencyPipe, FormsModule, CommonModule, RouterLink],
+  imports: [CurrencyPipe, FormsModule, CommonModule, RouterLink, Spinner],
   templateUrl: './receive-payment.html',
   styleUrl: './receive-payment.css',
 })
@@ -39,6 +40,7 @@ export class ReceivePayment implements OnInit, OnDestroy {
   showAmountError: boolean = false;
   showPaymentMethodError: boolean = false;
   showInvoiceError: boolean = false;
+  isSaving = false;
 
   constructor(
     private customerService: Customer,
@@ -55,29 +57,27 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
   ngOnInit() {
     console.log('Component initialized');
-    this.companySelection.selectedCompanyId$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((id) => {
-        const parsed = id ? Number(id) : NaN;
-        const nextId = Number.isFinite(parsed) ? parsed : null;
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      const parsed = id ? Number(id) : NaN;
+      const nextId = Number.isFinite(parsed) ? parsed : null;
 
-        if (this.activeCompanyId === nextId) {
-          return;
-        }
+      if (this.activeCompanyId === nextId) {
+        return;
+      }
 
-        this.activeCompanyId = nextId;
+      this.activeCompanyId = nextId;
 
-        if (this.activeCompanyId) {
-          this.loadCustomers(this.activeCompanyId);
-        } else {
-          this.customers = [];
-          this.selectedCustomerId = null;
-          this.invoices = [];
-          this.amount = null;
-          this.paymentMethod = '';
-          this.cdr.detectChanges();
-        }
-      });
+      if (this.activeCompanyId) {
+        this.loadCustomers(this.activeCompanyId);
+      } else {
+        this.customers = [];
+        this.selectedCustomerId = null;
+        this.invoices = [];
+        this.amount = null;
+        this.paymentMethod = '';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   /** Load customers */
@@ -237,6 +237,11 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
   /** Handle Submit */
   onSubmit(event?: Event) {
+    if (this.isSaving) {
+      console.log('Already saving, ignoring duplicate submission');
+      return;
+    }
+
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -254,16 +259,13 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
     this.submitted = true;
 
-    // Validate form
     if (!this.isFormValid()) {
       console.log('FORM VALIDATION FAILED');
-      // this.toastr.error('Please fill all required fields correctly.');
       return;
     }
 
     console.log('Form validation passed');
 
-    // Prepare data for API call
     const selectedInvoices = this.invoices.filter((inv) => inv.selected);
 
     if (selectedInvoices.length === 0) {
@@ -272,8 +274,6 @@ export class ReceivePayment implements OnInit, OnDestroy {
     }
 
     const invoiceIds = selectedInvoices.map((inv) => inv.id);
-
-    // Build final payload
     const data: ApplyPaymentRequest = {
       paymentAmount: this.amount!,
       paymentMethod: this.paymentMethod,
@@ -282,14 +282,13 @@ export class ReceivePayment implements OnInit, OnDestroy {
     };
 
     console.log('FINAL PAYLOAD:', JSON.stringify(data, null, 2));
+    this.isSaving = true;
+    this.cdr.detectChanges();
 
-    // Call the service to apply the payment
     this.paymentService.applyPayment(this.selectedCustomerId!, data).subscribe({
       next: (response: ApplyPaymentResponse) => {
         console.log('PAYMENT SUCCESS:', response);
         this.toastr.success('Payment applied successfully!', 'Success');
-
-        // Navigate to payments page after success
         setTimeout(() => {
           this.router.navigate(['/admin/payments']);
         }, 1000);
@@ -298,12 +297,18 @@ export class ReceivePayment implements OnInit, OnDestroy {
         console.error('PAYMENT ERROR:', error);
         const errorMsg = error?.error?.message || error?.message || 'Unknown error occurred';
         this.toastr.error('Failed to apply payment: ' + errorMsg, 'Error');
+
+        this.isSaving = false;
+        this.cdr.detectChanges();
       },
     });
   }
 
-  /** Reset form (for Cancel button) */
   resetForm() {
+    if (this.isSaving) {
+      return;
+    }
+
     console.log('Cancel clicked - navigating to payments page');
     this.router.navigate(['/admin/payments']);
   }
