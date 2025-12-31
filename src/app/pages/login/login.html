@@ -12,15 +12,13 @@
             type="email"
             formControlName="email"
             placeholder="Enter your email"
-            (input)="forceLowercase('email')"
+            class="email-input-lowercase"
+            (blur)="onEmailBlur()"
           />
           <img src="mail.svg" class="input-icon" alt="email icon" />
         </div>
 
-        <small
-          class="error"
-          *ngIf="form.get('email')?.touched && form.get('email')?.invalid"
-        >
+        <small class="error" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
           Enter a valid email.
         </small>
       </div>
@@ -42,14 +40,17 @@
           />
         </div>
 
-        <small
-          class="error"
-          *ngIf="form.get('password')?.touched && form.get('password')?.invalid"
-        >
+        <small class="error" *ngIf="form.get('password')?.touched && form.get('password')?.invalid">
           Password is required.
         </small>
 
-        <a class="forgot-password" href="#">Forgot Password?</a>
+        <!-- <a 
+          class="forgot-password" 
+          routerLink="/forgot-password"
+          (mousedown)="$event.preventDefault()"
+        >
+          Forgot Password?
+        </a> -->
       </div>
 
       <!-- LOGIN BUTTON -->
@@ -69,7 +70,13 @@
 
       <p class="signup-text">
         Don't have an account?
-        <a href="/signup" class="signup-link">Sign up</a>
+        <a 
+          class="signup-link" 
+          routerLink="/signup"
+          (mousedown)="$event.preventDefault()"
+        >
+          Sign up
+        </a>
       </p>
     </div>
   </div>
