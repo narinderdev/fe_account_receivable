@@ -12,11 +12,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CompanyService } from '../../../services/company-service';
 import { Spinner } from '../../../shared/spinner/spinner';
 import { CompanyEntity } from '../../../models/company.model';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-company-address',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, Spinner],
+  imports: [CommonModule, ReactiveFormsModule, Spinner],
   templateUrl: './company-address.html',
   styleUrls: ['./company-address.css'],
 })
@@ -64,70 +65,57 @@ export class CompanyAddress implements OnInit, OnDestroy {
   buildForm() {
     this.addressForm = this.fb.group({
       addressLine1: ['', [Validators.required, this.wordLimitValidator(100)]],
-
       city: [
         '',
         [Validators.required, Validators.pattern(/^[A-Za-z\s]+$/), this.wordLimitValidator(100)],
       ],
-
       stateProvince: [
         '',
         [Validators.required, Validators.pattern(/^[A-Za-z\s]+$/), this.wordLimitValidator(100)],
       ],
-
       postalCode: [
         '',
         [Validators.required, Validators.pattern(/^[0-9]*$/), Validators.maxLength(6)],
       ],
-
       addressCountry: ['', Validators.required],
-
       primaryContactName: ['', Validators.required],
-
       primaryContactEmail: [
         '',
         [Validators.required, Validators.pattern(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/)],
       ],
-
       primaryContactPhone: [
         '',
         [Validators.required, Validators.pattern(/^[0-9]*$/), Validators.maxLength(10)],
       ],
-
       website: [''],
-
       primaryContactCountry: ['', Validators.required],
     });
   }
 
   onCityInput() {
     let value = this.addressForm.get('city')?.value || '';
-    value = value.replace(/[0-9]/g, ''); // remove digits
+    value = value.replace(/[0-9]/g, '');
     this.addressForm.get('city')?.setValue(value, { emitEvent: false });
   }
 
-  // STATE – No digits
   onStateInput() {
     let value = this.addressForm.get('stateProvince')?.value || '';
-    value = value.replace(/[0-9]/g, ''); // remove digits
+    value = value.replace(/[0-9]/g, '');
     this.addressForm.get('stateProvince')?.setValue(value, { emitEvent: false });
   }
 
-  // POSTAL CODE – Only digits + max 6
   onPostalInput() {
     let value = this.addressForm.get('postalCode')?.value || '';
     value = value.replace(/\D/g, '').slice(0, 6);
     this.addressForm.get('postalCode')?.setValue(value, { emitEvent: false });
   }
 
-  // PHONE – Only digits + max 10
   onPhoneInput() {
     let value = this.addressForm.get('primaryContactPhone')?.value || '';
     value = value.replace(/\D/g, '').slice(0, 10);
     this.addressForm.get('primaryContactPhone')?.setValue(value, { emitEvent: false });
   }
 
-  // EMAIL – always lowercase
   onEmailInput() {
     let value = this.addressForm.get('primaryContactEmail')?.value || '';
     this.addressForm.get('primaryContactEmail')?.setValue(value.toLowerCase(), {
@@ -135,9 +123,6 @@ export class CompanyAddress implements OnInit, OnDestroy {
     });
   }
 
-  // -----------------------
-  // SAVE ADDRESS
-  // -----------------------
   saveAddress() {
     this.submitted = true;
 
@@ -153,24 +138,32 @@ export class CompanyAddress implements OnInit, OnDestroy {
       return;
     }
 
-    this.isSaving = true; // START SPINNER
+    this.isSaving = true;
 
-    this.companyService.createAddress(this.companyId, payload).subscribe({
-      next: (res) => {
-        this.isSaving = false; // STOP SPINNER
+    this.companyService
+      .createAddress(this.companyId, payload)
+      .pipe(
+        finalize(() => {
+          this.isSaving = false;
+        })
+      )
+      .subscribe({
+        next: (res) => {
+          const updated: CompanyEntity = {
+            ...(this.companyData || ({} as CompanyEntity)),
+            ...payload,
+          };
+          localStorage.setItem('editingCompany', JSON.stringify(updated));
+          localStorage.setItem('currentStep', 'step-3');
+          this.companyService.setEditingCompany(updated);
+          this.companyData = updated;
 
-        const updated: CompanyEntity = { ...(this.companyData || ({} as CompanyEntity)), ...payload };
-        localStorage.setItem('editingCompany', JSON.stringify(updated));
-        this.companyService.setEditingCompany(updated);
-        this.companyData = updated;
-
-        this.router.navigate([`/admin/company/add/step-3`]);
-      },
-      error: (err) => {
-        this.isSaving = false; // STOP SPINNER ON ERROR
-        console.error('Address API failed', err);
-      },
-    });
+          this.router.navigate([`/admin/company/add/step-3`]);
+        },
+        error: (err) => {
+          console.error('Address API failed', err);
+        },
+      });
   }
 
   private persistEditAddress(force = false) {

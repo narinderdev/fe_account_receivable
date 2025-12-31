@@ -6,11 +6,12 @@ import { CompanyService } from '../../../services/company-service';
 import { Subject, takeUntil } from 'rxjs';
 import { Spinner } from '../../../shared/spinner/spinner';
 import { CompanyEntity } from '../../../models/company.model';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-financial-ar-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, Spinner],
+  imports: [CommonModule, ReactiveFormsModule, Spinner],
   templateUrl: './financial-ar-settings.html',
   styleUrls: ['./financial-ar-settings.css'],
 })
@@ -99,13 +100,14 @@ export class FinancialArSettings implements OnInit, OnDestroy {
 
     this.companyService
       .createFinancialSettings(this.companyId, this.financialForm.value)
+      .pipe(
+        finalize(() => {
+          this.isSaving = false;
+        })
+      )
       .subscribe({
         next: () => {
-          this.isSaving = false;
-
-          const allowed = JSON.parse(localStorage.getItem('allowedTabs') || '[]');
-          // allowed.push('step-3');
-          localStorage.setItem('allowedTabs', JSON.stringify(allowed));
+          localStorage.setItem('currentStep', 'step-4');
 
           const nextUrl = this.isEditMode
             ? `/admin/company/edit/${this.companyId}/step-4`
@@ -113,9 +115,8 @@ export class FinancialArSettings implements OnInit, OnDestroy {
 
           this.router.navigate([nextUrl]);
         },
-
         error: () => {
-          this.isSaving = false;
+          // Error already handled in finalize
         },
       });
   }

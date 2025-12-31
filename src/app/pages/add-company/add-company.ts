@@ -21,10 +21,10 @@ export class AddCompany implements OnInit {
     { key: 'step-2', label: 'Address Info' },
     { key: 'step-3', label: 'Financial AR Settings' },
     { key: 'step-4', label: 'Banks & Payment' },
-    // { key: 'step-5', label: 'Users & Roles' },
   ];
 
   allowedTabs: string[] = ['step-1'];
+  currentStep: string = 'step-1'; // Track current active step
 
   constructor(
     private router: Router,
@@ -39,6 +39,10 @@ export class AddCompany implements OnInit {
     if (!id) {
       const savedTabs = this.parseJson<string[]>(localStorage.getItem('allowedTabs'));
       this.allowedTabs = Array.isArray(savedTabs) && savedTabs.length ? savedTabs : ['step-1'];
+
+      // Get current step from localStorage in add mode
+      const savedCurrentStep = localStorage.getItem('currentStep');
+      this.currentStep = savedCurrentStep || 'step-1';
     }
 
     if (id) {
@@ -70,10 +74,11 @@ export class AddCompany implements OnInit {
       localStorage.removeItem('originalCompany');
 
       // Get current step from route
-      const currentStep = this.route.snapshot.firstChild?.routeConfig?.path;
+      const currentStepFromRoute = this.route.snapshot.firstChild?.routeConfig?.path;
 
-      if (currentStep && this.allowedTabs.includes(currentStep)) {
-        this.goTo(currentStep);
+      if (currentStepFromRoute) {
+        this.currentStep = currentStepFromRoute;
+        this.goTo(currentStepFromRoute);
       } else {
         this.goTo('step-1');
       }
@@ -104,8 +109,8 @@ export class AddCompany implements OnInit {
   // STEP NAVIGATION
   // ---------------------------------------------------------
   goTo(step: string) {
-    // In add mode, only allow navigation to unlocked tabs
-    if (!this.isEditMode && !this.allowedTabs.includes(step)) {
+    // In add mode, only allow navigation to the current step
+    if (!this.isEditMode && step !== this.currentStep) {
       return;
     }
 
@@ -127,27 +132,25 @@ export class AddCompany implements OnInit {
     if (this.isEditMode) {
       return true;
     }
-    
-    // In add mode, a tab is accessible if:
-    // 1. It's in the allowedTabs array, OR
-    // 2. It's the currently active tab
-    return this.allowedTabs.includes(step) || this.isActive(step);
+
+    // In add mode, only the current step is accessible
+    return step === this.currentStep;
   }
 
-  // Call this method after successfully saving a step to unlock the next one
-  unlockNextTab(currentStep: string) {
-    const currentIndex = this.tabs.findIndex(t => t.key === currentStep);
+  // Call this method after successfully saving a step to move to next one
+  moveToNextStep(currentStep: string) {
+    const currentIndex = this.tabs.findIndex((t) => t.key === currentStep);
     if (currentIndex >= 0 && currentIndex < this.tabs.length - 1) {
       const nextStep = this.tabs[currentIndex + 1].key;
-      this.unlockTab(nextStep);
+      this.currentStep = nextStep;
+      localStorage.setItem('currentStep', nextStep);
+      this.goTo(nextStep);
     }
   }
 
-  private unlockTab(step: string) {
-    if (!this.allowedTabs.includes(step)) {
-      this.allowedTabs.push(step);
-      localStorage.setItem('allowedTabs', JSON.stringify(this.allowedTabs));
-    }
+  // Public method that child components can call
+  public unlockAndMoveToNextStep(currentStep: string) {
+    this.moveToNextStep(currentStep);
   }
 
   private parseJson<T>(value: string | null): T | null {
