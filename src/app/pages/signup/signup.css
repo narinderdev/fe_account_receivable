@@ -150,3 +150,11 @@ input:focus {
 .terms-text a {
   color: #3b82f6;
 }
+
+.email-input-lowercase {
+  text-transform: lowercase;
+}
+
+.input-wrapper input.email-input-lowercase {
+  text-transform: lowercase;
+}
