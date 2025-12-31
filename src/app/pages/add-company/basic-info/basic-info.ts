@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
 import { Spinner } from '../../../shared/spinner/spinner';
 import { CompanyEntity } from '../../../models/company.model';
+import { AddCompany } from '../add-company';
 
 @Component({
   selector: 'app-basic-info',
@@ -80,16 +81,6 @@ export class BasicInfo implements OnInit, OnDestroy {
       country: this.companyData.country,
       baseCurrency: this.companyData.baseCurrency,
       timeZone: this.companyData.timeZone,
-      // addressLine1: this.companyData.addressLine1,
-      // city: this.companyData.city,
-      // stateProvince: this.companyData.stateProvince,
-      // postalCode: this.companyData.postalCode,
-      // addressCountry: this.companyData.addressCountry,
-      // primaryContactName: this.companyData.primaryContactName,
-      // primaryContactEmail: this.companyData.primaryContactEmail,
-      // primaryContactPhone: this.companyData.primaryContactPhone,
-      // website: this.companyData.website,
-      // primaryContactCountry: this.companyData.primaryContactCountry,
     });
   }
 
@@ -117,7 +108,9 @@ export class BasicInfo implements OnInit, OnDestroy {
 
         localStorage.setItem('companyId', id);
         localStorage.setItem('editingCompany', JSON.stringify(res.data));
+        localStorage.setItem('currentStep', 'step-2');
 
+        // Navigate directly to step-2 and let parent component handle tab state
         this.router.navigate(['/admin/company/add/step-2'], { queryParams: { id } });
       },
       error: () => (this.isSaving = false),

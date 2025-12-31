@@ -79,7 +79,7 @@
 
       <div class="form-footer">
         <div class="actions">
-          <button
+          <!-- <button
             class="btn-cancel"
             [routerLink]="
               isEditMode
@@ -88,11 +88,11 @@
             "
           >
             Back
-          </button>
+          </button> -->
 
           <button class="btn-save" type="submit" [disabled]="isSaving">
             <app-spinner *ngIf="isSaving"></app-spinner>
-            <span *ngIf="!isSaving">Continue</span>
+            <span *ngIf="!isSaving">{{ isEditMode ? 'Update' : 'Continue' }}</span>
           </button>
         </div>
       </div>

@@ -50,12 +50,21 @@
               </div>
             </td>
             <td>{{ c.companyCode }}</td>
-            <td>{{ c.companyAddress.primaryContactEmail }}</td>
+            <td>
+              {{
+                c.companyAddress ? c.companyAddress.primaryContactEmail || '—' : '—'
+              }}
+            </td>
 
             <td>
-              {{ c.companyAddress.addressLine1 }}, {{ c.companyAddress.city }},
-              {{ c.companyAddress.stateProvince }}, {{ c.companyAddress.postalCode }},
-              {{ c.companyAddress.addressCountry }}
+              <ng-container *ngIf="c.companyAddress as address; else noCompanyAddress">
+                {{ address.addressLine1 }}
+                <span *ngIf="address.city">, {{ address.city }}</span>
+                <span *ngIf="address.stateProvince">, {{ address.stateProvince }}</span>
+                <span *ngIf="address.postalCode">, {{ address.postalCode }}</span>
+                <span *ngIf="address.addressCountry">, {{ address.addressCountry }}</span>
+              </ng-container>
+              <ng-template #noCompanyAddress>—</ng-template>
             </td>
 
             <td class="actions" *ngIf="showActionsColumn">
