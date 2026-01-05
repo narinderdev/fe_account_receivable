@@ -42,7 +42,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     currentPromiseToPay: 0,
   };
 
-  // ✅ Graph data properties
+  // Graph data properties
   graphLabels: string[] = [];
   graphData: number[] = [];
   loadingGraph = false;
@@ -87,8 +87,9 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
           totalCustomers: 0,
           currentPromiseToPay: 0,
         };
-        this.graphLabels = [];
-        this.graphData = [];
+        // Show last 12 months at zero when no company selected
+        this.graphLabels = this.generateLast12Months();
+        this.graphData = Array(12).fill(0);
         this.updateChart();
         this.cdr.detectChanges();
       }
@@ -132,7 +133,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // ✅ Load graph data from API
+  // Load graph data from API
   loadGraphData(companyId: number): void {
     this.loadingGraph = true;
 
@@ -140,13 +141,14 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
       next: (res: DashboardGraphResponse) => {
         const series = res?.data?.series;
 
-        if (series && Array.isArray(series)) {
+        if (series && Array.isArray(series) && series.length > 0) {
           // Convert month format from "YYYY-MM" to readable format
           this.graphLabels = series.map((item) => this.formatMonth(item.month));
           this.graphData = series.map((item) => item.balance);
         } else {
-          this.graphLabels = [];
-          this.graphData = [];
+          // Show empty state with last 12 months at zero
+          this.graphLabels = this.generateLast12Months();
+          this.graphData = Array(12).fill(0);
         }
 
         this.loadingGraph = false;
@@ -155,8 +157,9 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         console.error('Graph data error:', err);
-        this.graphLabels = [];
-        this.graphData = [];
+        // Show empty state on error too
+        this.graphLabels = this.generateLast12Months();
+        this.graphData = Array(12).fill(0);
         this.loadingGraph = false;
         this.updateChart();
         this.cdr.detectChanges();
@@ -164,7 +167,22 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // ✅ Format month from "2025-01" to "Jan 2025"
+  // Generate last 12 months labels for empty state
+  generateLast12Months(): string[] {
+    const months: string[] = [];
+    const today = new Date();
+
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      months.push(this.formatMonth(`${year}-${month}`));
+    }
+
+    return months;
+  }
+
+  // Format month from "2025-01" to "Jan 2025"
   formatMonth(monthStr: string): string {
     const [year, month] = monthStr.split('-');
     const monthNames = [
@@ -252,7 +270,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
         scales: {
           y: {
             beginAtZero: true,
-            // ✅ Dynamic Y-axis based on data
+            // Dynamic Y-axis based on data
             suggestedMax: this.calculateSuggestedMax(this.graphData),
             grid: {
               color: '#e5e7eb',
@@ -277,7 +295,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
               font: {
                 size: 12,
               },
-              // ✅ Auto-skip labels if too many months
+              // Auto-skip labels if too many months
               maxRotation: 45,
               minRotation: 0,
             },
@@ -294,14 +312,12 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // ✅ Update chart with new data
   updateChart() {
     if (!this.chart) return;
 
     this.chart.data.labels = this.graphLabels;
     this.chart.data.datasets[0].data = this.graphData;
 
-    // ✅ Use bracket notation for index signature
     if (this.chart.options.scales && this.chart.options.scales['y']) {
       this.chart.options.scales['y'].suggestedMax = this.calculateSuggestedMax(this.graphData);
     }
@@ -309,10 +325,11 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     this.chart.update();
   }
 
-  // ✅ Calculate suggested max for Y-axis (add 20% padding)
   calculateSuggestedMax(data: number[]): number {
     if (!data || data.length === 0) return 100;
     const max = Math.max(...data);
+    // If all values are 0, return 100 for better visualization
+    if (max === 0) return 100;
     return Math.ceil(max * 1.2);
   }
 

@@ -1,23 +1,51 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ChangeDetectorRef } from '@angular/core';
+import { of, Subject } from 'rxjs';
 
 import { Dashboard } from './dashboard';
+import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
 describe('Dashboard', () => {
-  let component: Dashboard;
-  let fixture: ComponentFixture<Dashboard>;
+  const createComponent = () => {
+    const dashboardService = {
+      getDashboardCardData: createSpy().mockReturnValue(of({})),
+      getDashboardGraphData: createSpy().mockReturnValue(of({})),
+    };
+    const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
+    const companySelection = {
+      selectedCompanyId$: new Subject<number | null>(),
+    };
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [Dashboard]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(Dashboard);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
-  });
+    return new Dashboard(
+      'browser' as unknown as object,
+      dashboardService as any,
+      cdr,
+      companySelection as any
+    );
+  };
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    const instance = createComponent();
+    expect(instance).toBeTruthy();
+  });
+
+  describe('logic helpers', () => {
+    it('formats months in a human readable way', () => {
+      const instance = createComponent();
+      expect(instance.formatMonth('2025-01')).toBe('Jan 2025');
+      expect(instance.formatMonth('2024-12')).toBe('Dec 2024');
+    });
+
+    it('calculates a suggested max that is 20% higher than the max value', () => {
+      const instance = createComponent();
+      expect(instance.calculateSuggestedMax([10, 20])).toBe(24);
+      expect(instance.calculateSuggestedMax([0, 0])).toBe(100);
+    });
+
+    it('builds 12 labels for the last 12 months', () => {
+      const instance = createComponent();
+      const months = instance.generateLast12Months();
+      expect(months.length).toBe(12);
+      expect(months.every((label) => label.includes(' '))).toBe(true);
+    });
   });
 });
