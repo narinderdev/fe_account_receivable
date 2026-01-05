@@ -117,3 +117,17 @@ export interface OverdueInvoicesResponse {
   message: string;
   data: OverdueInvoice[];
 }
+
+export interface ChangeDisputeStatusResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: DisputeRecord;
+}
+
+export interface SendReminderResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: string;
+}
