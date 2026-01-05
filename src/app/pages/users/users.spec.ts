@@ -1,23 +1,64 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ChangeDetectorRef } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
+import { CompanyService } from '../../services/company-service';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { RoleService } from '../../services/role-service';
+import { ToastrService } from 'ngx-toastr';
+import { UserContextService } from '../../services/user-context.service';
 
 import { Users } from './users';
+import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
 describe('Users', () => {
-  let component: Users;
-  let fixture: ComponentFixture<Users>;
+  const createComponent = () => {
+    const fb = new FormBuilder();
+    const companyService = createSpyObj<CompanyService>('CompanyService', [
+      'getUsers',
+      'inviteUser',
+    ]);
+    const companySelection = new CompanySelectionService();
+    const roleService = createSpyObj<RoleService>('RoleService', ['getRoles']);
+    const toastr = createSpyObj<ToastrService>('ToastrService', ['success', 'error']);
+    const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
+    const userContext = createSpyObj<UserContextService>('UserContextService', [
+      'hasPermission',
+    ]);
+    userContext.hasPermission.mockReturnValue(true);
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [Users]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(Users);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
-  });
+    const instance = new Users(
+      fb,
+      companyService,
+      companySelection,
+      roleService,
+      toastr,
+      cdr,
+      userContext
+    );
+    instance.inviteForm = fb.group({
+      firstName: [''],
+      lastName: [''],
+      email: [''],
+      roleIds: [''],
+    });
+    return instance;
+  };
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    const instance = createComponent();
+    expect(instance).toBeTruthy();
+  });
+
+  describe('logic helpers', () => {
+    it('builds a fallback display name when first and last names exist', () => {
+      const instance = createComponent();
+      const name = instance.getUserName({ firstName: 'Ada', lastName: 'Lovelace' } as any);
+      expect(name).toBe('Ada Lovelace');
+    });
+
+    it('maps user status to css class', () => {
+      const instance = createComponent();
+      expect(instance.getStatusClass({ status: 'ACTIVE' } as any)).toBe('status-open');
+      expect(instance.getStatusClass({ status: 'UNKNOWN' } as any)).toBe('status-default');
+    });
   });
 });

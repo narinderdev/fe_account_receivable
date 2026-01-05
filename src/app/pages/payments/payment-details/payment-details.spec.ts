@@ -1,23 +1,38 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 
 import { PaymentDetails } from './payment-details';
 
 describe('PaymentDetails', () => {
-  let component: PaymentDetails;
-  let fixture: ComponentFixture<PaymentDetails>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [PaymentDetails]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(PaymentDetails);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
-  });
+  const createComponent = () => {
+    const route = {
+      snapshot: { paramMap: { get: () => '15' } },
+    } as unknown as ActivatedRoute;
+    return new PaymentDetails(route);
+  };
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    const instance = createComponent();
+    expect(instance).toBeTruthy();
+  });
+
+  describe('initialisation', () => {
+    it('hydrates payment details from local storage', () => {
+      localStorage.setItem(
+        'paymentsData',
+        JSON.stringify([
+          {
+            id: 15,
+            paymentDate: '2024-01-01',
+            paymentAmount: 100,
+            notes: '  Hello  ',
+            applications: [{ invoice: { customer: { customerName: 'Acme' } } }],
+          },
+        ])
+      );
+      const instance = createComponent();
+      instance.ngOnInit();
+      expect(instance.customerName).toBe('Acme');
+      expect(instance.notes).toBe('Hello');
+    });
   });
 });
