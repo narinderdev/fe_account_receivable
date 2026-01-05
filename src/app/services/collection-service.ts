@@ -12,6 +12,8 @@ import {
   DisputeResponse,
   DisputeDetailResponse,
   OverdueInvoicesResponse,
+  ChangeDisputeStatusResponse,
+  SendReminderResponse,
 } from '../models/collection.model';
 
 @Injectable({
@@ -87,9 +89,16 @@ export class CollectionService {
     });
   }
 
-  changeDisputeStatus(data: { status: string }, disputeId: number): Observable<any> {
+  changeDisputeStatus(
+    data: { status: string },
+    disputeId: number
+  ): Observable<ChangeDisputeStatusResponse> {
     const headers = this.getAuthHeadersWithNgrok();
-    return this.http.patch<any>(`${this.baseUrl}/api/disputes/${disputeId}/status`, data, { headers });
+    return this.http.patch<ChangeDisputeStatusResponse>(
+      `${this.baseUrl}/api/disputes/${disputeId}/status`,
+      data,
+      { headers }
+    );
   }
 
   createPromiseToPay(data: CreatePromiseToPayRequest): Observable<PromiseToPayResponse> {
@@ -131,9 +140,9 @@ export class CollectionService {
     );
   }
 
-  sendReminders(invoiceId: number): Observable<any> {
+  sendReminders(invoiceId: number): Observable<SendReminderResponse> {
     const headers = this.getAuthHeadersWithNgrok();
-    return this.http.post<any>(
+    return this.http.post<SendReminderResponse>(
       `${this.baseUrl}/api/reminders/invoice/${invoiceId}`,
       {},
       { headers }

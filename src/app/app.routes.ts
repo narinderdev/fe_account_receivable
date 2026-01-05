@@ -11,7 +11,6 @@ import { CompanyAddress } from './pages/add-company/company-address/company-addr
 import { FinancialArSettings } from './pages/add-company/financial-ar-settings/financial-ar-settings';
 import { BanksAndPayments } from './pages/add-company/banks-and-payments/banks-and-payments';
 // import { UserAndRoles } from './pages/add-company/user-and-roles/user-and-roles';
-import { OpeningBalances } from './pages/add-company/opening-balances/opening-balances';
 import { OnboardingComplete } from './pages/add-company/onboarding-complete/onboarding-complete';
 
 import { Invoices } from './pages/invoices/invoices';

@@ -174,9 +174,13 @@ export class CompanyAddress implements OnInit, OnDestroy {
       return;
     }
 
+    const addressData = this.addressForm.getRawValue();
+
     const updated: CompanyEntity = {
       ...this.companyData,
-      ...this.addressForm.value,
+      companyAddress: addressData,
+      address: addressData,
+      ...addressData,
     } as CompanyEntity;
 
     localStorage.setItem('editingCompany', JSON.stringify(updated));

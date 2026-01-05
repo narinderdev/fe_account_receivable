@@ -136,3 +136,39 @@ export interface CreateBankingPayload {
   paymentSettings: PaymentSettingsInput;
   bankAccounts: BankAccountInput[];
 }
+
+export interface CreateCompanyResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: Omit<
+    CompanyEntity,
+    | 'financialSettings'
+    | 'paymentSettings'
+    | 'companyAddress'
+    | 'bankAccounts'
+    | 'users'
+    | 'companyCustomers'
+    | 'createdAt'
+    | 'updatedAt'
+  > & {
+    id: number;
+    addressLine1: string | null;
+    city: string | null;
+    stateProvince: string | null;
+    postalCode: string | null;
+    addressCountry: string | null;
+    primaryContactName: string | null;
+    primaryContactEmail: string | null;
+    primaryContactPhone: string | null;
+    website: string | null;
+    primaryContactCountry: string | null;
+  };
+}
+
+export interface CreateAddressResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: CompanyAddress;
+}

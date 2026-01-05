@@ -106,7 +106,7 @@ export class BasicInfo implements OnInit, OnDestroy {
         this.isSaving = false;
         const id = res.data.id;
 
-        localStorage.setItem('companyId', id);
+         localStorage.setItem('companyId', id.toString());
         localStorage.setItem('editingCompany', JSON.stringify(res.data));
         localStorage.setItem('currentStep', 'step-2');
 
