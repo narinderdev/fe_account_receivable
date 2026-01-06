@@ -2,7 +2,13 @@ import { ActivatedRoute } from '@angular/router';
 import { ChangeDetectorRef } from '@angular/core';
 import { CollectionService } from '../../../services/collection-service';
 import { of } from 'rxjs';
-import { DisputeDetailResponse } from '../../../models/collection.model';
+import {
+  DisputeDetailResponse,
+  ChangeDisputeStatusResponse,
+  DisputeRecord,
+} from '../../../models/collection.model';
+import { CustomerEntity } from '../../../models/customer.model';
+import { Invoice } from '../../../models/invoice.model';
 
 import { DisputeDetails } from './dispute-details';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
@@ -18,24 +24,14 @@ describe('DisputeDetails', () => {
       statusCode: 200,
       status: 'success',
       message: 'ok',
-      data: {
+      data: createDisputeRecord({
         id: 4,
         disputeId: 'D-4',
-        companyId: 1,
-        customer: { id: 1, customerName: 'Acme' } as any,
-        invoice: { id: 2, invoiceNumber: 'INV-2' } as any,
-        invoiceOriginalAmount: 100,
         disputedAmount: 25,
-        disputeCode: 'CODE',
-        reason: '',
-        status: 'OPEN',
-        resolutionDate: null,
-        createdAt: '',
-        updatedAt: '',
-      },
+      }),
     };
     collectionService.getDisputeById.mockReturnValue(of(disputeResponse));
-    collectionService.changeDisputeStatus.mockReturnValue(of({}));
+    collectionService.changeDisputeStatus.mockReturnValue(of({} as ChangeDisputeStatusResponse));
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
     return { instance: new DisputeDetails(route, collectionService, cdr), collectionService };
   };
@@ -54,9 +50,66 @@ describe('DisputeDetails', () => {
 
     it('updates dispute status through the service', () => {
       const { instance, collectionService } = createComponent();
-      instance.dispute = { id: 4, status: 'OPEN' } as any;
+      instance.dispute = createDisputeRecord({ id: 4, status: 'OPEN' });
       instance.onUnderReviewClick();
       expect(collectionService.changeDisputeStatus).toHaveBeenCalledWith({ status: 'UNDER_REVIEW' }, 4);
     });
   });
 });
+
+function createDisputeRecord(overrides: Partial<DisputeRecord> = {}): DisputeRecord {
+  return {
+    id: 4,
+    disputeId: 'D-4',
+    companyId: 1,
+    customer: createCustomerStub(),
+    invoice: createInvoiceStub(),
+    invoiceOriginalAmount: 100,
+    disputedAmount: 10,
+    disputeCode: 'CODE',
+    reason: '',
+    status: 'OPEN',
+    resolutionDate: null,
+    createdAt: '',
+    updatedAt: '',
+    ...overrides,
+  };
+}
+
+function createCustomerStub(): CustomerEntity {
+  return {
+    id: 1,
+    customerId: 1,
+    customerName: 'Acme',
+    customerType: 'Business',
+    email: 'acme@example.com',
+    deleted: false,
+    address: null,
+    cashApplication: null,
+    dunning: null,
+    eft: null,
+    statement: null,
+    vat: null,
+  };
+}
+
+function createInvoiceStub(): Invoice {
+  return {
+    id: 2,
+    invoiceNumber: 'INV-2',
+    invoiceDate: '',
+    dueDate: '',
+    subTotal: 0,
+    taxAmount: 0,
+    totalAmount: 0,
+    description: null,
+    balanceDue: 0,
+    status: 'OPEN',
+    lastPaymentDate: null,
+    note: null,
+    generated: false,
+    active: true,
+    deleted: false,
+    customer: createCustomerStub(),
+  };
+}

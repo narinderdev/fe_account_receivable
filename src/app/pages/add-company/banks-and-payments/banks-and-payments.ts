@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { CompanyService } from '../../../services/company-service';
 import { Subject, takeUntil } from 'rxjs';
 import { Spinner } from '../../../shared/spinner/spinner';
-import { CompanyEntity } from '../../../models/company.model';
+import { CompanyAddress, CompanyEntity, FinancialSettings } from '../../../models/company.model';
 import { ToastrService } from 'ngx-toastr';
 
 function atLeastOnePaymentValidator(group: FormGroup) {
@@ -222,7 +222,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       return false;
     }
 
-    const basicFields = [
+    const basicFields: Array<keyof CompanyEntity> = [
       'legalName',
       'tradeName',
       'companyCode',
@@ -235,8 +235,8 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       return false;
     }
 
-    const addressSource = company.companyAddress ?? company;
-    const addressFields = [
+    const addressSource: Partial<CompanyAddress> | null = company.companyAddress ?? company;
+    const addressFields: Array<keyof CompanyAddress> = [
       'addressLine1',
       'city',
       'stateProvince',
@@ -252,8 +252,9 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       return false;
     }
 
-    const financialSource = company.financial ?? company.financialSettings;
-    const financialFields = [
+    const financialSource: Partial<FinancialSettings> =
+      company.financial ?? company.financialSettings;
+    const financialFields: Array<keyof FinancialSettings> = [
       'fiscalYearStartMonth',
       'revenueRecognitionMode',
       'defaultTaxHandling',
@@ -280,25 +281,32 @@ export class BanksAndPayments implements OnInit, OnDestroy {
     return true;
   }
 
-  private hasValues(source: any, fields: string[]): boolean {
+  private hasValues<T extends object>(source: Partial<T> | null | undefined, fields: (keyof T)[]): boolean {
     if (!source) {
       return false;
     }
     return fields.every((field) => this.isFilled(source[field]));
   }
 
-  private isFilled(value: any): boolean {
+  private isFilled(value: unknown): boolean {
     if (value === null || value === undefined) {
       return false;
     }
-    return typeof value === 'string' ? value.trim().length > 0 : true;
+    if (typeof value === 'string') {
+      return value.trim().length > 0;
+    }
+    return true;
   }
 
-  private hasMinValue(value: any, min: number): boolean {
-    if (value === null || value === undefined || isNaN(value)) {
+  private hasMinValue(value: unknown, min: number): boolean {
+    if (value === null || value === undefined) {
       return false;
     }
-    return Number(value) >= min;
+    const numericValue = typeof value === 'number' ? value : Number(value);
+    if (Number.isNaN(numericValue)) {
+      return false;
+    }
+    return numericValue >= min;
   }
 
   private buildCompanyWithPayment(baseData: CompanyEntity | null): CompanyEntity {

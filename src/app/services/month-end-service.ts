@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AgingResponse, AgingFilters } from '../models/aging.model';
+import { MonthEndCompanyResponse, MonthEndCustomerResponse } from '../models/month-end.model';
 
 @Injectable({
   providedIn: 'root',
@@ -19,25 +19,25 @@ export class MonthEndService {
     });
   }
 
-  getCompanyMonthEnd(companyId: number, month: string): Observable<any> {
+  getCompanyMonthEnd(companyId: number, month: string): Observable<MonthEndCompanyResponse> {
     const headers = this.getAuthHeadersWithNgrok();
     const params = new HttpParams()
       .set('companyId', String(companyId))
       .set('month', month);
 
-    return this.http.get<any>(`${this.baseUrl}/ar/company/month-end`, {
+    return this.http.get<MonthEndCompanyResponse>(`${this.baseUrl}/ar/company/month-end`, {
       headers,
       params,
     });
   }
 
-  getCustomerMonthEnd(customerId: number, month: string): Observable<any> {
+  getCustomerMonthEnd(customerId: number, month: string): Observable<MonthEndCustomerResponse> {
     const headers = this.getAuthHeadersWithNgrok();
     const params = new HttpParams()
       .set('customerId', String(customerId))
       .set('month', month);
 
-    return this.http.get<any>(`${this.baseUrl}/ar/customer/month-end`, {
+    return this.http.get<MonthEndCustomerResponse>(`${this.baseUrl}/ar/customer/month-end`, {
       headers,
       params,
     });

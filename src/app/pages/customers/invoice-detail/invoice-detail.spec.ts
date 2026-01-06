@@ -1,6 +1,7 @@
 import { ActivatedRoute } from '@angular/router';
 import { ChangeDetectorRef } from '@angular/core';
 import { Customer } from '../../../services/customer';
+import { InvoiceWithItems } from '../../../models/invoice.model';
 
 import { InvoiceDetail } from './invoice-detail';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
@@ -29,12 +30,50 @@ describe('InvoiceDetail', () => {
 
     it('maps invoice status to friendly values', () => {
       const instance = createComponent();
-      instance.invoice = { status: 'PAID' } as any;
+      instance.invoice = createInvoice({ status: 'PAID' });
       expect(instance.getStatusText()).toBe('PAID');
-      instance.invoice = { status: 'COMPLETED' } as any;
+      instance.invoice = createInvoice({ status: 'COMPLETED' as 'COMPLETED' });
       expect(instance.getStatusClass()).toBe('status-paid');
       instance.invoice = null;
       expect(instance.getStatusText()).toBe('OPEN');
     });
   });
 });
+
+function createInvoice(overrides: Partial<InvoiceWithItems> = {}): InvoiceWithItems {
+  const base: InvoiceWithItems = {
+    id: 1,
+    invoiceNumber: 'INV-1',
+    invoiceDate: '2024-01-01',
+    dueDate: '2024-01-31',
+    subTotal: 100,
+    taxAmount: 10,
+    totalAmount: 110,
+    description: null,
+    balanceDue: 0,
+    status: 'OPEN',
+    lastPaymentDate: null,
+    note: null,
+    generated: false,
+    active: true,
+    deleted: false,
+    customer: {
+      id: 1,
+      customerId: 1,
+      customerName: 'Acme',
+      customerType: 'Business',
+      email: 'acme@example.com',
+      deleted: false,
+      address: null,
+      cashApplication: null,
+      dunning: null,
+      eft: null,
+      statement: null,
+      vat: null,
+    },
+    items: [],
+    ...overrides,
+  };
+
+  return base;
+}

@@ -11,7 +11,12 @@ import {
   CompanyAddressInput,
   CreateAddressResponse,
   FinancialSettingsInput,
+  PaymentSettingsInput,
   CreateBankingPayload,
+  UpdateCompanyPayload,
+  EditableBankAccount,
+  EditableCompanyUser,
+  CompanyDeleteResponse,
 } from '../models/company.model';
 import { environment } from '../../environments/environment';
 import {
@@ -19,6 +24,13 @@ import {
   InviteUserRequest,
   InviteUserResponse,
 } from '../models/company-users.model';
+
+type CompanyBankAccountSource = CompanyEntity['bankAccounts'][number] & EditableBankAccount;
+type CompanyUserSource = CompanyEntity['users'][number] & EditableCompanyUser;
+type AddressFieldKey = keyof CompanyAddressInput;
+type InlineCompanyAddress = {
+  [K in AddressFieldKey]?: CompanyAddressInput[K] | undefined;
+};
 
 @Injectable({
   providedIn: 'root',
@@ -31,56 +43,7 @@ export class CompanyService {
   editingCompany$ = this.editingCompanySubject.asObservable();
   originalCompany$ = this.originalCompanySubject.asObservable();
 
-  private readonly editableFieldMap = {
-    root: [
-      'legalName',
-      'tradeName',
-      'companyCode',
-      'country',
-      'baseCurrency',
-      'timeZone',
-      'address',
-      'financial',
-      'payment',
-      'bankAccounts',
-      'users',
-    ],
-    address: [
-      'addressLine1',
-      'city',
-      'stateProvince',
-      'postalCode',
-      'addressCountry',
-      'primaryContactName',
-      'primaryContactEmail',
-      'primaryContactPhone',
-      'website',
-      'primaryContactCountry',
-    ],
-    financial: [
-      'fiscalYearStartMonth',
-      // 'defaultArAccountCode',
-      'revenueRecognitionMode',
-      'defaultTaxHandling',
-      'defaultPaymentTerms',
-      'allowOtherTerms',
-      'enableCreditLimitChecking',
-      'agingBucketConfig',
-      'dunningFrequencyDays',
-      'enableAutomatedDunningEmails',
-      'defaultCreditLimit',
-    ],
-    payment: [
-      'acceptCheck',
-      'acceptCreditCard',
-      'acceptBankTransfer',
-      'acceptCash',
-      'remittanceInstructions',
-    ],
-    bankAccounts: ['bankName', 'accountNumber', 'ifscSwift', 'currency', 'isDefault'],
-    users: ['id', 'name', 'email', 'status', 'roleId'],
-  } as const;
-  private readonly addressFieldList = [
+  private readonly addressFieldList: (keyof CompanyAddressInput)[] = [
     'addressLine1',
     'city',
     'stateProvince',
@@ -91,6 +54,25 @@ export class CompanyService {
     'primaryContactPhone',
     'website',
     'primaryContactCountry',
+  ];
+  private readonly financialFieldList: (keyof FinancialSettingsInput)[] = [
+    'fiscalYearStartMonth',
+    'revenueRecognitionMode',
+    'defaultTaxHandling',
+    'defaultPaymentTerms',
+    'allowOtherTerms',
+    'enableCreditLimitChecking',
+    'agingBucketConfig',
+    'dunningFrequencyDays',
+    'enableAutomatedDunningEmails',
+    'defaultCreditLimit',
+  ];
+  private readonly paymentFieldList: (keyof PaymentSettingsInput)[] = [
+    'acceptCheck',
+    'acceptCreditCard',
+    'acceptBankTransfer',
+    'acceptCash',
+    'remittanceInstructions',
   ];
 
   private getAuthHeaders(): HttpHeaders {
@@ -198,14 +180,18 @@ export class CompanyService {
     return this.http.get<CompanyResponse>(`${this.baseUrl}/api/companies/${id}`, { headers });
   }
 
-  updateCompany(id: number, data: any): Observable<any> {
+  updateCompany(id: number, data: UpdateCompanyPayload): Observable<CompanyResponse> {
     const headers = this.getAuthHeaders();
-    return this.http.patch(`${this.baseUrl}/api/companies/${id}/update`, data, { headers });
+    return this.http.patch<CompanyResponse>(`${this.baseUrl}/api/companies/${id}/update`, data, {
+      headers,
+    });
   }
 
-  deleteCompany(id: number): Observable<any> {
+  deleteCompany(id: number): Observable<CompanyDeleteResponse> {
     const headers = this.getAuthHeaders();
-    return this.http.delete(`${this.baseUrl}/api/companies/${id}`, { headers });
+    return this.http.delete<CompanyDeleteResponse>(`${this.baseUrl}/api/companies/${id}`, {
+      headers,
+    });
   }
 
   setEditingCompany(data: CompanyEntity | null): void {
@@ -224,7 +210,7 @@ export class CompanyService {
     return this.originalCompanySubject.value;
   }
 
-  getChangedCompanyPayload(): Record<string, any> {
+  getChangedCompanyPayload(): UpdateCompanyPayload {
     const updated = this.extractEditableFields(this.getEditingCompanySnapshot());
     const original = this.extractEditableFields(this.getOriginalCompanySnapshot());
 
@@ -239,128 +225,252 @@ export class CompanyService {
     return this.computeDiff(updated, original);
   }
 
-  private extractEditableFields(data: CompanyEntity | null): Record<string, any> | null {
+  private extractEditableFields(data: CompanyEntity | null): UpdateCompanyPayload | null {
     if (!data) return null;
 
-    const result: Record<string, any> = {};
-    const rootKeys = this.editableFieldMap.root;
+    const result: UpdateCompanyPayload = {
+      legalName: data.legalName,
+      tradeName: data.tradeName,
+      companyCode: data.companyCode,
+      country: data.country,
+      baseCurrency: data.baseCurrency,
+      timeZone: data.timeZone,
+      bankAccounts: [],
+      users: [],
+    };
 
-    rootKeys.forEach((key) => {
-      const value = this.resolveEditableValue(data, key);
+    const address = this.buildEditableAddress(data);
+    result.address = address ?? null;
 
-      if (key === 'financial' || key === 'payment' || key === 'address') {
-        result[key] = this.pickFields(value, this.editableFieldMap[key]);
-      } else if (key === 'bankAccounts' || key === 'users') {
-        result[key] = Array.isArray(value)
-          ? value
-              .map((item) => this.pickFields(item, this.editableFieldMap[key]))
-              .filter((item) => item)
-          : [];
-      } else {
-        result[key] = value;
-      }
-    });
+    const financial = this.buildEditableFinancial(data);
+    result.financial = financial ?? null;
+
+    const payment = this.buildEditablePayment(data);
+    result.payment = payment ?? null;
+
+    result.bankAccounts = this.buildEditableBankAccounts(data);
+    result.users = this.buildEditableUsers(data);
 
     return result;
   }
 
-  private resolveEditableValue(data: CompanyEntity, key: string): any {
-    if (Object.prototype.hasOwnProperty.call(data, key)) {
-      return (data as any)[key];
-    }
+  private buildEditableAddress(data: CompanyEntity): Partial<CompanyAddressInput> | null {
+    const merged: Partial<CompanyAddressInput> = {};
+    const extended = data as CompanyEntity & { address?: Partial<CompanyAddressInput> | null };
+    const inlineValues = data as InlineCompanyAddress;
 
-    if (key === 'address') {
-      const merged: Record<string, any> = {};
-      const source =
-        (data as any).address ??
-        (data as any).companyAddress ??
-        null;
-      if (source) {
-        this.addressFieldList.forEach((field) => {
-          if (Object.prototype.hasOwnProperty.call(source, field)) {
-            merged[field] = source[field];
-          }
-        });
-      }
-      this.addressFieldList.forEach((field) => {
-        if (Object.prototype.hasOwnProperty.call(data, field)) {
-          merged[field] = (data as any)[field];
-        }
-      });
-      return Object.keys(merged).length ? merged : null;
-    }
+    this.mergeAddressValues(
+      merged,
+      this.pickFromSource(extended.address ?? null, this.addressFieldList)
+    );
+    this.mergeAddressValues(merged, this.pickFromSource(data.companyAddress, this.addressFieldList));
 
-    if (key === 'financial') {
-      return (data as any).financial ?? (data as any).financialSettings ?? null;
-    }
-
-    if (key === 'payment') {
-      return (data as any).payment ?? (data as any).paymentSettings ?? null;
-    }
-
-    return null;
-  }
-
-  private pickFields(source: any, allowed: readonly string[]): Record<string, any> | null {
-    if (!source) return null;
-    const picked: Record<string, any> = {};
-    allowed.forEach((field) => {
-      if (Object.prototype.hasOwnProperty.call(source, field)) {
-        picked[field] = source[field];
+    this.addressFieldList.forEach((field) => {
+      const entityValue = inlineValues[field];
+      if (entityValue !== undefined) {
+        merged[field] = entityValue;
       }
     });
-    return picked;
+
+    return Object.keys(merged).length ? merged : null;
+  }
+
+  private mergeAddressValues(
+    target: Partial<CompanyAddressInput>,
+    source: Partial<CompanyAddressInput> | null
+  ): void {
+    if (!source) {
+      return;
+    }
+    this.addressFieldList.forEach((field) => {
+      const value = source[field];
+      if (value !== undefined) {
+        target[field] = value;
+      }
+    });
+  }
+
+  private buildEditableFinancial(data: CompanyEntity): Partial<FinancialSettingsInput> | null {
+    const extended = data as CompanyEntity & { financial?: Partial<FinancialSettingsInput> | null };
+    const direct = this.pickFromSource(extended.financial ?? null, this.financialFieldList);
+    if (direct) {
+      return direct;
+    }
+    return this.pickFromSource(data.financialSettings, this.financialFieldList);
+  }
+
+  private buildEditablePayment(data: CompanyEntity): Partial<PaymentSettingsInput> | null {
+    const extended = data as CompanyEntity & { payment?: Partial<PaymentSettingsInput> | null };
+    const direct = this.pickFromSource(extended.payment ?? null, this.paymentFieldList);
+    if (direct) {
+      return direct;
+    }
+    return this.pickFromSource(data.paymentSettings, this.paymentFieldList);
+  }
+
+  private buildEditableBankAccounts(data: CompanyEntity): EditableBankAccount[] {
+    const source = (data as { bankAccounts?: CompanyBankAccountSource[] }).bankAccounts ?? [];
+    const list = Array.isArray(source) ? source : [];
+    return list
+      .map((account) => {
+        const mapped: EditableBankAccount = {};
+        if (account.bankName !== undefined) {
+          mapped.bankName = account.bankName;
+        }
+        if (account.accountNumber !== undefined) {
+          mapped.accountNumber = account.accountNumber;
+        }
+        if (account.ifscSwift !== undefined) {
+          mapped.ifscSwift = account.ifscSwift;
+        }
+        if (account.currency !== undefined) {
+          mapped.currency = account.currency;
+        }
+        if (account.isDefault !== undefined) {
+          mapped.isDefault = account.isDefault;
+        }
+        return mapped;
+      })
+      .filter((account) => Object.keys(account).length > 0);
+  }
+
+  private buildEditableUsers(data: CompanyEntity): EditableCompanyUser[] {
+    const source = (data as { users?: CompanyUserSource[] }).users ?? [];
+    const list = Array.isArray(source) ? source : [];
+    return list
+      .map((user) => {
+        const mapped: EditableCompanyUser = {};
+        if (user.id !== undefined) {
+          mapped.id = user.id;
+        }
+        if (user.name !== undefined) {
+          mapped.name = user.name;
+        }
+        if (user.email !== undefined) {
+          mapped.email = user.email;
+        }
+        if (user.status !== undefined) {
+          mapped.status = user.status;
+        }
+        const derivedRoleId = user.roleId !== undefined ? user.roleId : user.role?.id;
+        if (derivedRoleId !== undefined) {
+          mapped.roleId = derivedRoleId;
+        }
+        return mapped;
+      })
+      .filter((user) => Object.keys(user).length > 0);
+  }
+
+  private pickFromSource<T extends object, K extends keyof T>(
+    source: T | null,
+    fields: readonly K[]
+  ): Partial<Pick<T, K>> | null {
+    if (!source) {
+      return null;
+    }
+    const picked: Partial<Pick<T, K>> = {};
+    let hasValue = false;
+    fields.forEach((field) => {
+      const value = source[field];
+      if (value !== undefined) {
+        picked[field] = value;
+        hasValue = true;
+      }
+    });
+    return hasValue ? picked : null;
   }
 
   private computeDiff(
-    updated: Record<string, any>,
-    original: Record<string, any>
-  ): Record<string, any> {
-    const diff: Record<string, any> = {};
-    this.editableFieldMap.root.forEach((key) => {
-      const newValue = updated?.[key];
-      const oldValue = original?.[key];
+    updated: UpdateCompanyPayload,
+    original: UpdateCompanyPayload
+  ): UpdateCompanyPayload {
+    const diff: UpdateCompanyPayload = {};
 
-      if (key === 'financial' || key === 'payment' || key === 'address') {
-        const nestedDiff = this.diffObjects(newValue, oldValue);
-        if (Object.keys(nestedDiff).length) {
-          diff[key] = nestedDiff;
-        }
-      } else if (key === 'bankAccounts' || key === 'users') {
-        if (!this.arraysEqual(newValue, oldValue)) {
-          diff[key] = newValue || [];
-        }
-      } else if (!this.valuesEqual(newValue, oldValue)) {
+    if (!this.valuesMatch(updated.legalName, original.legalName)) {
+      diff.legalName = updated.legalName;
+    }
+    if (!this.valuesMatch(updated.tradeName, original.tradeName)) {
+      diff.tradeName = updated.tradeName;
+    }
+    if (!this.valuesMatch(updated.companyCode, original.companyCode)) {
+      diff.companyCode = updated.companyCode;
+    }
+    if (!this.valuesMatch(updated.country, original.country)) {
+      diff.country = updated.country;
+    }
+    if (!this.valuesMatch(updated.baseCurrency, original.baseCurrency)) {
+      diff.baseCurrency = updated.baseCurrency;
+    }
+    if (!this.valuesMatch(updated.timeZone, original.timeZone)) {
+      diff.timeZone = updated.timeZone;
+    }
+
+    const addressDiff = this.diffObjects<CompanyAddressInput>(
+      updated.address ?? null,
+      original.address ?? null
+    );
+    if (addressDiff) {
+      diff.address = addressDiff;
+    }
+
+    const financialDiff = this.diffObjects<FinancialSettingsInput>(
+      updated.financial ?? null,
+      original.financial ?? null
+    );
+    if (financialDiff) {
+      diff.financial = financialDiff;
+    }
+
+    const paymentDiff = this.diffObjects<PaymentSettingsInput>(
+      updated.payment ?? null,
+      original.payment ?? null
+    );
+    if (paymentDiff) {
+      diff.payment = paymentDiff;
+    }
+
+    const newBankAccounts = updated.bankAccounts ?? [];
+    const oldBankAccounts = original.bankAccounts ?? [];
+    if (!this.arraysEqual(newBankAccounts, oldBankAccounts)) {
+      diff.bankAccounts = newBankAccounts;
+    }
+
+    const newUsers = updated.users ?? [];
+    const oldUsers = original.users ?? [];
+    if (!this.arraysEqual(newUsers, oldUsers)) {
+      diff.users = newUsers;
+    }
+
+    return diff;
+  }
+
+  private diffObjects<T extends object>(
+    newObj: Partial<T> | null,
+    oldObj: Partial<T> | null
+  ): Partial<T> | null {
+    if (!newObj) {
+      return null;
+    }
+    const diff: Partial<T> = {};
+    let hasChanges = false;
+    (Object.keys(newObj) as (keyof T)[]).forEach((key) => {
+      const newValue = newObj[key];
+      const oldValue = oldObj?.[key];
+      if (!this.valuesMatch(newValue, oldValue)) {
         diff[key] = newValue;
+        hasChanges = true;
       }
     });
-
-    return diff;
+    return hasChanges ? diff : null;
   }
 
-  private diffObjects(newObj: any, oldObj: any): Record<string, any> {
-    const diff: Record<string, any> = {};
-    if (!newObj) return diff;
-
-    Object.keys(newObj).forEach((key) => {
-      if (!this.valuesEqual(newObj[key], oldObj?.[key])) {
-        diff[key] = newObj[key];
-      }
-    });
-
-    return diff;
-  }
-
-  private arraysEqual(a: any, b: any): boolean {
+  private arraysEqual<T>(a: T[] | undefined, b: T[] | undefined): boolean {
     const aStr = JSON.stringify(a ?? []);
     const bStr = JSON.stringify(b ?? []);
     return aStr === bStr;
   }
 
-  private valuesEqual(a: any, b: any): boolean {
-    if (Array.isArray(a) || Array.isArray(b)) {
-      return this.arraysEqual(a, b);
-    }
+  private valuesMatch<T>(a: T | undefined, b: T | undefined): boolean {
     return a === b;
   }
 }

@@ -27,7 +27,7 @@ export interface PaymentSettings {
 export interface CompanyAddress {
   id: number;
   addressLine1: string | null;
-  city: string;
+  city: string | null;
   stateProvince: string | null;
   postalCode: string | null;
   addressCountry: string | null;
@@ -135,6 +135,42 @@ export type BankAccountInput = Pick<BankAccount, 'bankName' | 'accountNumber'> &
 export interface CreateBankingPayload {
   paymentSettings: PaymentSettingsInput;
   bankAccounts: BankAccountInput[];
+}
+
+export interface EditableBankAccount {
+  bankName?: string;
+  accountNumber?: string;
+  ifscSwift?: string | null;
+  currency?: string | null;
+  isDefault?: boolean | null;
+}
+
+export interface EditableCompanyUser {
+  id?: number;
+  name?: string;
+  email?: string;
+  status?: string;
+  roleId?: number | null;
+}
+
+export interface UpdateCompanyPayload {
+  legalName?: string;
+  tradeName?: string;
+  companyCode?: string;
+  country?: string;
+  baseCurrency?: string;
+  timeZone?: string;
+  address?: Partial<CompanyAddressInput> | null;
+  financial?: Partial<FinancialSettingsInput> | null;
+  payment?: Partial<PaymentSettingsInput> | null;
+  bankAccounts?: EditableBankAccount[];
+  users?: EditableCompanyUser[];
+}
+
+export interface CompanyDeleteResponse {
+  statusCode: number;
+  status: string;
+  message: string;
 }
 
 export interface CreateCompanyResponse {

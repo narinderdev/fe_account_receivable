@@ -36,9 +36,4 @@ export class RoleService {
     const headers = this.getAuthHeaders();
     return this.http.post<RolesResponse>(`${this.baseUrl}/api/roles/company/${companyId}`, data, { headers });
   }
-
-  getPermissions(): Observable<any> {
-    const headers = this.getAuthHeadersWithNgrok();
-    return this.http.get<any>(`${this.baseUrl}/permissions`, { headers });
-  }
 }

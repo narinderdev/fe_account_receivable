@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { HttpHeaders } from '@angular/common/http';
-import { InvoiceListResponse, InvoicePage } from '../models/invoice.model';
+import {
+  CreateInvoiceRequest,
+  InvoiceDetailResponse,
+  InvoiceListResponse,
+  InvoicePage,
+  SendInvoiceResponse,
+} from '../models/invoice.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -36,14 +42,21 @@ export class InvoiceService {
     );
   }
 
-  createInvoice(customerId: number, data: any): Observable<any> {
+  createInvoice(
+    customerId: number,
+    data: CreateInvoiceRequest
+  ): Observable<InvoiceDetailResponse> {
     const headers = this.getAuthHeaders();
-    return this.http.post(`${this.baseUrl}/invoice/${customerId}`, data, { headers });
+    return this.http.post<InvoiceDetailResponse>(`${this.baseUrl}/invoice/${customerId}`, data, {
+      headers,
+    });
   }
 
-  sendInvoice(invoiceId: number): Observable<any> {
+  sendInvoice(invoiceId: number): Observable<SendInvoiceResponse> {
     const headers = this.getAuthHeaders();
-    return this.http.post(`${this.baseUrl}/invoice/send/${invoiceId}`, null, { headers });
+    return this.http.post<SendInvoiceResponse>(`${this.baseUrl}/invoice/send/${invoiceId}`, null, {
+      headers,
+    });
   }
 
   getUnpaidInvoices(customerId: number): Observable<InvoiceListResponse> {

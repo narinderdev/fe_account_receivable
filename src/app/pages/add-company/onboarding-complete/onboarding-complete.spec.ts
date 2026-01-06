@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { OnboardingComplete } from './onboarding-complete';
 import { CompanyService } from '../../../services/company-service';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
+import { CompanyResponse } from '../../../models/company.model';
 
 describe('OnboardingComplete', () => {
   const createComponent = () => {
@@ -16,7 +17,7 @@ describe('OnboardingComplete', () => {
       'getOriginalCompanySnapshot',
     ]);
     companyService.getChangedCompanyPayload.mockReturnValue({});
-    companyService.updateCompany.mockReturnValue(of({}));
+    companyService.updateCompany.mockReturnValue(of({} as CompanyResponse));
     companyService.getEditingCompanySnapshot.mockReturnValue(null);
     companyService.getOriginalCompanySnapshot.mockReturnValue(null);
 
@@ -36,9 +37,9 @@ describe('OnboardingComplete', () => {
 
   it('shows info message when there are no pending changes', () => {
     const { instance, companyService } = createComponent();
-    companyService.getChangedCompanyPayload.mockReturnValue(null);
+    companyService.getChangedCompanyPayload.mockReturnValue({});
     instance.isEditMode = true;
-    (instance as any).companyId = 5;
+    (instance as unknown as { companyId: number | null }).companyId = 5;
     instance.submitUpdates();
     expect(instance.infoMessage).toContain('No changes detected');
     expect(companyService.updateCompany).not.toHaveBeenCalled();
@@ -46,10 +47,10 @@ describe('OnboardingComplete', () => {
 
   it('invokes update when payload exists', () => {
     const { instance, companyService } = createComponent();
-    companyService.getChangedCompanyPayload.mockReturnValue({ name: 'Updated' });
+    companyService.getChangedCompanyPayload.mockReturnValue({ legalName: 'Updated' });
     instance.isEditMode = true;
-    (instance as any).companyId = 3;
+    (instance as unknown as { companyId: number | null }).companyId = 3;
     instance.submitUpdates();
-    expect(companyService.updateCompany).toHaveBeenCalledWith(3, { name: 'Updated' });
+    expect(companyService.updateCompany).toHaveBeenCalledWith(3, { legalName: 'Updated' });
   });
 });

@@ -28,7 +28,6 @@ export class DashboardService {
     );
   }
 
-  // ✅ Fix return type to DashboardGraphResponse
   getDashboardGraphData(companyId: number): Observable<DashboardGraphResponse> {
     const headers = this.getAuthHeadersWithNgrok();
 

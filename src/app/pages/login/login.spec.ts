@@ -21,7 +21,10 @@ describe('Login', () => {
     ]);
     userContext.isAdmin.mockReturnValue(false);
     userContext.getPermissions.mockReturnValue(permissions);
-    return { instance: new Login(new FormBuilder(), router, loginService, toastr, cdr, userContext), userContext };
+    return {
+      instance: new Login(new FormBuilder(), router, loginService, toastr, cdr, userContext),
+      userContext,
+    };
   };
 
   it('should create', () => {
@@ -45,9 +48,10 @@ describe('Login', () => {
 
     it('selects landing route based on permissions', () => {
       const { instance, userContext } = createComponent(['VIEW_INVOICES', 'VIEW_PAYMENTS']);
-      expect((instance as any).getLandingRoute()).toBe('/admin/invoices');
+      const getLandingRoute = (instance as unknown as { getLandingRoute(): string }).getLandingRoute;
+      expect(getLandingRoute.call(instance)).toBe('/admin/invoices');
       userContext.isAdmin.mockReturnValue(true);
-      expect((instance as any).getLandingRoute()).toBe('/admin/dashboard');
+      expect(getLandingRoute.call(instance)).toBe('/admin/dashboard');
     });
   });
 });
