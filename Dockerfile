@@ -22,5 +22,5 @@ ENV NODE_ENV=production
 # Copy built files from build stage
 COPY --from=build /app/dist/account_receivable/browser /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 4200
 CMD ["nginx", "-g", "daemon off;"]
