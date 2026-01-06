@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
 
 import { Invoices } from './invoices';
+import { Invoice } from '../../models/invoice.model';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
 describe('Invoices', () => {
@@ -30,9 +31,9 @@ describe('Invoices', () => {
     it('filters invoices when searching by customer name', () => {
       const instance = createComponent();
       instance.allInvoices = [
-        { customer: { customerName: 'Acme' } },
-        { customer: { customerName: 'Globex' } },
-      ] as any;
+        createInvoice({ customer: { ...createInvoice().customer, customerName: 'Acme' } }),
+        createInvoice({ customer: { ...createInvoice().customer, customerName: 'Globex' } }),
+      ];
       instance.searchName = 'acm';
       instance.onSearchChange();
       expect(instance.invoices.length).toBe(1);
@@ -41,8 +42,43 @@ describe('Invoices', () => {
 
     it('returns readable status labels', () => {
       const instance = createComponent();
-      expect(instance.getStatus({ status: 'PAID' } as any)).toBe('Paid');
-      expect(instance.getStatus({ status: 'OPEN' } as any)).toBe('Due');
+      expect(instance.getStatus(createInvoice({ status: 'PAID' }))).toBe('Paid');
+      expect(instance.getStatus(createInvoice({ status: 'OPEN' }))).toBe('Due');
     });
   });
 });
+
+function createInvoice(overrides: Partial<Invoice> = {}): Invoice {
+  return {
+    id: 1,
+    invoiceNumber: 'INV-1',
+    invoiceDate: '2024-01-01',
+    dueDate: '2024-01-31',
+    subTotal: 100,
+    taxAmount: 10,
+    totalAmount: 110,
+    description: null,
+    balanceDue: 0,
+    status: 'OPEN',
+    lastPaymentDate: null,
+    note: null,
+    generated: false,
+    active: true,
+    deleted: false,
+    customer: {
+      id: 1,
+      customerId: 1,
+      customerName: 'Acme',
+      customerType: 'Business',
+      email: 'acme@example.com',
+      deleted: false,
+      address: null,
+      cashApplication: null,
+      dunning: null,
+      eft: null,
+      statement: null,
+      vat: null,
+    },
+    ...overrides,
+  };
+}

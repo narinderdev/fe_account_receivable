@@ -1,15 +1,20 @@
 import { ChangeDetectorRef } from '@angular/core';
 import { of, Subject } from 'rxjs';
-
 import { Dashboard } from './dashboard';
+import { DashboardService } from '../../services/dashboard-service';
+import { CompanySelectionService } from '../../services/company-selection.service';
+import { DashboardGraphResponse, DashboardSummaryResponse } from '../../models/dashboard.model';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
 describe('Dashboard', () => {
   const createComponent = () => {
-    const dashboardService = {
-      getDashboardCardData: createSpy().mockReturnValue(of({})),
-      getDashboardGraphData: createSpy().mockReturnValue(of({})),
-    };
+    const dashboardService = createSpyObj<DashboardService>('DashboardService', [
+      'getDashboardCardData',
+      'getDashboardGraphData',
+    ]);
+    dashboardService.getDashboardCardData.mockReturnValue(of({} as DashboardSummaryResponse));
+    dashboardService.getDashboardGraphData.mockReturnValue(of({} as DashboardGraphResponse));
+
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
     const companySelection = {
       selectedCompanyId$: new Subject<number | null>(),
@@ -17,9 +22,9 @@ describe('Dashboard', () => {
 
     return new Dashboard(
       'browser' as unknown as object,
-      dashboardService as any,
+      dashboardService,
       cdr,
-      companySelection as any
+      companySelection as unknown as CompanySelectionService
     );
   };
 

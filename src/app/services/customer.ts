@@ -4,7 +4,27 @@ import { Observable } from 'rxjs';
 import { HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { CustomerInvoiceListResponse, InvoiceDetailResponse } from '../models/invoice.model';
-import { CustomerDetailResponse } from '../models/customer.model';
+import {
+  Address,
+  AddressPayload,
+  ApiResponse,
+  CashApplication,
+  CashApplicationPayload,
+  CreateCustomerPayload,
+  CustomerDetailResponse,
+  CustomerEntity,
+  CustomerListResponse,
+  CustomerCsvUploadResult,
+  Dunning,
+  DunningPayload,
+  EFT,
+  EftPayload,
+  Statement,
+  StatementPayload,
+  UpdateCustomerPayload,
+  VAT,
+  VatPayload,
+} from '../models/customer.model';
 
 @Injectable({
   providedIn: 'root',
@@ -34,54 +54,86 @@ export class Customer {
     return Number.isFinite(parsed) ? parsed : null;
   }
 
-  getCustomers(companyId: number, page = 0, size = 10): Observable<any> {
+  getCustomers(companyId: number, page = 0, size = 10): Observable<CustomerListResponse> {
     const headers = this.getAuthHeadersWithNgrok();
-    return this.http.get(
+    return this.http.get<CustomerListResponse>(
       `${this.baseUrl}/customer/company/${companyId}?page=${page}&size=${size}`,
       { headers }
     );
   }
 
-  createCustomer(companyId: number, data: any, userId?: number): Observable<any> {
+  createCustomer(
+    companyId: number,
+    data: CreateCustomerPayload,
+    userId?: number
+  ): Observable<ApiResponse<CustomerEntity>> {
     const headers = this.getAuthHeaders();
     const resolvedUserId = userId ?? this.getStoredUserId();
-    return this.http.post(`${this.baseUrl}/customer/${resolvedUserId}/${companyId}`, data, {
+    return this.http.post<ApiResponse<CustomerEntity>>(
+      `${this.baseUrl}/customer/${resolvedUserId}/${companyId}`,
+      data,
+      {
+        headers,
+      }
+    );
+  }
+
+  saveAddress(customerId: number, data: AddressPayload): Observable<ApiResponse<Address>> {
+    const headers = this.getAuthHeaders();
+    return this.http.post<ApiResponse<Address>>(`${this.baseUrl}/customer/${customerId}/address`, data, {
       headers,
     });
   }
 
-  saveAddress(customerId: number, data: any): Observable<any> {
+  saveApplication(
+    customerId: number,
+    data: CashApplicationPayload
+  ): Observable<ApiResponse<CashApplication>> {
     const headers = this.getAuthHeaders();
-    return this.http.post(`${this.baseUrl}/customer/${customerId}/address`, data, { headers });
+    return this.http.post<ApiResponse<CashApplication>>(
+      `${this.baseUrl}/customer/${customerId}/cash-application`,
+      data,
+      {
+        headers,
+      }
+    );
   }
 
-  saveApplication(customerId: number, data: any): Observable<any> {
+  saveStatement(
+    customerId: number,
+    data: StatementPayload
+  ): Observable<ApiResponse<Statement>> {
     const headers = this.getAuthHeaders();
-    return this.http.post(`${this.baseUrl}/customer/${customerId}/cash-application`, data, {
+    return this.http.post<ApiResponse<Statement>>(
+      `${this.baseUrl}/customer/${customerId}/statement`,
+      data,
+      { headers }
+    );
+  }
+
+  saveEft(customerId: number, data: EftPayload): Observable<ApiResponse<EFT>> {
+    const headers = this.getAuthHeaders();
+    return this.http.post<ApiResponse<EFT>>(`${this.baseUrl}/customer/${customerId}/eft`, data, {
       headers,
     });
   }
 
-  saveStatement(customerId: number, data: any): Observable<any> {
+  saveVat(customerId: number, data: VatPayload): Observable<ApiResponse<VAT>> {
     const headers = this.getAuthHeaders();
-    return this.http.post(`${this.baseUrl}/customer/${customerId}/statement`, data, { headers });
-  }
-
-  saveEft(customerId: number, data: any): Observable<any> {
-    const headers = this.getAuthHeaders();
-    return this.http.post(`${this.baseUrl}/customer/${customerId}/eft`, data, { headers });
-  }
-
-  saveVat(customerId: number, data: any): Observable<any> {
-    const headers = this.getAuthHeaders();
-    return this.http.post(`${this.baseUrl}/customer/${customerId}/vat`, data, { headers });
-  }
-
-  saveCredit(customerId: number, data: any): Observable<any> {
-    const headers = this.getAuthHeaders();
-    return this.http.post(`${this.baseUrl}/customer/${customerId}/dunning-credit`, data, {
+    return this.http.post<ApiResponse<VAT>>(`${this.baseUrl}/customer/${customerId}/vat`, data, {
       headers,
     });
+  }
+
+  saveCredit(customerId: number, data: DunningPayload): Observable<ApiResponse<Dunning>> {
+    const headers = this.getAuthHeaders();
+    return this.http.post<ApiResponse<Dunning>>(
+      `${this.baseUrl}/customer/${customerId}/dunning-credit`,
+      data,
+      {
+        headers,
+      }
+    );
   }
 
   getCustomerById(id: number): Observable<CustomerDetailResponse> {
@@ -89,14 +141,16 @@ export class Customer {
     return this.http.get<CustomerDetailResponse>(`${this.baseUrl}/customer/${id}`, { headers });
   }
 
-  updateCustomer(id: number, data: any): Observable<any> {
+  updateCustomer(id: number, data: UpdateCustomerPayload): Observable<CustomerDetailResponse> {
     const headers = this.getAuthHeaders();
-    return this.http.patch(`${this.baseUrl}/customer/${id}`, data, { headers });
+    return this.http.patch<CustomerDetailResponse>(`${this.baseUrl}/customer/${id}`, data, {
+      headers,
+    });
   }
 
-  deleteCustomer(id: number): Observable<any> {
+  deleteCustomer(id: number): Observable<ApiResponse<null>> {
     const headers = this.getAuthHeaders();
-    return this.http.delete(`${this.baseUrl}/customer/${id}`, { headers });
+    return this.http.delete<ApiResponse<null>>(`${this.baseUrl}/customer/${id}`, { headers });
   }
 
   getCustomerInvoicesById(id: number): Observable<CustomerInvoiceListResponse> {
@@ -111,10 +165,17 @@ export class Customer {
     return this.http.get<InvoiceDetailResponse>(`${this.baseUrl}/invoice/${id}`, { headers });
   }
 
-  uploadCsv(companyId: number, data: FormData): Observable<any> {
+  uploadCsv(
+    companyId: number,
+    data: FormData
+  ): Observable<ApiResponse<CustomerCsvUploadResult>> {
     const headers = this.getAuthHeaders();
-    return this.http.post(`${this.baseUrl}/customer/import-csv?companyId=${companyId}`, data, {
-      headers,
-    });
+    return this.http.post<ApiResponse<CustomerCsvUploadResult>>(
+      `${this.baseUrl}/customer/import-csv?companyId=${companyId}`,
+      data,
+      {
+        headers,
+      }
+    );
   }
 }

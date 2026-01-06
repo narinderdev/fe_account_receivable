@@ -23,7 +23,7 @@ export interface Invoice {
   totalAmount: number;
   description: string | null;
   balanceDue: number;
-  status: 'OPEN' | 'PAID';
+  status: 'OPEN' | 'PAID' | 'COMPLETED';
   lastPaymentDate: string | null;
   note: string | null;
   generated: boolean;
@@ -63,4 +63,28 @@ export interface InvoiceListResponse {
   status: string;
   message: string;
   data: Invoice[];
+}
+
+export interface InvoiceItemInput {
+  itemName: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  tax: number;
+}
+
+export interface CreateInvoiceRequest {
+  invoiceNumber?: string;
+  isGenerated: boolean;
+  invoiceDate: string;
+  dueDate: string;
+  note: string | null;
+  items: InvoiceItemInput[];
+}
+
+export interface SendInvoiceResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: string;
 }

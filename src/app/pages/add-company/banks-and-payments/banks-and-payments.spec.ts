@@ -44,8 +44,11 @@ describe('BanksAndPayments', () => {
 
     it('verifies helper methods detect missing fields', () => {
       const instance = createComponent();
-      expect((instance as any).hasValues({ name: 'Acme' }, ['name'])).toBe(true);
-      expect((instance as any).hasValues({ name: '' }, ['name'])).toBe(false);
+      const hasValues = (instance as unknown as {
+        hasValues(source: Record<string, unknown>, fields: string[]): boolean;
+      }).hasValues;
+      expect(hasValues.call(instance, { name: 'Acme' }, ['name'])).toBe(true);
+      expect(hasValues.call(instance, { name: '' }, ['name'])).toBe(false);
     });
   });
 });

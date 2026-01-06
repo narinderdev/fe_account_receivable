@@ -7,6 +7,7 @@ import { ToastrService } from 'ngx-toastr';
 import { UserContextService } from '../../services/user-context.service';
 
 import { Users } from './users';
+import { CompanyUser } from '../../models/company-users.model';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
 describe('Users', () => {
@@ -51,14 +52,28 @@ describe('Users', () => {
   describe('logic helpers', () => {
     it('builds a fallback display name when first and last names exist', () => {
       const instance = createComponent();
-      const name = instance.getUserName({ firstName: 'Ada', lastName: 'Lovelace' } as any);
+      const name = instance.getUserName(createUser({ firstName: 'Ada', lastName: 'Lovelace' }));
       expect(name).toBe('Ada Lovelace');
     });
 
     it('maps user status to css class', () => {
       const instance = createComponent();
-      expect(instance.getStatusClass({ status: 'ACTIVE' } as any)).toBe('status-open');
-      expect(instance.getStatusClass({ status: 'UNKNOWN' } as any)).toBe('status-default');
+      expect(instance.getStatusClass(createUser({ status: 'ACTIVE' }))).toBe('status-open');
+      expect(instance.getStatusClass(createUser({ status: 'UNKNOWN' }))).toBe('status-default');
     });
   });
 });
+
+function createUser(overrides: Partial<CompanyUser> = {}): CompanyUser {
+  return {
+    id: 1,
+    name: '',
+    firstName: 'First',
+    lastName: 'Last',
+    email: 'user@example.com',
+    status: 'ACTIVE',
+    role: { id: 1, name: 'Role', description: 'Role desc' },
+    userRoles: [],
+    ...overrides,
+  };
+}

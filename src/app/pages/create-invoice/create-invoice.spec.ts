@@ -4,6 +4,7 @@ import { Customer } from '../../services/customer';
 import { InvoiceService } from '../../services/invoice-service';
 import { ToastrService } from 'ngx-toastr';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { CustomerEntity, Dunning } from '../../models/customer.model';
 
 import { CreateInvoice } from './create-invoice';
 import { Subject } from 'rxjs';
@@ -45,9 +46,45 @@ describe('CreateInvoice', () => {
 
     it('detects when the invoice exceeds the customer credit limit', () => {
       const instance = createComponent();
-      instance.selectedCustomer = { dunning: { creditLimit: 100 } } as any;
+      instance.selectedCustomer = createCustomerStub({
+        dunning: createDunning({ creditLimit: 100 }),
+      });
       instance.invoice.items = [{ itemName: 'Item', description: '', quantity: 1, rate: 150, tax: 0 }];
       expect(instance.exceedsCreditLimit).toBe(true);
     });
   });
 });
+
+function createCustomerStub(overrides: Partial<CustomerEntity> = {}): CustomerEntity {
+  const merged = {
+    id: 1,
+    customerId: 1,
+    customerName: 'Acme',
+    customerType: 'Business',
+    email: 'acme@example.com',
+    deleted: false,
+    address: null,
+    cashApplication: null,
+    dunning: createDunning(),
+    eft: null,
+    statement: null,
+    vat: null,
+    ...overrides,
+  };
+  return merged;
+}
+
+function createDunning(overrides: Partial<Dunning> = {}): Dunning {
+  return {
+    id: 1,
+    creditLimit: 0,
+    dunningLevel: '',
+    level1: '',
+    level2: '',
+    level3: '',
+    level4: '',
+    pastDue: '',
+    placeOnCreditHold: false,
+    ...overrides,
+  };
+}

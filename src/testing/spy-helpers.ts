@@ -1,6 +1,8 @@
 import { vi } from 'vitest';
 
-export type Spy<T extends (...args: any[]) => any = (...args: any[]) => any> = ReturnType<typeof vi.fn<T>>;
+type UnknownFn = (...args: any[]) => any;
+
+export type Spy<T extends UnknownFn = UnknownFn> = ReturnType<typeof vi.fn<T>>;
 
 export type SpyObject<T extends object> = T & {
   [K in keyof T as T[K] extends (...args: any[]) => any ? K : never]: T[K] extends (
@@ -10,7 +12,7 @@ export type SpyObject<T extends object> = T & {
     : never;
 };
 
-export function createSpy<T extends (...args: any[]) => any = (...args: any[]) => any>(name?: string) {
+export function createSpy<T extends UnknownFn = UnknownFn>(name?: string) {
   const spy = vi.fn<T>();
   if (name) {
     spy.mockName(name);
@@ -23,7 +25,7 @@ export function createSpyObj<T extends object>(
   methodNamesMaybe?: ReadonlyArray<keyof T | string>
 ): SpyObject<T> {
   const methodNames = Array.isArray(nameOrMethodNames) ? nameOrMethodNames : methodNamesMaybe || [];
-  const obj: Record<string, Spy> = {};
+  const obj: Record<string, Spy<UnknownFn>> = {};
   methodNames.forEach((method) => {
     obj[method as string] = vi.fn();
   });

@@ -8,6 +8,7 @@ import { CompanySelectionService } from '../../../services/company-selection.ser
 import { Subject } from 'rxjs';
 
 import { ReceivePayment } from './receive-payment';
+import { Invoice } from '../../../models/invoice.model';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
 describe('ReceivePayment', () => {
@@ -53,11 +54,53 @@ describe('ReceivePayment', () => {
     it('totals the applied amount across selected invoices', () => {
       const instance = createComponent();
       instance.invoices = [
-        { appliedAmount: 25, selected: true },
-        { appliedAmount: 10, selected: true },
-        { appliedAmount: 5, selected: false },
-      ] as any;
+        createInvoice({ appliedAmount: 25, selected: true }),
+        createInvoice({ appliedAmount: 10, selected: true }),
+        createInvoice({ appliedAmount: 5, selected: false }),
+      ];
       expect(instance.totalApplied).toBe(40);
     });
   });
 });
+
+type TestSelectableInvoice = Invoice & {
+  selected?: boolean;
+  appliedAmount?: number;
+};
+
+function createInvoice(overrides: Partial<TestSelectableInvoice> = {}): TestSelectableInvoice {
+  return {
+    id: 1,
+    invoiceNumber: 'INV-1',
+    invoiceDate: '2024-01-01',
+    dueDate: '2024-01-31',
+    subTotal: 100,
+    taxAmount: 10,
+    totalAmount: 110,
+    description: null,
+    balanceDue: 0,
+    status: 'OPEN',
+    lastPaymentDate: null,
+    note: null,
+    generated: false,
+    active: true,
+    deleted: false,
+    customer: {
+      id: 1,
+      customerId: 1,
+      customerName: 'Acme',
+      customerType: 'Business',
+      email: 'acme@example.com',
+      deleted: false,
+      address: null,
+      cashApplication: null,
+      dunning: null,
+      eft: null,
+      statement: null,
+      vat: null,
+    },
+    selected: false,
+    appliedAmount: 0,
+    ...overrides,
+  };
+}

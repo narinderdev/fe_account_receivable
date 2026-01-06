@@ -1,4 +1,4 @@
-import { FormBuilder } from '@angular/forms';
+import { AbstractControl, FormBuilder } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CompanyService } from '../../../services/company-service';
 
@@ -28,8 +28,10 @@ describe('CompanyAddress', () => {
     it('enforces a word limit in text fields', () => {
       const instance = createComponent();
       const validator = instance.wordLimitValidator(2);
-      expect(validator({ value: 'one two' } as any)).toBeNull();
-      expect(validator({ value: 'one two three' } as any)).toEqual({ wordLimit: true });
+      expect(validator(mockControl('one two'))).toBeNull();
+      expect(validator(mockControl('one two three'))).toEqual({
+        wordLimit: true,
+      });
     });
 
     it('only allows digits inside the postal code input', () => {
@@ -43,3 +45,7 @@ describe('CompanyAddress', () => {
     });
   });
 });
+
+function mockControl(value: string | null): AbstractControl {
+  return { value } as unknown as AbstractControl;
+}

@@ -29,7 +29,8 @@ describe('RolesDetail', () => {
 
   it('knows when a permission code is missing', () => {
     const instance = createComponent();
-    (instance as any).permissionLookup = new Set(['VIEW_USER']);
+    const internals = instance as unknown as RolesDetailInternals;
+    internals.permissionLookup = new Set(['VIEW_USER']);
     expect(instance.hasPermission('VIEW_USER')).toBe(true);
     expect(instance.hasPermission('UNKNOWN')).toBe(false);
     expect(instance.hasPermission(undefined)).toBe(false);
@@ -53,11 +54,19 @@ describe('RolesDetail', () => {
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
 
     const instance = new RolesDetail(route, roleService, companySelection, cdr);
-    (instance as any).companyId = 2;
-    (instance as any).roleId = 9;
-    (instance as any).loadRoleDetails();
+    const internals = instance as unknown as RolesDetailInternals;
+    internals.companyId = 2;
+    internals.roleId = 9;
+    internals.loadRoleDetails();
 
     expect(instance.accessibleTabs).toContain('Dashboard');
     expect(instance.accessibleTabs).toContain('Customers');
   });
 });
+
+type RolesDetailInternals = {
+  permissionLookup: Set<string>;
+  companyId: number | null;
+  roleId: number | null;
+  loadRoleDetails(): void;
+};
