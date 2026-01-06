@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CompanyService } from '../../../services/company-service';
+import { CompanySelectionService } from '../../../services/company-selection.service';
 
 @Component({
   selector: 'app-onboarding-complete',
@@ -20,7 +21,8 @@ export class OnboardingComplete implements OnInit {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private companySelection: CompanySelectionService
   ) {}
 
   ngOnInit() {
@@ -31,8 +33,10 @@ export class OnboardingComplete implements OnInit {
       this.isEditMode = true;
       this.companyId = Number(routeId);
       this.hydrateCachedState();
+      this.markCompanyAvailability();
     } else if (queryId) {
       this.companyId = Number(queryId);
+      this.markCompanyAvailability();
     }
   }
 
@@ -85,6 +89,19 @@ export class OnboardingComplete implements OnInit {
           this.companyService.setOriginalCompany(parsedOriginal);
         }
       }
+    }
+  }
+
+  private markCompanyAvailability() {
+    if (!this.companyId) {
+      return;
+    }
+
+    localStorage.setItem('hasCompanies', 'true');
+
+    const selectedCompanyId = this.companySelection.getSelectedCompanyId();
+    if (!this.isEditMode || !selectedCompanyId) {
+      this.companySelection.setSelectedCompanyId(String(this.companyId));
     }
   }
 }
