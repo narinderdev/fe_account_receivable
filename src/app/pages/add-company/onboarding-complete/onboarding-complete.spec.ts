@@ -3,8 +3,9 @@ import { of } from 'rxjs';
 
 import { OnboardingComplete } from './onboarding-complete';
 import { CompanyService } from '../../../services/company-service';
-import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
+import { createSpyObj } from 'src/testing/spy-helpers';
 import { CompanyResponse } from '../../../models/company.model';
+import { CompanySelectionService } from '../../../services/company-selection.service';
 
 describe('OnboardingComplete', () => {
   const createComponent = () => {
@@ -27,7 +28,16 @@ describe('OnboardingComplete', () => {
       snapshot: { params: {} },
     } as ActivatedRoute;
 
-    return { instance: new OnboardingComplete(router, route, companyService), companyService };
+    const companySelection = createSpyObj<CompanySelectionService>('CompanySelectionService', [
+      'setSelectedCompanyId',
+      'getSelectedCompanyId',
+    ]);
+    companySelection.getSelectedCompanyId.mockReturnValue(null);
+
+    return {
+      instance: new OnboardingComplete(router, route, companyService, companySelection),
+      companyService,
+    };
   };
 
   it('should create', () => {

@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, ActivatedRoute, RouterOutlet } from '@angular/router';
+import { Router, ActivatedRoute, RouterOutlet, NavigationEnd } from '@angular/router';
 import { CompanyService } from '../../services/company-service';
 import { CompanyEntity } from '../../models/company.model';
 import { CommonModule } from '@angular/common';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-add-company',
@@ -24,7 +25,7 @@ export class AddCompany implements OnInit {
   ];
 
   allowedTabs: string[] = ['step-1'];
-  currentStep: string = 'step-1'; // Track current active step
+  currentStep: string = 'step-1';
 
   constructor(
     private router: Router,
@@ -33,7 +34,6 @@ export class AddCompany implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Read route param — NOT query param
     const id = this.route.snapshot.params['id'];
 
     if (!id) {
@@ -43,6 +43,16 @@ export class AddCompany implements OnInit {
       // Get current step from localStorage in add mode
       const savedCurrentStep = localStorage.getItem('currentStep');
       this.currentStep = savedCurrentStep || 'step-1';
+
+      // Subscribe to route changes to update currentStep in ADD mode
+      this.router.events
+        .pipe(filter(event => event instanceof NavigationEnd))
+        .subscribe(() => {
+          const currentPath = this.router.url.split('?')[0].split('/').pop();
+          if (currentPath && this.tabs.some(t => t.key === currentPath)) {
+            this.currentStep = currentPath;
+          }
+        });
     }
 
     if (id) {
@@ -65,15 +75,12 @@ export class AddCompany implements OnInit {
       }
 
       this.loadCompanyForEdit(this.companyId);
-
-      // Open step-1 by default
       this.goTo('step-1');
     } else {
       this.companyService.setEditingCompany(null);
       this.companyService.setOriginalCompany(null);
       localStorage.removeItem('originalCompany');
 
-      // Get current step from route
       const currentStepFromRoute = this.route.snapshot.firstChild?.routeConfig?.path;
 
       if (currentStepFromRoute) {
@@ -96,7 +103,6 @@ export class AddCompany implements OnInit {
         this.companyService.setEditingCompany(data);
         this.companyService.setOriginalCompany(data);
 
-        // In edit mode → Unlock all tabs
         this.allowedTabs = this.tabs.map((t) => t.key);
       },
       error: (err) => {
@@ -105,9 +111,6 @@ export class AddCompany implements OnInit {
     });
   }
 
-  // ---------------------------------------------------------
-  // STEP NAVIGATION
-  // ---------------------------------------------------------
   goTo(step: string) {
     // In add mode, only allow navigation to the current step
     if (!this.isEditMode && step !== this.currentStep) {
@@ -126,9 +129,7 @@ export class AddCompany implements OnInit {
     return currentPath === step;
   }
 
-  // Check if a tab can be accessed (enabled)
   canAccessTab(step: string): boolean {
-    // In edit mode, all tabs are accessible
     if (this.isEditMode) {
       return true;
     }
@@ -137,7 +138,6 @@ export class AddCompany implements OnInit {
     return step === this.currentStep;
   }
 
-  // Call this method after successfully saving a step to move to next one
   moveToNextStep(currentStep: string) {
     const currentIndex = this.tabs.findIndex((t) => t.key === currentStep);
     if (currentIndex >= 0 && currentIndex < this.tabs.length - 1) {
@@ -148,7 +148,6 @@ export class AddCompany implements OnInit {
     }
   }
 
-  // Public method that child components can call
   public unlockAndMoveToNextStep(currentStep: string) {
     this.moveToNextStep(currentStep);
   }
