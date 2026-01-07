@@ -9,6 +9,7 @@ import { CompanySelectionService } from '../../services/company-selection.servic
 import { Subject, takeUntil } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
 import { Router } from '@angular/router';
+import { Loader } from '../../shared/loader/loader';
 
 interface PermissionColumn {
   view?: string;
@@ -26,7 +27,7 @@ interface PermissionRow {
 @Component({
   selector: 'app-roles',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Spinner],
+  imports: [CommonModule, ReactiveFormsModule, Spinner, Loader],
   templateUrl: './roles.html',
   styleUrls: ['./roles.css'],
 })

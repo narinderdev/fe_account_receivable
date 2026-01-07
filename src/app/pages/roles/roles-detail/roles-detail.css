@@ -1,5 +1,5 @@
 .role-details-page {
-  padding: 24px;
+  /* padding: 24px; */
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -179,6 +179,11 @@
 }
 
 .perm-pill.active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.perm-pill.null {
   background: #dcfce7;
   color: #15803d;
 }

@@ -14,11 +14,12 @@ import { Subject, takeUntil } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
 import { UserContextService } from '../../services/user-context.service';
+import { Loader } from '../../shared/loader/loader';
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, Spinner],
+  imports: [CommonModule, ReactiveFormsModule, Spinner, Loader],
   templateUrl: './users.html',
   styleUrls: ['./users.css'],
 })
@@ -27,6 +28,7 @@ export class Users implements OnInit, OnDestroy {
   inviteForm!: FormGroup;
   submitted = false;
   isSavingInvite = false;
+  isLoadingUsers = false;
 
   roles: Role[] = [];
   users: CompanyUser[] = [];
@@ -92,11 +94,15 @@ export class Users implements OnInit, OnDestroy {
   loadUsers() {
     if (!this.companyId) return;
 
+    this.isLoadingUsers = true;
+    this.cdr.detectChanges();
+
     this.companyService.getUsers(this.companyId).subscribe({
       next: (res) => {
         this.allUsers = res.data || [];
         this.pagination = this.createPagination();
         this.users = this.applyPagination(this.allUsers, 0);
+        this.isLoadingUsers = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -104,6 +110,7 @@ export class Users implements OnInit, OnDestroy {
         this.allUsers = [];
         this.users = [];
         this.pagination = this.createPagination();
+        this.isLoadingUsers = false;
         this.cdr.detectChanges();
       },
     });

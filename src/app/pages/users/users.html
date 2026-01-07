@@ -1,5 +1,6 @@
 <div class="company-container">
   <div class="form-section">
+    <app-loader [visible]="isLoadingUsers"></app-loader>
 
     <div class="actions" *ngIf="companyId && canInviteUser">
       <!-- <h2 class="section-title">Invite Users</h2> -->
@@ -9,7 +10,7 @@
     </div>
 
 
-    <div class="users-table-wrapper" *ngIf="companyId && pagination.totalItems > 0">
+    <div class="users-table-wrapper" *ngIf="companyId && !isLoadingUsers && pagination.totalItems > 0">
       <table class="users-table">
         <thead>
           <tr>
@@ -85,7 +86,10 @@
       </div>
     </div>
 
-    <p *ngIf="companyId && pagination.totalItems === 0" class="section-description">
+    <p
+      *ngIf="companyId && !isLoadingUsers && pagination.totalItems === 0"
+      class="section-description"
+    >
       No users found for this company.
     </p>
   </div>

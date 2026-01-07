@@ -3,7 +3,7 @@
     <button class="btn-add" (click)="openModal()">Add Role</button>
   </div>
 
-  <app-spinner *ngIf="isLoading"></app-spinner>
+  <app-loader [visible]="isLoading"></app-loader>
 
   <!-- ROLES TABLE -->
   <div class="roles-table-wrapper" *ngIf="!isLoading && pagination.totalItems > 0">
