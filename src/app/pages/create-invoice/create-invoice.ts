@@ -55,6 +55,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
   customers: CustomerEntity[] = [];
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
+  readonly today = this.getToday();
 
   formSubmitted = false;
   loading = false;
@@ -64,7 +65,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
     customerId: '',
     invoiceNumber: '',
     isGenerated: false,
-    invoiceDate: this.getToday(),
+    invoiceDate: this.today,
     dueDate: '',
     note: '',
     items: [{ itemName: '', description: '', quantity: 1, rate: 0, tax: 0 }],
@@ -190,6 +191,24 @@ export class CreateInvoice implements OnInit, OnDestroy {
     return this.subtotal + this.taxAmount;
   }
 
+  get dueDateMin(): string {
+    return this.invoice.invoiceDate || this.today;
+  }
+
+  get isInvoiceDateInFuture(): boolean {
+    if (!this.invoice.invoiceDate) {
+      return false;
+    }
+    return new Date(this.invoice.invoiceDate) > new Date(this.today);
+  }
+
+  get isDueDateBeforeInvoiceDate(): boolean {
+    if (!this.invoice.dueDate || !this.invoice.invoiceDate) {
+      return false;
+    }
+    return new Date(this.invoice.dueDate) < new Date(this.invoice.invoiceDate);
+  }
+
   // ---------------------------
   // SUBMIT INVOICE
   // ---------------------------
@@ -204,6 +223,16 @@ export class CreateInvoice implements OnInit, OnDestroy {
       !this.invoice.note ||
       (!this.invoice.isGenerated && !this.invoice.invoiceNumber)
     ) {
+      return;
+    }
+
+    if (this.isInvoiceDateInFuture) {
+      this.toastr.error('Invoice date cannot be in the future.', 'Validation Error');
+      return;
+    }
+
+    if (this.isDueDateBeforeInvoiceDate) {
+      this.toastr.error('Due date cannot be before the invoice date.', 'Validation Error');
       return;
     }
 
@@ -285,6 +314,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
             const msg = err?.error?.message || 'Failed to send invoice.';
             this.toastr.error(msg, 'Send Invoice Error');
             this.loading = false;
+            this.cdr.detectChanges();
           },
         });
       },
@@ -293,6 +323,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
         const msg = err?.error?.message || 'Unknown error';
         this.toastr.error('Failed to create invoice: ' + msg, 'Error');
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }
