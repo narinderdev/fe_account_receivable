@@ -203,7 +203,14 @@ export class Customers implements OnInit, OnDestroy {
       error: (err) => {
         this.uploadingCsv = false;
         console.error('CSV upload failed:', err);
-        this.toastr.error('CSV upload failed!', 'Error');
+
+        const backendMessage = err?.error?.message;
+        if (backendMessage) {
+          this.toastr.error(backendMessage, 'Error');
+        } else {
+          this.toastr.error('CSV upload failed!', 'Error');
+        }
+
         this.cdr.detectChanges();
       },
     });
