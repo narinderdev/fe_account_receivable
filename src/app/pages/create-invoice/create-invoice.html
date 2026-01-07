@@ -35,17 +35,23 @@
           <!-- Invoice Date -->
           <div class="form-field">
             <label>Invoice Date</label>
-            <input type="date" [(ngModel)]="invoice.invoiceDate" />
+            <input type="date" [(ngModel)]="invoice.invoiceDate" [max]="today" />
             <p class="error" *ngIf="formSubmitted && !invoice.invoiceDate">
               Invoice date is required.
+            </p>
+            <p class="error" *ngIf="invoice.invoiceDate && isInvoiceDateInFuture">
+              Invoice date cannot be after today.
             </p>
           </div>
 
           <!-- Due Date -->
           <div class="form-field">
             <label>Due Date</label>
-            <input type="date" [(ngModel)]="invoice.dueDate" />
+            <input type="date" [(ngModel)]="invoice.dueDate" [min]="dueDateMin" />
             <p class="error" *ngIf="formSubmitted && !invoice.dueDate">Due date is required.</p>
+            <p class="error" *ngIf="invoice.dueDate && isDueDateBeforeInvoiceDate">
+              Due date cannot be before invoice date.
+            </p>
           </div>
         </div>
 
