@@ -18,6 +18,7 @@
             <th>Company Code</th>
             <th>Email</th>
             <th>Address</th>
+            <th>Created At</th>
             <th *ngIf="showActionsColumn">Actions</th>
           </tr>
         </thead>
@@ -51,9 +52,7 @@
             </td>
             <td>{{ c.companyCode }}</td>
             <td>
-              {{
-                c.companyAddress ? c.companyAddress.primaryContactEmail || '—' : '—'
-              }}
+              {{ c.companyAddress ? c.companyAddress.primaryContactEmail || '—' : '—' }}
             </td>
 
             <td>
@@ -66,6 +65,8 @@
               </ng-container>
               <ng-template #noCompanyAddress>—</ng-template>
             </td>
+
+            <td>{{ c.createdAt | date: 'MMM d, y, h:mm a' }}</td>
 
             <td class="actions" *ngIf="showActionsColumn">
               <span class="btn-right" *ngIf="canUpdateCompany"

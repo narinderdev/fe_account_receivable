@@ -5,7 +5,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { Role } from '../../../models/company-users.model';
 import { CompanySelectionService } from '../../../services/company-selection.service';
 import { RoleService } from '../../../services/role-service';
-import { Spinner } from '../../../shared/spinner/spinner';
+import { Loader } from '../../../shared/loader/loader';
 
 interface PermissionColumn {
   view?: string;
@@ -23,7 +23,7 @@ interface PermissionRow {
 @Component({
   selector: 'app-roles-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, Spinner],
+  imports: [CommonModule, RouterLink, Loader],
   templateUrl: './roles-detail.html',
   styleUrls: ['./roles-detail.css'],
 })
