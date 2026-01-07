@@ -311,7 +311,12 @@ export class AddCustomer implements OnInit {
         this.allowedTabs = ['main', 'address'];
         this.goToTab('address');
       },
-      error: () => (this.isSavingMain = false),
+      error: (err) => {
+        const message = err?.error?.message || 'Failed to create customer.';
+        this.toastr.error(message, 'Error');
+        this.isSavingMain = false;
+        this.cdr.detectChanges();
+      },
     });
   }
 
