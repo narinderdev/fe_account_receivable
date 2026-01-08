@@ -24,6 +24,8 @@ interface PermissionRow {
   isSubRow?: boolean;
 }
 
+type PermissionType = keyof PermissionColumn;
+
 @Component({
   selector: 'app-roles',
   standalone: true,
@@ -277,21 +279,86 @@ export class Roles implements OnInit, OnDestroy {
     return code === this.REQUIRED_VIEW_COMPANY;
   }
 
-  togglePermissionSelection(code: string | undefined) {
-    if (!code) return;
+  // ✅ Check if View permission should be disabled based on dependents
+  isViewDisabled(row: PermissionRow): boolean {
+    const viewCode = row.permissions.view;
+    if (!viewCode) return false;
 
-    // ✅ Prevent toggling required permissions
-    if (this.isPermissionRequired(code)) return;
+    // If it's the required VIEW_COMPANY permission, it's always disabled
+    if (this.isPermissionRequired(viewCode)) return true;
+
+    // Check if any dependent permissions are selected
+    const current = this.getSelectedPermissions();
+    return this.hasDependentPermissionSelected(row, current);
+  }
+
+  onPermissionToggle(row: PermissionRow, action: PermissionType) {
+    const code = row.permissions[action];
+    if (!code) {
+      return;
+    }
 
     const control = this.addRoleForm.get('permissions');
-    if (!control) return;
+    if (!control) {
+      return;
+    }
 
     const current = this.getSelectedPermissions();
-    if (current.includes(code)) {
-      control.setValue(current.filter((val) => val !== code));
-    } else {
-      control.setValue([...current, code]);
+    const isSelected = current.includes(code);
+
+    if (action === 'view') {
+      // Trying to uncheck view
+      if (isSelected) {
+        // Check if any dependent permissions (create, update, delete) are selected
+        const hasDependents = this.hasDependentPermissionSelected(row, current);
+        // Prevent unchecking if there are dependents OR if it's required
+        if (hasDependents || this.isPermissionRequired(code)) {
+          // Don't allow unchecking - show a visual feedback that it's locked
+          this.cdr.detectChanges();
+          return;
+        }
+        control.setValue(current.filter((val) => val !== code));
+      } else {
+        // Checking view
+        control.setValue([...current, code]);
+      }
+      this.cdr.detectChanges();
+      return;
     }
+
+    // Handling create, update, or delete
+    if (isSelected) {
+      // Unchecking create/update/delete - simply remove it
+      const updated = current.filter((val) => val !== code);
+      control.setValue(updated);
+
+      // After unchecking, check if view should still be disabled
+      const viewCode = row.permissions.view;
+      if (viewCode) {
+        const stillHasDependents = this.hasDependentPermissionSelected(row, updated);
+        // If no more dependents and view is checked, allow user to uncheck it later
+        // If VIEW_COMPANY is required, it stays disabled
+      }
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Checking create/update/delete - add it AND ensure view is also checked
+    const updated = [...current];
+
+    // First, add the view permission if not already present
+    const viewCode = row.permissions.view;
+    if (viewCode && !updated.includes(viewCode)) {
+      updated.push(viewCode);
+    }
+
+    // Then add the selected permission (create/update/delete)
+    if (!updated.includes(code)) {
+      updated.push(code);
+    }
+
+    control.setValue(updated);
+    this.cdr.detectChanges();
   }
 
   getSelectedCount(): number {
@@ -302,6 +369,14 @@ export class Roles implements OnInit, OnDestroy {
     const control = this.addRoleForm.get('permissions');
     const value = control?.value;
     return Array.isArray(value) ? (value as string[]) : [];
+  }
+
+  private hasDependentPermissionSelected(row: PermissionRow, current: string[]): boolean {
+    const dependentActions: PermissionType[] = ['create', 'update', 'delete'];
+    return dependentActions.some((action) => {
+      const perm = row.permissions[action];
+      return perm ? current.includes(perm) : false;
+    });
   }
 
   viewRole(role: Role) {
@@ -375,10 +450,7 @@ export class Roles implements OnInit, OnDestroy {
       return [];
     }
 
-    this.pagination.currentPage = Math.min(
-      Math.max(page, 0),
-      this.pagination.totalPages - 1
-    );
+    this.pagination.currentPage = Math.min(Math.max(page, 0), this.pagination.totalPages - 1);
 
     const start = this.pagination.currentPage * this.pagination.pageSize;
     return source.slice(start, start + this.pagination.pageSize);

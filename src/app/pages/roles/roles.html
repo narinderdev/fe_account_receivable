@@ -30,12 +30,7 @@
     <div class="pagination-wrapper" *ngIf="pagination.totalPages > 1">
       <div class="pagination-info">
         Showing {{ pagination.currentPage * pagination.pageSize + 1 }} to
-        {{
-          Math.min(
-            (pagination.currentPage + 1) * pagination.pageSize,
-            pagination.totalItems
-          )
-        }}
+        {{ Math.min((pagination.currentPage + 1) * pagination.pageSize, pagination.totalItems) }}
         of {{ pagination.totalItems }} results
       </div>
 
@@ -66,7 +61,9 @@
     </div>
   </div>
 
-  <p *ngIf="!isLoading && pagination.totalItems === 0" class="section-description">No roles found.</p>
+  <p *ngIf="!isLoading && pagination.totalItems === 0" class="section-description">
+    No roles found.
+  </p>
 </div>
 
 <!-- ADD ROLE MODAL -->
@@ -125,8 +122,8 @@
                     <input
                       type="checkbox"
                       [checked]="isPermissionSelected(row.permissions.view)"
-                      [disabled]="isPermissionRequired(row.permissions.view)"
-                      (change)="togglePermissionSelection(row.permissions.view)"
+                      [disabled]="isViewDisabled(row)"
+                      (change)="onPermissionToggle(row, 'view')"
                     />
                   </label>
                 </td>
@@ -135,7 +132,7 @@
                     <input
                       type="checkbox"
                       [checked]="isPermissionSelected(row.permissions.create)"
-                      (change)="togglePermissionSelection(row.permissions.create)"
+                      (change)="onPermissionToggle(row, 'create')"
                     />
                   </label>
                 </td>
@@ -144,7 +141,7 @@
                     <input
                       type="checkbox"
                       [checked]="isPermissionSelected(row.permissions.update)"
-                      (change)="togglePermissionSelection(row.permissions.update)"
+                      (change)="onPermissionToggle(row, 'update')"
                     />
                   </label>
                 </td>
@@ -153,7 +150,7 @@
                     <input
                       type="checkbox"
                       [checked]="isPermissionSelected(row.permissions.delete)"
-                      (change)="togglePermissionSelection(row.permissions.delete)"
+                      (change)="onPermissionToggle(row, 'delete')"
                     />
                   </label>
                 </td>

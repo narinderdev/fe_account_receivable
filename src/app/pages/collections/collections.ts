@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Customer } from '../../services/customer';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { CollectionService } from '../../services/collection-service';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Loader } from '../../shared/loader/loader';
@@ -41,7 +41,7 @@ interface ReminderItem {
 @Component({
   selector: 'app-collections',
   standalone: true,
-  imports: [CommonModule, FormsModule, Spinner, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, Spinner, Loader],
   templateUrl: './collections.html',
   styleUrls: ['./collections.css'],
 })
@@ -79,8 +79,8 @@ export class Collections implements OnInit, OnDestroy {
   disputeSubmitted = false;
   disputeCustomers: CustomerEntity[] = [];
   disputeInvoices: InvoiceWithItems[] = [];
-  selectedDisputeCustomerId: number | null = null;
-  selectedDisputeInvoiceId: number | null = null;
+  selectedDisputeCustomerId: number | '' = '';
+  selectedDisputeInvoiceId: number | '' = '';
   disputeInvoiceAmount: number | null = null;
   disputedAmount: number | null = null;
   resolutionDate = '';
@@ -534,7 +534,7 @@ export class Collections implements OnInit, OnDestroy {
       return;
     }
     if (!this.selectedCompanyId || this.loadingDisputeCustomers) {
-      this.selectedDisputeCustomerId = null;
+      this.selectedDisputeCustomerId = '';
       this.disputeInvoices = [];
     }
 
@@ -544,7 +544,7 @@ export class Collections implements OnInit, OnDestroy {
     this.resolutionDate = '';
     this.disputeReason = '';
     this.selectedDisputeCode = '';
-    this.selectedDisputeInvoiceId = null;
+    this.selectedDisputeInvoiceId = '';
     this.disputeInvoiceAmount = null;
 
     if (this.selectedCompanyId) {
@@ -588,17 +588,18 @@ export class Collections implements OnInit, OnDestroy {
   onDisputeCustomerChange() {
     if (!this.selectedDisputeCustomerId) {
       this.disputeInvoices = [];
-      this.selectedDisputeInvoiceId = null;
+      this.selectedDisputeInvoiceId = '';
       this.disputeInvoiceAmount = null;
       return;
     }
 
     this.loadingDisputeInvoices = true;
-    this.customerService.getCustomerInvoicesById(this.selectedDisputeCustomerId).subscribe({
+    const customerId = Number(this.selectedDisputeCustomerId);
+    this.customerService.getCustomerInvoicesById(customerId).subscribe({
       next: (res: CustomerInvoiceListResponse) => {
         this.disputeInvoices = Array.isArray(res.data) ? res.data : [];
         this.loadingDisputeInvoices = false;
-        this.selectedDisputeInvoiceId = null;
+        this.selectedDisputeInvoiceId = '';
         this.disputeInvoiceAmount = null;
         this.disputedAmount = null;
         this.cdr.detectChanges();
@@ -606,7 +607,7 @@ export class Collections implements OnInit, OnDestroy {
       error: () => {
         this.disputeInvoices = [];
         this.loadingDisputeInvoices = false;
-        this.selectedDisputeInvoiceId = null;
+        this.selectedDisputeInvoiceId = '';
         this.disputeInvoiceAmount = null;
         this.disputedAmount = null;
         this.cdr.detectChanges();
@@ -631,8 +632,10 @@ export class Collections implements OnInit, OnDestroy {
   saveDispute() {
     this.disputeSubmitted = true;
 
-    const hasValidCustomer = !!this.selectedDisputeCustomerId;
-    const hasValidInvoice = !!this.selectedDisputeInvoiceId;
+    const customerId = Number(this.selectedDisputeCustomerId);
+    const invoiceId = Number(this.selectedDisputeInvoiceId);
+    const hasValidCustomer = Number.isFinite(customerId) && customerId > 0;
+    const hasValidInvoice = Number.isFinite(invoiceId) && invoiceId > 0;
     const invoiceAmount = this.disputeInvoiceAmount ?? 0;
     const disputedAmount = this.disputedAmount ?? 0;
     const hasValidAmount =
@@ -654,8 +657,8 @@ export class Collections implements OnInit, OnDestroy {
     }
 
     const payload: CreateDisputeRequest = {
-      customerId: this.selectedDisputeCustomerId!,
-      invoiceId: this.selectedDisputeInvoiceId!,
+      customerId,
+      invoiceId,
       disputeCode: this.selectedDisputeCode,
       disputedAmount,
       reason: this.disputeReason.trim(),
@@ -744,8 +747,8 @@ export class Collections implements OnInit, OnDestroy {
   private resetDisputeState() {
     this.disputeCustomers = [];
     this.disputeInvoices = [];
-    this.selectedDisputeCustomerId = null;
-    this.selectedDisputeInvoiceId = null;
+    this.selectedDisputeCustomerId = '';
+    this.selectedDisputeInvoiceId = '';
     this.disputeInvoiceAmount = null;
     this.disputedAmount = null;
     this.resolutionDate = '';

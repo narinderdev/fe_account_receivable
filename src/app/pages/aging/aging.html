@@ -43,14 +43,14 @@
 
       <!-- DATA -->
       <tbody *ngIf="!loading && agingData.length > 0">
-        <tr *ngFor="let row of agingData">
+        <tr *ngFor="let row of agingData; let i = index">
           <td>
             <div class="customer-info">
               <div
                 class="customer-initial"
                 [ngStyle]="{
-                  backgroundColor: getInitialColor(row.customer).background,
-                  color: getInitialColor(row.customer).color
+                  backgroundColor: getInitialColor(i).background,
+                  color: getInitialColor(i).color
                 }"
               >
                 {{ row.customer[0] }}
