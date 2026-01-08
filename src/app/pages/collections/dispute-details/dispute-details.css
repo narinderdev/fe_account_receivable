@@ -6,12 +6,12 @@
 
 .dispute-details-page {
   overflow-y: auto;
-  padding-bottom: 40px;
+  padding-bottom: 10px;
 }
 
 .header-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: end;
   align-items: center;
   margin-bottom: 24px;
 }
@@ -140,6 +140,7 @@
 /* Action Buttons in Header */
 .action-buttons {
   display: flex;
+  justify-content: end;
   gap: 10px;
 }
 
