@@ -198,7 +198,14 @@
           </thead>
           <tbody>
             <tr *ngFor="let invoice of overdueInvoices; let i = index">
-              <td>{{ invoice.invoiceNumber }}</td>
+              <td>
+                <a
+                  [routerLink]="['/admin/invoices/detail', invoice.invoiceId]"
+                  class="invoice-link"
+                >
+                  {{ invoice.invoiceNumber }}
+                </a>
+              </td>
               <td>
                 <div class="customer-info">
                   <div
@@ -648,7 +655,8 @@
               (change)="onDisputeCustomerChange()"
               [disabled]="loadingDisputeCustomers"
             >
-              <option value="">Select customer</option>
+              <option value="" disabled *ngIf="loadingDisputeCustomers">Loading customers...</option>
+              <option value="" *ngIf="!loadingDisputeCustomers">Select customer</option>
               <option *ngFor="let customer of disputeCustomers" [value]="customer.id">
                 {{ customer.customerName }}
               </option>
@@ -665,7 +673,15 @@
               (change)="onDisputeInvoiceChange()"
               [disabled]="loadingDisputeInvoices || !selectedDisputeCustomerId"
             >
-              <option value="">Select invoice</option>
+              <option value="" disabled *ngIf="!selectedDisputeCustomerId">
+                Select a customer first
+              </option>
+              <option value="" disabled *ngIf="selectedDisputeCustomerId && loadingDisputeInvoices">
+                Loading invoices...
+              </option>
+              <option value="" *ngIf="selectedDisputeCustomerId && !loadingDisputeInvoices">
+                Select invoice
+              </option>
               <option *ngFor="let invoice of disputeInvoices" [value]="invoice.id">
                 {{ invoice.invoiceNumber }}
               </option>

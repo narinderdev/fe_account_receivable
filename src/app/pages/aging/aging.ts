@@ -93,24 +93,19 @@ export class Aging implements OnInit, OnDestroy {
       });
   }
 
-  /** GET INITIAL COLOR BASED ON FIRST LETTER */
-  getInitialColor(customerName: string): { background: string; color: string } {
-    const initial = customerName[0]?.toUpperCase() || '';
-    const palette: Record<string, { background: string; color: string }> = {
-      A: { background: '#DBEAFE', color: '#2563EB' },
-      G: { background: '#F3E8FF', color: '#9333EA' },
-      S: { background: '#FFEDD5', color: '#EA580C' },
-      U: { background: '#FEE2E2', color: '#DC2626' },
-      C: { background: '#E0E7FF', color: '#4F46E5' },
-      I: { background: '#CCFBF1', color: '#0D9488' },
-      W: { background: '#FEF3C7', color: '#D97706' },
-    };
-    return (
-      palette[initial] || {
-        background: '#F3F4F6',
-        color: '#1F2937',
-      }
-    );
+  /** GET INITIAL COLOR BASED ON ROW INDEX (CYCLING PALETTE) */
+  getInitialColor(index: number): { background: string; color: string } {
+    const palette = [
+      { background: '#DBEAFE', color: '#2563EB' },
+      { background: '#F3E8FF', color: '#9333EA' },
+      { background: '#FFEDD5', color: '#EA580C' },
+      { background: '#FEE2E2', color: '#DC2626' },
+      { background: '#E0E7FF', color: '#4F46E5' },
+      { background: '#CCFBF1', color: '#0D9488' },
+    ];
+
+    const colorIndex = palette.length ? index % palette.length : 0;
+    return palette[colorIndex];
   }
 
   /** LOAD CUSTOMERS INTO DROPDOWN */

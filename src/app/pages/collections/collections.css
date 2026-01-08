@@ -246,6 +246,16 @@
   text-decoration: underline;
 }
 
+.invoice-link {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.invoice-link:hover {
+  text-decoration: underline;
+}
+
 .pagination-wrapper {
   display: flex;
   justify-content: space-between;

@@ -24,13 +24,10 @@ describe('Aging', () => {
   });
 
   describe('helper logic', () => {
-    it('returns deterministic placeholder colors for initials', () => {
+    it('cycles placeholder colors using the row index', () => {
       const instance = createComponent();
-      expect(instance.getInitialColor('Alpha').background).toBe('#DBEAFE');
-      expect(instance.getInitialColor('zulu')).toEqual({
-        background: '#F3F4F6',
-        color: '#1F2937',
-      });
+      expect(instance.getInitialColor(0)).toEqual({ background: '#DBEAFE', color: '#2563EB' });
+      expect(instance.getInitialColor(6)).toEqual({ background: '#DBEAFE', color: '#2563EB' });
     });
 
     it('builds pagination ranges with ellipsis', () => {

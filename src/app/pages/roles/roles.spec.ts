@@ -54,16 +54,30 @@ describe('Roles', () => {
       expect(instance.isPermissionRequired('CREATE_CUSTOMER')).toBe(false);
     });
 
-    it('toggles optional permissions without affecting required ones', () => {
+    it('enforces view dependencies for create/update/delete permissions', () => {
       const instance = createComponent();
-      instance.togglePermissionSelection('CREATE_CUSTOMER');
-      expect(instance.getSelectedCount()).toBe(2);
+      const row = {
+        label: 'Customers',
+        permissions: {
+          view: 'VIEW_CUSTOMERS',
+          create: 'CREATE_CUSTOMER',
+          update: 'EDIT_CUSTOMER',
+          delete: 'DELETE_CUSTOMER',
+        },
+      };
 
-      instance.togglePermissionSelection('CREATE_CUSTOMER');
-      expect(instance.getSelectedCount()).toBe(1);
+      instance.onPermissionToggle(row, 'create');
+      expect(instance.isPermissionSelected('CREATE_CUSTOMER')).toBe(true);
+      expect(instance.isPermissionSelected('VIEW_CUSTOMERS')).toBe(true);
 
-      instance.togglePermissionSelection('VIEW_COMPANY');
-      expect(instance.getSelectedCount()).toBe(1);
+      // Attempt to uncheck view while create is selected should fail
+      instance.onPermissionToggle(row, 'view');
+      expect(instance.isPermissionSelected('VIEW_CUSTOMERS')).toBe(true);
+
+      // Once create is removed, view can be toggled off
+      instance.onPermissionToggle(row, 'create');
+      instance.onPermissionToggle(row, 'view');
+      expect(instance.isPermissionSelected('VIEW_CUSTOMERS')).toBe(false);
     });
   });
 });
