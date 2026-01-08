@@ -761,9 +761,13 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" (click)="closeDisputePopup()">Cancel</button>
-        <button class="btn-save" (click)="saveDispute()">
-          <span>Submit Dispute</span>
+        <button class="btn-cancel" (click)="closeDisputePopup()" [disabled]="savingDispute">
+          Cancel
+        </button>
+        <button class="btn-save" (click)="saveDispute()" [disabled]="savingDispute">
+          <app-spinner *ngIf="savingDispute"></app-spinner>
+          <span *ngIf="!savingDispute">Submit Dispute</span>
+          <!-- <span *ngIf="savingDispute"></span> -->
         </button>
       </div>
     </div>
