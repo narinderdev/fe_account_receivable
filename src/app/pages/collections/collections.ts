@@ -89,6 +89,7 @@ export class Collections implements OnInit, OnDestroy {
   loadingDisputeInvoices = false;
   disputeCodes: DisputeCode[] = [];
   selectedDisputeCode: string = '';
+  savingDispute = false;
 
   creditsToApply: CreditItem[] = [
     { customer: 'Acme Corp', totalDue: 32000, lastActivity: 'Note 2 days' },
@@ -453,12 +454,12 @@ export class Collections implements OnInit, OnDestroy {
 
   getInitialColor(index: number): { background: string; color: string } {
     const palette = [
-      { background: '#DBEAFE', color: '#2563EB' }, // Blue
-      { background: '#F3E8FF', color: '#9333EA' }, // Purple
-      { background: '#FFEDD5', color: '#EA580C' }, // Orange
-      { background: '#FEE2E2', color: '#DC2626' }, // Red
-      { background: '#E0E7FF', color: '#4F46E5' }, // Indigo
-      { background: '#CCFBF1', color: '#0D9488' }, // Teal
+      { background: '#DBEAFE', color: '#2563EB' }, 
+      { background: '#F3E8FF', color: '#9333EA' }, 
+      { background: '#FFEDD5', color: '#EA580C' }, 
+      { background: '#FEE2E2', color: '#DC2626' }, 
+      { background: '#E0E7FF', color: '#4F46E5' }, 
+      { background: '#CCFBF1', color: '#0D9488' }, 
     ];
 
     const colorIndex = index % palette.length;
@@ -665,12 +666,24 @@ export class Collections implements OnInit, OnDestroy {
       resolutionDate: this.resolutionDate,
     };
 
+    this.savingDispute = true;
+    this.cdr.detectChanges();
+
     this.collectionService.createDispute(payload).subscribe({
-      next: () => {
+      next: (res) => {
+        const message = res?.message || 'Dispute created successfully';
+        this.toastr.success(message);
+        this.savingDispute = false;
         this.closeDisputePopup();
+        if (this.selectedCompanyId) {
+          this.loadDisputes(this.selectedCompanyId);
+        }
+        this.cdr.detectChanges();
       },
       error: () => {
         this.toastr.error('Failed to create dispute');
+        this.savingDispute = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -757,6 +770,7 @@ export class Collections implements OnInit, OnDestroy {
     this.disputeSubmitted = false;
     this.loadingDisputeCustomers = false;
     this.loadingDisputeInvoices = false;
+    this.savingDispute = false;
   }
 
   logCall() {

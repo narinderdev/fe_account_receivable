@@ -193,6 +193,21 @@
     min-width: 240px;
     max-width: calc(100vw - 32px);
   }
+
+  .navbar-right {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 1rem;
+  }
+
+  .month-end-balance {
+    order: 2;
+  }
+
+  .company-select {
+    order: 1;
+  }
 }
 
 .navbar-right {
@@ -226,4 +241,58 @@
 .balance-loading {
   font-size: 0.875rem;
   color: #999;
+}
+
+@media (max-width: 640px) {
+  .navbar-right {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .month-end-balance {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .company-select {
+    width: 100%;
+  }
+
+  .company-select-trigger {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .company-select-label {
+    min-width: auto;
+    flex: 1;
+  }
+
+  .company-select-menu {
+    width: 100%;
+    min-width: unset;
+    left: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-navbar {
+    padding: 14px;
+  }
+
+  .navbar-title {
+    font-size: 18px;
+  }
+
+  .month-end-balance {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .company-select-trigger {
+    padding: 10px 14px;
+  }
 }
