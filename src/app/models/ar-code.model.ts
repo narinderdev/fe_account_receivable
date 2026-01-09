@@ -1,0 +1,31 @@
+export interface ArCodeEntity {
+  id: number;
+  codeType: string | null;
+  code: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  active: boolean;
+}
+
+export interface CreateArCodePayload {
+  code: string;
+  name: string;
+  description: string;
+  active?: boolean;
+}
+
+export interface ArCodeApiResponse<T> {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: T;
+}
+
+export type CreateArCodeResponse = ArCodeApiResponse<ArCodeEntity>;
+export type ArCodeListResponse = ArCodeApiResponse<ArCodeEntity[]>;
+export type DeleteArCodeResponse = ArCodeApiResponse<null>;
+export type UpdateArCodePayload = Partial<CreateArCodePayload>;
+export type UpdateArCodeResponse = ArCodeApiResponse<ArCodeEntity>;
+export type ToggleArCodeResponse = UpdateArCodeResponse;

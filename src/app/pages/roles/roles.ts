@@ -144,6 +144,15 @@ export class Roles implements OnInit, OnDestroy {
         create: 'CREATE_ROLES',
       },
     },
+    {
+      label: 'Ar-Code',
+      permissions: {
+        view: 'VIEW_CODE',
+        create: 'CREATE_CODE',
+        update: 'UPDATE_CODE',
+        delete: 'DELETE_CODE',
+      },
+    },
   ];
 
   private destroy$ = new Subject<void>();
