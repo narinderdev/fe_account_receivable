@@ -28,7 +28,8 @@ interface SelectableInvoice extends Invoice {
 export class ReceivePayment implements OnInit, OnDestroy {
   customers: CustomerEntity[] = [];
   selectedCustomerId: number | null = null;
-  amount: number | null = null;
+  bankDeposit: number | null = null;
+  serviceFee: number | null = null;
   paymentMethod: string = '';
   invoices: SelectableInvoice[] = [];
   notes: string = '';
@@ -37,7 +38,8 @@ export class ReceivePayment implements OnInit, OnDestroy {
   // Validation flags
   submitted: boolean = false;
   showCustomerError: boolean = false;
-  showAmountError: boolean = false;
+  showBankDepositError: boolean = false;
+  showServiceFeeError: boolean = false;
   showPaymentMethodError: boolean = false;
   showInvoiceError: boolean = false;
   isSaving = false;
@@ -73,11 +75,19 @@ export class ReceivePayment implements OnInit, OnDestroy {
         this.customers = [];
         this.selectedCustomerId = null;
         this.invoices = [];
-        this.amount = null;
+        this.bankDeposit = null;
+        this.serviceFee = null;
         this.paymentMethod = '';
         this.cdr.detectChanges();
       }
     });
+  }
+
+  /** Calculate total amount from bank deposit and service fee */
+  get totalAmount(): number {
+    const deposit = this.bankDeposit || 0;
+    const fee = this.serviceFee || 0;
+    return deposit + fee;
   }
 
   /** Load customers */
@@ -103,13 +113,13 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
     if (!this.selectedCustomerId) return;
 
-    // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
     setTimeout(() => {
-      // Reset form
-      this.amount = null;
+      this.bankDeposit = null;
+      this.serviceFee = null;
       this.paymentMethod = '';
       this.invoices = [];
-      this.showAmountError = false;
+      this.showBankDepositError = false;
+      this.showServiceFeeError = false;
       this.showPaymentMethodError = false;
       this.showInvoiceError = false;
       this.cdr.detectChanges();
@@ -135,6 +145,40 @@ export class ReceivePayment implements OnInit, OnDestroy {
     });
   }
 
+  /** Recalculate applied amounts when bank deposit or service fee changes */
+  onAmountFieldChange() {
+    // Recalculate allocations for selected invoices
+    this.recalculateAllocations();
+    this.cdr.detectChanges();
+  }
+
+  /** Recalculate invoice allocations based on total amount */
+  private recalculateAllocations() {
+    const selected = this.invoices.filter((inv) => inv.selected);
+
+    if (selected.length === 0) {
+      return;
+    }
+
+    let remaining = this.totalAmount;
+
+    // Reset all applied amounts first
+    selected.forEach((inv) => {
+      inv.appliedAmount = 0;
+    });
+
+    // Allocate amount to selected invoices
+    for (const inv of selected) {
+      if (remaining <= 0) {
+        break;
+      }
+
+      const amountToApply = Math.min(remaining, inv.balanceDue || 0);
+      inv.appliedAmount = amountToApply;
+      remaining -= amountToApply;
+    }
+  }
+
   /** Handle invoice checkbox selection */
   toggleInvoice(inv: SelectableInvoice, event: Event) {
     console.log('Toggle invoice called for:', inv.invoiceNumber || inv.id);
@@ -145,10 +189,10 @@ export class ReceivePayment implements OnInit, OnDestroy {
     console.log('Checkbox checked:', isChecked);
 
     if (isChecked) {
-      // Validate amount first
-      if (!this.amount || this.amount <= 0) {
-        console.log('Amount validation failed');
-        this.toastr.warning('Please enter a payment amount first.');
+      // Validate total amount first
+      if (this.totalAmount <= 0) {
+        console.log('Total amount validation failed');
+        this.toastr.warning('Please enter bank deposit or service fee first.');
         if (checkbox) {
           checkbox.checked = false;
         }
@@ -160,7 +204,7 @@ export class ReceivePayment implements OnInit, OnDestroy {
         .filter((i) => i.selected)
         .reduce((sum, i) => sum + (i.appliedAmount || 0), 0);
 
-      const remaining = this.amount - alreadyApplied;
+      const remaining = this.totalAmount - alreadyApplied;
       console.log('Already applied:', alreadyApplied, 'Remaining:', remaining);
 
       // Make sure there is remaining amount to allocate
@@ -195,14 +239,8 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
   /** Unapplied amount */
   get unappliedAmount() {
-    const totalInvoiceAmount = this.invoices.reduce(
-      (sum, invoice) => sum + (invoice.balanceDue || 0),
-      0
-    );
-
-    if (!this.amount) return totalInvoiceAmount;
-
-    return totalInvoiceAmount - this.amount;
+    if (this.totalAmount <= 0) return 0;
+    return this.totalAmount - this.totalApplied;
   }
 
   /** Get selected invoices count */
@@ -215,7 +253,8 @@ export class ReceivePayment implements OnInit, OnDestroy {
     let isValid = true;
 
     this.showCustomerError = !this.selectedCustomerId;
-    this.showAmountError = !this.amount || this.amount <= 0;
+    this.showBankDepositError = !this.bankDeposit || this.bankDeposit < 0;
+    this.showServiceFeeError = !this.serviceFee || this.serviceFee < 0;
     this.showPaymentMethodError = !this.paymentMethod;
     this.showInvoiceError = this.selectedInvoicesCount === 0;
     const trimmedNotes = this.notes.trim();
@@ -224,7 +263,8 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
     if (
       this.showCustomerError ||
-      this.showAmountError ||
+      this.showBankDepositError ||
+      this.showServiceFeeError ||
       this.showPaymentMethodError ||
       this.showInvoiceError ||
       this.showNotesError
@@ -251,7 +291,9 @@ export class ReceivePayment implements OnInit, OnDestroy {
     console.log('SAVE BUTTON CLICKED');
     console.log('========================================');
     console.log('Customer ID:', this.selectedCustomerId);
-    console.log('Amount:', this.amount);
+    console.log('Bank Deposit:', this.bankDeposit);
+    console.log('Service Fee:', this.serviceFee);
+    console.log('Total Amount:', this.totalAmount);
     console.log('Payment Method:', this.paymentMethod);
     console.log('Total Invoices:', this.invoices.length);
     console.log('Selected Invoices:', this.selectedInvoicesCount);
@@ -274,8 +316,20 @@ export class ReceivePayment implements OnInit, OnDestroy {
     }
 
     const invoiceIds = selectedInvoices.map((inv) => inv.id);
+
+    // Payload structure for backend:
+    // {
+    //   bankDeposit: number,
+    //   serviceFee: number,
+    //   paymentAmount: number (calculated as bankDeposit + serviceFee),
+    //   paymentMethod: string,
+    //   notes: string,
+    //   invoiceIds: number[]
+    // }
     const data: ApplyPaymentRequest = {
-      paymentAmount: this.amount!,
+      bankDeposit: this.bankDeposit!,
+      serviceFee: this.serviceFee!,
+      paymentAmount: this.totalAmount,
       paymentMethod: this.paymentMethod,
       notes: this.notes,
       invoiceIds: invoiceIds,

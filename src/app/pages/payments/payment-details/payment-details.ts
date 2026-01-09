@@ -18,6 +18,8 @@ export class PaymentDetails implements OnInit {
   customerName = '';
   paymentDate = '';
   paymentAmount = 0;
+  bankDeposit = 0;
+  serviceFee = 0;
   invoices: PaymentApplication[] = [];
   notes = 'No Notes Yet';
 
@@ -34,6 +36,8 @@ export class PaymentDetails implements OnInit {
       this.customerName = payment.applications?.[0]?.invoice?.customer?.customerName || '--';
       this.paymentDate = payment.paymentDate;
       this.paymentAmount = payment.paymentAmount;
+       this.bankDeposit = payment.bankDeposit ?? 0;
+       this.serviceFee = payment.serviceFee ?? 0;
       this.invoices = payment.applications || [];
 
       const trimmedNotes = payment.notes?.trim();

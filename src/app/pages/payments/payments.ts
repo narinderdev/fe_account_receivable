@@ -29,6 +29,8 @@ interface Application {
 
 interface Payment {
   id: number;
+  bankDeposit?: number;
+  serviceFee?: number;
   paymentAmount: number;
   paymentMethod: string;
   paymentDate: string;
