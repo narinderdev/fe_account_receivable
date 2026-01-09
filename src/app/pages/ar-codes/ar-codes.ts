@@ -15,6 +15,7 @@ interface ArCodeRecord {
   id?: number;
   arCode: string;
   codeName: string;
+  codeType?: string;
   description: string;
   status: ArCodeStatus;
 }
@@ -52,6 +53,24 @@ export class ArCodes implements OnInit {
     { label: 'Inactive', value: 'INACTIVE' as ArCodeStatus },
   ];
 
+  readonly codeTypeOptions = [
+    { label: 'Bank Cash', value: 'BANK_CASH' },
+    { label: 'GL', value: 'GL' },
+    { label: 'Adjust Reason', value: 'ADJUST_REASON' },
+    { label: 'Dispute', value: 'DISPUTE' },
+    { label: 'Memo', value: 'MEMO' },
+    { label: 'Customer Class', value: 'CUSTOMER_CLASS' },
+    { label: 'Sales Rep', value: 'SALES_REP' },
+    { label: 'Territory', value: 'TERRITORY' },
+    { label: 'Category', value: 'CATEGORY' },
+    { label: 'Aging', value: 'AGING' },
+    { label: 'Dunning', value: 'DUNNING' },
+    { label: 'Promise to Pay', value: 'PROMISE_TO_PAY' },
+    { label: 'Hold', value: 'HOLD' },
+    { label: 'Cycle', value: 'CYCLE' },
+    { label: 'Operator', value: 'OPERATOR' },
+  ];
+
   constructor(
     private fb: FormBuilder,
     private arCodeService: ArCodeService,
@@ -68,6 +87,7 @@ export class ArCodes implements OnInit {
     this.arCodeForm = this.fb.group({
       arCode: ['', [Validators.required, Validators.maxLength(50)]],
       codeName: ['', [Validators.required, Validators.maxLength(100)]],
+      codeType: ['', Validators.required],
       description: ['', [Validators.required, Validators.maxLength(200)]],
     });
   }
@@ -116,8 +136,9 @@ export class ArCodes implements OnInit {
       id: editingRecord?.id,
       arCode: sanitize(formValue.arCode),
       codeName: sanitize(formValue.codeName),
+      codeType: formValue.codeType || undefined,
       description: sanitize(formValue.description),
-      status: editingRecord?.status ?? 'ACTIVE', // Keep existing status or default to ACTIVE
+      status: editingRecord?.status ?? 'ACTIVE',
     };
 
     const userId = this.getCurrentUserId();
@@ -177,10 +198,11 @@ export class ArCodes implements OnInit {
       return;
     }
 
-    // Create payload without status field
+    // Create payload with codeType
     const payload: CreateArCodePayload = {
       code: newCode.arCode,
       name: newCode.codeName,
+      codeType: newCode.codeType!,
       description: newCode.description,
     };
 
@@ -218,6 +240,7 @@ export class ArCodes implements OnInit {
     this.arCodeForm.setValue({
       arCode: record.arCode,
       codeName: record.codeName,
+      codeType: record.codeType || '',
       description: record.description,
     });
     this.submitted = false;
@@ -396,6 +419,13 @@ export class ArCodes implements OnInit {
     return status === 'ACTIVE' ? 'Active' : 'Inactive';
   }
 
+  // Get formatted label for code type
+  getCodeTypeLabel(codeType: string | undefined): string {
+    if (!codeType) return '—';
+    const option = this.codeTypeOptions.find((opt) => opt.value === codeType);
+    return option ? option.label : codeType;
+  }
+
   private getCurrentUserId(): number | null {
     const raw = localStorage.getItem(USER_CONTEXT_STORAGE_KEY);
     if (!raw) {
@@ -415,6 +445,7 @@ export class ArCodes implements OnInit {
       id: entity.id,
       arCode: entity.code,
       codeName: entity.name,
+      codeType: (entity as any).codeType,
       description: entity.description,
       status: entity.active ? 'ACTIVE' : 'INACTIVE',
     };
@@ -429,10 +460,12 @@ export class ArCodes implements OnInit {
     if (original.codeName !== updated.codeName) {
       payload.name = updated.codeName;
     }
+    if (original.codeType !== updated.codeType && updated.codeType) {
+      payload.codeType = updated.codeType;
+    }
     if (original.description !== updated.description) {
       payload.description = updated.description;
     }
-    // Status is no longer included in update payload - use toggle API instead
 
     return payload;
   }

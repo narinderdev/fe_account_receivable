@@ -18,6 +18,7 @@
             <tr>
               <th>AR Code</th>
               <th>Code Name</th>
+              <th>Code Type</th>
               <th>Description</th>
               <th *ngIf="canUpdateArCode">Status</th>
               <th *ngIf="showActionsColumn">Actions</th>
@@ -27,6 +28,7 @@
             <tr *ngFor="let record of records; let i = index">
               <td>{{ record.arCode }}</td>
               <td>{{ record.codeName }}</td>
+              <td>{{ getCodeTypeLabel(record.codeType) }}</td>
               <td>{{ record.description }}</td>
               <td *ngIf="canUpdateArCode">
                 <div class="status-toggle">
@@ -98,7 +100,7 @@
   <div class="modal-overlay" *ngIf="modalOpen">
     <div class="ar-code-modal">
       <div class="modal-header">
-        <h2>New AR Code</h2>
+        <h2>{{ editingRecordIndex !== null ? 'Edit AR Code' : 'New AR Code' }}</h2>
         <button class="btn-close" (click)="closeModal()" aria-label="Close" [disabled]="saving">
           <span>&times;</span>
         </button>
@@ -118,6 +120,19 @@
             <input type="text" formControlName="codeName" placeholder="Enter code name" />
             <p class="error" *ngIf="submitted && arCodeForm.controls['codeName'].invalid">
               Code name is required
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>AR Code Type <span class="color">*</span></label>
+            <select formControlName="codeType">
+              <option value="">Select Code Type</option>
+              <option *ngFor="let option of codeTypeOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <p class="error" *ngIf="submitted && arCodeForm.controls['codeType'].invalid">
+              Code type is required
             </p>
           </div>
 
