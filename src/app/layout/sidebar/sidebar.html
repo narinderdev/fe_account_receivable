@@ -72,6 +72,27 @@
           Collections & Dispute
         </a>
 
+        <a
+          routerLink="creditMemo"
+          routerLinkActive="active"
+          #creditMemoLink="routerLinkActive"
+          class="nav-item"
+        >
+          <img [src]="creditMemoLink.isActive ? '/collection1.svg' : '/collection.svg'" class="nav-icon" />
+          Credit Memo
+        </a>
+
+        <a
+          routerLink="writeOff"
+          routerLinkActive="active"
+          #writeOffLink="routerLinkActive"
+          class="nav-item"
+        >
+          <img [src]="writeOffLink.isActive ? '/collection1.svg' : '/collection.svg'" class="nav-icon" />
+          Write-Off
+        </a>
+        
+
         <!-- <a routerLink="integration" routerLinkActive="active" #integrationLink="routerLinkActive" class="nav-item">
           <img [src]="integrationLink.isActive ? '/integration1.svg' : '/integration.svg'" class="nav-icon" />
           Integration
