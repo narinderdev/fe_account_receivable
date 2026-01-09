@@ -207,7 +207,7 @@
 /* Action Buttons */
 .btn-cancel,
 .btn-save {
-  padding: 9px 24px;
+  padding: 8px 20px;
   border: none;
   cursor: pointer;
   font-size: 14px;
@@ -369,7 +369,7 @@
   gap: 8px;
   background-color: #3599ff;
   color: white;
-  padding: 9px 30px;
+  padding: 8px 20px;
   font-size: 13px;
   border: none;
   border-radius: 6px;
@@ -389,7 +389,7 @@
 .cancelBtn {
   background: #6b7280;
   color: white;
-  padding: 9px 30px;
+  padding: 8px 20px;
   font-size: 13px;
   border: none;
   border-radius: 6px;
@@ -400,8 +400,3 @@
 .cancelBtn:hover {
   opacity: 0.9;
 }
-
-/* ================================================================
-   ADDED: COMPANY DROPDOWN STYLES
-   (ONLY NEW CODE BELOW — NOTHING ABOVE WAS MODIFIED)
-================================================================ */

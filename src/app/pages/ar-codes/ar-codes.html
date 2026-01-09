@@ -1,0 +1,145 @@
+<div class="ar-codes-container">
+  <div class="header-card">
+    <button class="btn-primary" (click)="openModal()" *ngIf="canCreateArCode">New AR Code</button>
+  </div>
+  <div class="card" *ngIf="canViewArCodes; else noPermission">
+    <div *ngIf="loading" class="loader-block">
+      <app-loader [visible]="loading"></app-loader>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div *ngIf="records.length === 0" class="empty-text">
+        No AR codes have been created yet.
+      </div>
+
+      <div class="table-scroll" *ngIf="records.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>AR Code</th>
+              <th>Code Name</th>
+              <th>Description</th>
+              <th *ngIf="canUpdateArCode">Status</th>
+              <th *ngIf="showActionsColumn">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of records; let i = index">
+              <td>{{ record.arCode }}</td>
+              <td>{{ record.codeName }}</td>
+              <td>{{ record.description }}</td>
+              <td *ngIf="canUpdateArCode">
+                <div class="status-toggle">
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      [checked]="record.status === 'ACTIVE'"
+                      [disabled]="isTogglingStatus(record.id) || isDeleting(record.id)"
+                      (click)="toggleStatus(record, $event)"
+                    />
+                    <span class="slider round"></span>
+                  </label>
+                  <span class="status-text">{{ getStatusLabel(record.status) }}</span>
+                  <app-spinner *ngIf="isTogglingStatus(record.id)" class="switch-spinner"></app-spinner>
+                </div>
+              </td>
+              <td class="actions" *ngIf="showActionsColumn">
+                <span class="actions-gap" *ngIf="canUpdateArCode">
+                  <img
+                    src="/editIcn.svg"
+                    alt="Edit AR code"
+                    class="action-icon"
+                    (click)="editArCode(i); $event.stopPropagation()"
+                  />
+                </span>
+                <span *ngIf="canDeleteArCode">
+                  <img
+                    src="/deleteIcn.svg"
+                    alt="Delete AR code"
+                    class="action-icon delete"
+                    [class.disabled]="isDeleting(record.id)"
+                    [attr.aria-disabled]="isDeleting(record.id)"
+                    [attr.title]="isDeleting(record.id) ? 'Deleting...' : 'Delete AR code'"
+                    (click)="openDeleteModal(i); $event.stopPropagation()"
+                  />
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </div>
+
+  <ng-template #noPermission>
+    <div class="card empty-text">
+      You do not have permission to view AR codes.
+    </div>
+  </ng-template>
+
+  <div class="confirm-modal-overlay" *ngIf="deleteModalOpen">
+    <div class="confirm-modal">
+      <h3>Delete AR Code</h3>
+      <p>Are you sure you want to delete this AR code?</p>
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeDeleteModal()">
+          Cancel
+        </button>
+        <button type="button" class="btn-primary danger" (click)="confirmDelete()" [disabled]="deleting">
+          <ng-container *ngIf="!deleting">Delete</ng-container>
+          <ng-container *ngIf="deleting">
+            <app-spinner></app-spinner>
+          </ng-container>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="modalOpen">
+    <div class="ar-code-modal">
+      <div class="modal-header">
+        <h2>New AR Code</h2>
+        <button class="btn-close" (click)="closeModal()" aria-label="Close" [disabled]="saving">
+          <span>&times;</span>
+        </button>
+      </div>
+      <form [formGroup]="arCodeForm" (ngSubmit)="saveArCode()">
+        <div class="modal-body">
+          <div class="form-field">
+            <label>AR Code <span class="color">*</span></label>
+            <input type="text" formControlName="arCode" placeholder="Enter AR code" />
+            <p class="error" *ngIf="submitted && arCodeForm.controls['arCode'].invalid">
+              AR code is required
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>Code Name <span class="color">*</span></label>
+            <input type="text" formControlName="codeName" placeholder="Enter code name" />
+            <p class="error" *ngIf="submitted && arCodeForm.controls['codeName'].invalid">
+              Code name is required
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>Description <span class="color">*</span></label>
+            <textarea rows="4" formControlName="description" placeholder="Describe this AR code"></textarea>
+            <p class="error" *ngIf="submitted && arCodeForm.controls['description'].invalid">
+              Description is required
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="saving">
+            <app-spinner *ngIf="saving"></app-spinner>
+            <span *ngIf="!saving">Save AR Code</span>
+            <span *ngIf="saving">Saving...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

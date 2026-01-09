@@ -33,6 +33,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { CompanyGuard } from './guards/company.guard';
 import { SetPassword } from './pages/set-password/set-password';
 import { VerifyOtp } from './pages/verify-otp/verify-otp';
+import { ArCodes } from './pages/ar-codes/ar-codes';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -104,6 +105,8 @@ export const routes: Routes = [
       { path: 'ar-reports', component: Aging },
       { path: 'collections', component: Collections },
       { path: 'collections/disputes/:disputeId', component: DisputeDetails },
+
+      { path: 'ar-code', component: ArCodes },
     ],
   },
 ];
