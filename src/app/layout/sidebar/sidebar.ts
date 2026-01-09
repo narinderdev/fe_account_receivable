@@ -22,6 +22,7 @@ export class Sidebar {
   canViewCompany = false;
   canViewUsers = false;
   canViewRoles = false;
+  canViewArCodes = false;
   showSetupLinks = false;
 
   constructor(private router: Router, private userContext: UserContextService) {
@@ -44,8 +45,13 @@ export class Sidebar {
     this.canViewCompany = this.userContext.hasPermission('VIEW_COMPANY');
     this.canViewUsers = this.userContext.hasPermission('VIEW_USER');
     this.canViewRoles = this.userContext.hasPermission('VIEW_ROLES');
+    this.canViewArCodes = this.userContext.hasPermission('VIEW_CODE');
     this.showSetupLinks =
-      this.userContext.isAdmin() || this.canViewCompany || this.canViewUsers || this.canViewRoles;
+      this.userContext.isAdmin() ||
+      this.canViewCompany ||
+      this.canViewUsers ||
+      this.canViewRoles ||
+      this.canViewArCodes;
   }
 
   toggleSetup() {

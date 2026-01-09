@@ -89,7 +89,9 @@
           >
           <a *ngIf="canViewUsers" routerLink="users" routerLinkActive="active" class="sub-nav-item">Users</a>
           <a *ngIf="canViewRoles" routerLink="roles" routerLinkActive="active" class="sub-nav-item">Roles</a>
-          <a *ngIf="canViewRoles" routerLink="ar-code" routerLinkActive="active" class="sub-nav-item">AR Codes</a>
+          <a *ngIf="canViewArCodes" routerLink="ar-code" routerLinkActive="active" class="sub-nav-item"
+            >AR Codes</a
+          >
         </div>
       </nav>
     </div>
@@ -213,6 +215,9 @@
           >
           <a *ngIf="canViewUsers" routerLink="users" routerLinkActive="active" (click)="closeMobileMenu()">Users</a>
           <a *ngIf="canViewRoles" routerLink="roles" routerLinkActive="active" (click)="closeMobileMenu()">Roles</a>
+          <a *ngIf="canViewArCodes" routerLink="ar-code" routerLinkActive="active" (click)="closeMobileMenu()"
+            >AR Codes</a
+          >
         </div>
       </nav>
 
