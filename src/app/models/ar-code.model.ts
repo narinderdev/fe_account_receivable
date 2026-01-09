@@ -13,6 +13,7 @@ export interface CreateArCodePayload {
   code: string;
   name: string;
   description: string;
+  codeType?: string;
   active?: boolean;
 }
 
