@@ -1,13 +1,21 @@
 <div class="receive-page">
-  <!-- <h1 class="title">Receive Payment</h1> -->
-
   <div class="content-card">
-    <!-- Payment Details -->
-    <h3 class="section-title">Payment Details</h3>
+    <!-- Payment Details Section with Icon -->
+    <div class="section-header">
+      <div class="section-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4"/>
+          <path d="M12 8h.01"/>
+        </svg>
+      </div>
+      <h3 class="section-title">Payment Details</h3>
+    </div>
 
     <div class="grid">
+      <!-- Customer -->
       <div class="form-group">
-        <label>Customer <span style="color: red">*</span></label>
+        <label>Customer <span class="required">*</span></label>
         <select
           [(ngModel)]="selectedCustomerId"
           (change)="onCustomerChange()"
@@ -22,27 +30,47 @@
         <div *ngIf="showCustomerError" class="error-message">Customer is required</div>
       </div>
 
-      <!-- AMOUNT -->
+      <!-- Bank Deposit -->
       <div class="form-group">
-        <label>Amount <span style="color: red">*</span></label>
+        <label>Bank Deposit <span class="required">*</span></label>
         <input
           type="number"
-          [(ngModel)]="amount"
-          placeholder="Enter amount"
-          [class.error-input]="showAmountError"
-          (blur)="showAmountError = submitted && (!amount || amount <= 0)"
-          name="amount"
-          min="0.01"
+          [(ngModel)]="bankDeposit"
+          (ngModelChange)="onAmountFieldChange()"
+          placeholder="0.00"
+          [class.error-input]="showBankDepositError"
+          (blur)="showBankDepositError = submitted && (!bankDeposit || bankDeposit < 0)"
+          name="bankDeposit"
+          min="0"
           step="0.01"
         />
-        <div *ngIf="showAmountError" class="error-message">
-          Amount is required and must be greater than 0
+        <div *ngIf="showBankDepositError" class="error-message">
+          Bank deposit is required and must be 0 or greater
         </div>
       </div>
 
-      <!-- PAYMENT METHOD -->
+      <!-- Service Fee -->
       <div class="form-group">
-        <label>Payment Method <span style="color: red">*</span></label>
+        <label>Service Fee <span class="required">*</span></label>
+        <input
+          type="number"
+          [(ngModel)]="serviceFee"
+          (ngModelChange)="onAmountFieldChange()"
+          placeholder="0.00"
+          [class.error-input]="showServiceFeeError"
+          (blur)="showServiceFeeError = submitted && (!serviceFee || serviceFee < 0)"
+          name="serviceFee"
+          min="0"
+          step="0.01"
+        />
+        <div *ngIf="showServiceFeeError" class="error-message">
+          Service fee is required and must be 0 or greater
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="form-group">
+        <label>Payment Method <span class="required">*</span></label>
         <select
           [(ngModel)]="paymentMethod"
           [class.error-input]="showPaymentMethodError"
@@ -53,28 +81,38 @@
           <option value="Bank Transfer">Bank Transfer</option>
           <option value="Cash">Cash</option>
           <option value="UPI">UPI</option>
+          <option value="Check">Check</option>
+          <option value="Credit Card">Credit Card</option>
         </select>
         <div *ngIf="showPaymentMethodError" class="error-message">Payment method is required</div>
       </div>
 
-      <!-- NOTES FIELD -->
+      <!-- Total Amount (Read-only calculated field) -->
       <div class="form-group">
-        <label>Notes <span style="color: red">*</span></label>
-        <textarea
-          [(ngModel)]="notes"
-          placeholder="Enter notes"
-          [class.error-input]="showNotesError"
-          (blur)="showNotesError = submitted && !notes"
-          name="notes"
-          rows="2"
-        ></textarea>
-
-        <div *ngIf="showNotesError" class="error-message">Notes are required</div>
+        <label>Total Amount</label>
+        <input
+          type="text"
+          [value]="totalAmount | currency"
+          readonly
+          class="readonly-field"
+          name="totalAmount"
+        />
       </div>
     </div>
 
-    <!-- Invoice Table -->
-    <h3 class="section-title">Apply to Invoices <span style="color: red">*</span></h3>
+    <!-- Invoice Table Section with Icon -->
+    <div class="section-header">
+      <div class="section-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </div>
+      <h3 class="section-title">Apply to Invoices <span class="required">*</span></h3>
+    </div>
 
     <div class="table-scroll" *ngIf="invoices.length > 0">
       <table class="invoice-table">
@@ -85,37 +123,52 @@
             <th>Due Date</th>
             <th>Original Amount</th>
             <th>Balance Due</th>
+            <th>Applied</th>
           </tr>
         </thead>
 
         <tbody>
-          <tr *ngFor="let inv of invoices">
+          <tr *ngFor="let inv of invoices" [class.selected-row]="inv.selected">
             <td>
               <input
                 type="checkbox"
                 [checked]="inv.selected"
                 (change)="toggleInvoice(inv, $event)"
                 [id]="'invoice-' + inv.id"
+                class="invoice-checkbox"
               />
             </td>
             <td class="invoice-link" [routerLink]="['/admin/invoices/detail', inv.id]">
               {{ inv.invoiceNumber || inv.id }}
             </td>
-
             <td>{{ inv.dueDate }}</td>
             <td>{{ inv.totalAmount | currency }}</td>
-            <td>{{ inv.balanceDue | currency }}</td>
+            <td class="balance-due">{{ inv.balanceDue | currency }}</td>
+            <td class="applied-amount" [class.has-amount]="inv.appliedAmount && inv.appliedAmount > 0">
+              {{ inv.appliedAmount ? (inv.appliedAmount | currency) : '—' }}
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div *ngIf="selectedCustomerId && invoices.length === 0" class="empty-state">
-      No unpaid invoices found for this customer.
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p>No unpaid invoices found for this customer.</p>
     </div>
 
     <div *ngIf="!selectedCustomerId" class="empty-state">
-      Please select a customer to view their unpaid invoices.
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <p>Please select a customer to view their unpaid invoices.</p>
     </div>
 
     <!-- Show error if no invoice selected -->
@@ -123,28 +176,105 @@
       Please select at least one invoice to apply the payment
     </div>
 
-    <!-- Summary Fields -->
-    <div class="summary-section" *ngIf="invoices.length > 0">
-      <div class="summary-row">
-        <span>Payment Amount</span>
-        <strong>{{ amount || 0 | currency }}</strong>
+    <!-- Notes and Summary Section Side by Side -->
+    <div class="notes-summary-container" *ngIf="invoices.length > 0 && totalAmount > 0">
+      <!-- Notes Section (Left) -->
+      <div class="notes-section">
+        <h3 class="notes-heading">Notes <span class="required">*</span></h3>
+        <textarea
+          [(ngModel)]="notes"
+          placeholder="Add any additional notes or payment terms..."
+          [class.error-input]="showNotesError"
+          (blur)="showNotesError = submitted && !notes.trim()"
+          name="notes"
+          class="notes-textarea"
+        ></textarea>
+        <div *ngIf="showNotesError" class="error-message">Notes are required</div>
       </div>
 
-      <div class="summary-row">
-        <span>Unapplied Amount</span>
-        <strong [style.color]="unappliedAmount < 0 ? 'red' : 'inherit'">
-          {{ unappliedAmount | currency }}
-        </strong>
+      <!-- Summary Section (Right) -->
+      <div class="summary-section-wrapper">
+        <div class="summary-box">
+          <div class="summary-row">
+            <span>Bank Deposit</span>
+            <strong>{{ bankDeposit || 0 | currency }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Service Fee</span>
+            <strong>{{ serviceFee || 0 | currency }}</strong>
+          </div>
+          <div class="summary-row total-row">
+            <span>Total Payment Amount</span>
+            <strong>{{ totalAmount | currency }}</strong>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row">
+            <span>Applied to Invoices</span>
+            <strong class="applied">{{ totalApplied | currency }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Unapplied Amount</span>
+            <strong [class.negative]="unappliedAmount < 0" [class.positive]="unappliedAmount > 0">
+              {{ unappliedAmount | currency }}
+            </strong>
+          </div>
+        </div>
       </div>
     </div>
 
+    <!-- Notes field for when no invoices or total amount -->
+    <div class="notes-only-section" *ngIf="!(invoices.length > 0 && totalAmount > 0)">
+      <h3 class="notes-heading">Notes <span class="required">*</span></h3>
+      <textarea
+        [(ngModel)]="notes"
+        placeholder="Add any additional notes or payment terms..."
+        [class.error-input]="showNotesError"
+        (blur)="showNotesError = submitted && !notes.trim()"
+        name="notes"
+        rows="4"
+      ></textarea>
+      <div *ngIf="showNotesError" class="error-message">Notes are required</div>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="summary-section" *ngIf="invoices.length > 0 && totalAmount > 0" style="display: none;">
+      <div class="summary-box-wrapper">
+        <div class="summary-box">
+          <div class="summary-row">
+            <span>Bank Deposit</span>
+            <strong>{{ bankDeposit || 0 | currency }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Service Fee</span>
+            <strong>{{ serviceFee || 0 | currency }}</strong>
+          </div>
+          <div class="summary-row total-row">
+            <span>Total Payment Amount</span>
+            <strong>{{ totalAmount | currency }}</strong>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row">
+            <span>Applied to Invoices</span>
+            <strong class="applied">{{ totalApplied | currency }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Unapplied Amount</span>
+            <strong [class.negative]="unappliedAmount < 0" [class.positive]="unappliedAmount > 0">
+              {{ unappliedAmount | currency }}
+            </strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
     <div class="action-buttons">
-      <button type="button" class="btn back" (click)="resetForm()" [disabled]="isSaving">
+      <button type="button" class="btn btn-cancel" (click)="resetForm()" [disabled]="isSaving">
         Cancel
       </button>
-      <button type="button" class="btn continue" (click)="onSubmit($event)" [disabled]="isSaving">
+      <button type="button" class="btn btn-save" (click)="onSubmit($event)" [disabled]="isSaving">
         <app-spinner *ngIf="isSaving"></app-spinner>
-        <span *ngIf="!isSaving">Save</span>
+        <span *ngIf="!isSaving">Save & Send</span>
         <span *ngIf="isSaving">Saving...</span>
       </button>
     </div>

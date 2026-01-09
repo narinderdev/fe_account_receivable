@@ -26,6 +26,20 @@
           <label>Amount Received</label>
           <div class="value">{{ paymentAmount | currency }}</div>
         </div>
+
+        <div class="divider"></div>
+
+        <div class="summary-item">
+          <label>Bank Deposit</label>
+          <div class="value">{{ bankDeposit | currency }}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="summary-item">
+          <label>Service Fee</label>
+          <div class="value">{{ serviceFee | currency }}</div>
+        </div>
       </div>
     </div>
 

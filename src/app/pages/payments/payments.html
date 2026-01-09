@@ -23,6 +23,8 @@
           <th>Customer</th>
           <th>Status</th>
           <th>Applied Amount</th>
+          <th>Bank Deposit</th>
+          <th>Service Fee</th>
           <th>Payment Method</th>
           <th>Payment Date</th>
         </tr>
@@ -31,7 +33,7 @@
       <tbody>
         <!-- EMPTY STATE -->
         <tr *ngIf="payments.length === 0" class="no-data-row">
-          <td colspan="5">No payments found.</td>
+          <td colspan="7">No payments found.</td>
         </tr>
 
         <!-- PAYMENT ROWS -->
@@ -60,6 +62,8 @@
             </span>
           </td>
           <td>{{ getAppliedAmount(payment) | currency }}</td>
+          <td>{{ payment.bankDeposit || 0 | currency }}</td>
+          <td>{{ payment.serviceFee || 0 | currency }}</td>
           <td>{{ payment.paymentMethod || '--' }}</td>
           <td>{{ payment.paymentDate | date : 'mediumDate' }}</td>
         </tr>

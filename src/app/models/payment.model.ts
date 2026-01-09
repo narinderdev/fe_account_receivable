@@ -34,6 +34,8 @@ export interface PaymentApplication {
 // Main Payment interface
 export interface Payment {
   id: number;
+  bankDeposit: number;
+  serviceFee: number;
   paymentAmount: number;
   paymentMethod: string;
   paymentDate: string;
@@ -52,6 +54,8 @@ export interface PaymentPage {
 }
 
 export interface ApplyPaymentRequest {
+  bankDeposit: number;  
+  serviceFee: number;   
   paymentAmount: number;
   paymentMethod: string;
   notes: string;
