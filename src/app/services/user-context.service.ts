@@ -63,6 +63,10 @@ export class UserContextService {
     return this.getContext().permissions;
   }
 
+  getUserId(): number | null {
+    return this.getContext().userId;
+  }
+
   clear() {
     localStorage.removeItem(STORAGE_KEY);
   }

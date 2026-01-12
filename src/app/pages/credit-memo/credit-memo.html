@@ -1,0 +1,392 @@
+<div class="credit-memo-container" (click)="closeActionMenu()">
+  <div class="header-card">
+    <button class="btn-primary" (click)="openModal()" *ngIf="canCreateCreditMemo">
+      New Credit Memo
+    </button>
+  </div>
+  <div class="card" *ngIf="canViewCreditMemos; else noPermission">
+    <div *ngIf="loading" class="loader-block">
+      <app-loader [visible]="loading"></app-loader>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div *ngIf="creditMemosError" class="empty-text error">
+        {{ creditMemosError }}
+      </div>
+
+      <div *ngIf="!creditMemosError && records.length === 0" class="empty-text">
+        No credit memos have been created yet.
+      </div>
+
+      <div class="table-scroll" *ngIf="!creditMemosError && records.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Credit Memo No.</th>
+              <th>Customer</th>
+              <th>Amount</th>
+              <th>Applied Amount</th>
+              <th>AR Code</th>
+              <th>Date</th>
+              <th>Status</th>
+              <!-- <th *ngIf="showActionsColumn">Actions</th> -->
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of records; let i = index">
+              <td>{{ record.creditMemoNo || 'N/A' }}</td>
+              <td>
+                <div class="customer-info">
+                  <div
+                    class="customer-initial"
+                    [ngStyle]="{
+                      backgroundColor: getInitialColor(i).background,
+                      color: getInitialColor(i).color
+                    }"
+                  >
+                    {{ getInitial(record.customerName) }}
+                  </div>
+                  <span class="customer-name">{{ record.customerName || 'Unknown' }}</span>
+                </div>
+              </td>
+              <td>$ {{ record.amount | number : '1.2-2' }}</td>
+              <td>$ {{ record.appliedAmount || 0 | number : '1.2-2' }}</td>
+              <td>{{ record.arCodeName || 'N/A' }}</td>
+              <td>
+                <ng-container *ngIf="record.date; else noMemoDate">
+                  {{ record.date | date : 'MM/dd/yyyy' }}
+                </ng-container>
+                <ng-template #noMemoDate>N/A</ng-template>
+              </td>
+              <td>
+                <span
+                  class="status-badge"
+                  [ngClass]="{
+                    'status-draft': getStatusLabel(record.status) === 'Draft',
+                    'status-posted': getStatusLabel(record.status) === 'Posted',
+                    'status-allowed': getStatusLabel(record.status) === 'Allowed'
+                  }"
+                >
+                  {{ getStatusLabel(record.status) }}
+                </span>
+              </td>
+              <!-- <td class="actions" *ngIf="showActionsColumn">
+                <div class="action-menu-container">
+                  <button
+                    class="action-menu-trigger"
+                    (click)="toggleActionMenu(i, $event)"
+                    [attr.aria-label]="'Actions for credit memo ' + record.creditMemoNo"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                      <circle cx="10" cy="4" r="1.5" />
+                      <circle cx="10" cy="10" r="1.5" />
+                      <circle cx="10" cy="16" r="1.5" />
+                    </svg>
+                  </button> -->
+
+                  <!-- <div
+                    class="action-menu-dropdown"
+                    *ngIf="activeMenuIndex === i"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <button
+                      *ngIf="canUpdateCreditMemo"
+                      class="action-menu-item"
+                      (click)="editCreditMemo(i); closeActionMenu()"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path
+                          d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"
+                        />
+                      </svg>
+                      Edit
+                    </button>
+
+                    <button
+                      *ngIf="canApplyCreditMemo"
+                      class="action-menu-item"
+                      (click)="openApplyModal(i); closeActionMenu()"
+                      [disabled]="(record.appliedAmount || 0) >= record.amount"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path
+                          d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"
+                        />
+                      </svg>
+                      Apply
+                    </button>
+
+                    <button
+                      *ngIf="canDeleteCreditMemo"
+                      class="action-menu-item delete"
+                      (click)="openDeleteModal(i); closeActionMenu()"
+                      [disabled]="isDeleting(record.id)"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path
+                          d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"
+                        />
+                        <path
+                          fill-rule="evenodd"
+                          d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"
+                        />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
+                </div> -->
+              <!-- </td> -->
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </div>
+
+  <ng-template #noPermission>
+    <div class="card empty-text">You do not have permission to view credit memos.</div>
+  </ng-template>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="confirm-modal-overlay" *ngIf="deleteModalOpen">
+    <div class="confirm-modal">
+      <h3>Delete Credit Memo</h3>
+      <p>Are you sure you want to delete this credit memo?</p>
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeDeleteModal()">Cancel</button>
+        <button
+          type="button"
+          class="btn-primary danger"
+          (click)="confirmDelete()"
+          [disabled]="deleting"
+        >
+          <ng-container *ngIf="!deleting">Delete</ng-container>
+          <ng-container *ngIf="deleting">
+            <app-spinner></app-spinner>
+          </ng-container>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Credit Memo Modal -->
+  <div class="modal-overlay" *ngIf="modalOpen">
+    <div class="credit-memo-modal">
+      <div class="modal-header">
+        <h2>{{ editingRecordIndex !== null ? 'Edit Credit Memo' : 'New Credit Memo' }}</h2>
+        <button class="btn-close" (click)="closeModal()" aria-label="Close" [disabled]="saving">
+          <span>&times;</span>
+        </button>
+      </div>
+      <form [formGroup]="creditMemoForm" (ngSubmit)="saveCreditMemo()">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-field">
+              <label>Customer <span class="color">*</span></label>
+              <select
+                #customerSelect
+                formControlName="customerId"
+                (change)="handleCustomerSelection(customerSelect.value)"
+              >
+                <option value="">Select Customer</option>
+                <option *ngFor="let customer of customers" [value]="customer.id">
+                  {{ customer.name }}
+                </option>
+              </select>
+              <p class="error" *ngIf="submitted && creditMemoForm.controls['customerId'].invalid">
+                Customer is required
+              </p>
+            </div>
+
+            <div class="form-field">
+              <label>Amount <span class="color">*</span></label>
+              <input
+                type="number"
+                step="0.01"
+                formControlName="amount"
+                placeholder="Enter amount"
+              />
+              <p class="error" *ngIf="submitted && creditMemoForm.controls['amount'].invalid">
+                <span *ngIf="creditMemoForm.controls['amount'].errors?.['required']"
+                  >Amount is required</span
+                >
+                <span *ngIf="creditMemoForm.controls['amount'].errors?.['min']"
+                  >Amount must be greater than 0</span
+                >
+              </p>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>AR Code <span class="color">*</span></label>
+            <select formControlName="arCodeId">
+              <option value="">Select AR Code</option>
+              <option *ngFor="let arCode of arCodes" [value]="arCode.id">
+                {{ arCode.name }}
+              </option>
+            </select>
+            <p class="error" *ngIf="submitted && creditMemoForm.controls['arCodeId'].invalid">
+              AR Code is required
+            </p>
+          </div>
+
+          <div class="form-field checkbox-field">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="applyToInvoiceNow" />
+              <span class="checkbox-text">Apply to invoice now</span>
+            </label>
+            <p class="helper-text">Leave unchecked to create an on-account credit.</p>
+          </div>
+
+          <div class="invoices-section" *ngIf="creditMemoForm.controls['applyToInvoiceNow'].value">
+            <div class="section-header">
+              <h3>Customer Invoices</h3>
+              <p class="helper-text" *ngIf="invoicesLoading">
+                <app-spinner></app-spinner>
+                Loading invoices...
+              </p>
+              <p
+                *ngIf="!invoicesLoading && invoiceMessage"
+                [ngClass]="invoiceMessageIsError ? 'error' : 'info-message'"
+              >
+                {{ invoiceMessage }}
+              </p>
+            </div>
+
+            <div
+              class="table-scroll invoice-table"
+              *ngIf="!invoicesLoading && customerInvoices.length > 0"
+            >
+              <table class="data-table mini">
+                <thead>
+                  <tr>
+                    <th class="checkbox-column">
+                      <input type="checkbox" disabled />
+                    </th>
+                    <th>Invoice #</th>
+                    <th>Invoice Date</th>
+                    <th>Due Date</th>
+                    <th>Total</th>
+                    <th>Balance Due</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let invoice of customerInvoices"
+                    [class.selected-row]="isInvoiceSelected(invoice.id)"
+                    (click)="toggleInvoiceSelection(invoice.id)"
+                  >
+                    <td class="checkbox-column">
+                      <input
+                        type="checkbox"
+                        [checked]="isInvoiceSelected(invoice.id)"
+                        (click)="$event.stopPropagation()"
+                        (change)="toggleInvoiceSelection(invoice.id)"
+                      />
+                    </td>
+                    <td>{{ invoice.invoiceNumber }}</td>
+                    <td>{{ invoice.invoiceDate | date : 'MM/dd/yyyy' }}</td>
+                    <td>{{ invoice.dueDate | date : 'MM/dd/yyyy' }}</td>
+                    <td>{{ invoice.totalAmount | currency }}</td>
+                    <td>{{ invoice.balanceDue | currency }}</td>
+                    <td>
+                      <span
+                        class="invoice-status-badge"
+                        [ngClass]="'status-' + (invoice.status || 'unknown').toLowerCase()"
+                      >
+                        {{ invoice.status || 'Unknown' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="selection-summary" *ngIf="selectedInvoiceIds.length > 0">
+              <span class="selection-count"
+                >{{ selectedInvoiceIds.length }} invoice(s) selected</span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="saving">
+            <app-spinner *ngIf="saving"></app-spinner>
+            <span *ngIf="!saving">Save Credit Memo</span>
+            <span *ngIf="saving">Saving...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Apply Credit Memo Modal -->
+  <div class="modal-overlay" *ngIf="applyModalOpen">
+    <div class="credit-memo-modal apply-modal">
+      <div class="modal-header">
+        <h2>Apply Credit Memo</h2>
+        <button
+          class="btn-close"
+          (click)="closeApplyModal()"
+          aria-label="Close"
+          [disabled]="applying"
+        >
+          <span>&times;</span>
+        </button>
+      </div>
+      <form [formGroup]="applyForm" (ngSubmit)="applyCreditMemo()">
+        <div class="modal-body">
+          <div class="form-field">
+            <label>Credit Memo No.</label>
+            <input type="text" [value]="applyingRecord?.creditMemoNo" disabled />
+          </div>
+
+          <div class="form-field">
+            <label>Available Amount</label>
+            <input type="text" [value]="getAvailableAmount() | currency" disabled />
+          </div>
+
+          <div class="form-field">
+            <label>Apply Amount <span class="color">*</span></label>
+            <input
+              type="number"
+              step="0.01"
+              formControlName="applyAmount"
+              placeholder="Enter amount to apply"
+            />
+            <p class="error" *ngIf="applySubmitted && applyForm.controls['applyAmount'].invalid">
+              <span *ngIf="applyForm.controls['applyAmount'].errors?.['required']"
+                >Apply amount is required</span
+              >
+              <span *ngIf="applyForm.controls['applyAmount'].errors?.['min']"
+                >Amount must be greater than 0</span
+              >
+              <span *ngIf="applyForm.controls['applyAmount'].errors?.['max']"
+                >Amount exceeds available balance</span
+              >
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="closeApplyModal()"
+            [disabled]="applying"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="applying">
+            <app-spinner *ngIf="applying"></app-spinner>
+            <span *ngIf="!applying">Apply</span>
+            <span *ngIf="applying">Applying...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,574 @@
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ToastrService } from 'ngx-toastr';
+import { Loader } from '../../shared/loader/loader';
+import { Spinner } from '../../shared/spinner/spinner';
+import { UserContextService } from '../../services/user-context.service';
+import { ArCodeService } from '../../services/ar-code-service';
+import { Customer } from '../../services/customer';
+import { CompanySelectionService } from '../../services/company-selection.service';
+
+type CreditMemoStatus = 'ACTIVE' | 'INACTIVE';
+
+interface CreditMemoRecord {
+  id?: number;
+  creditMemoNo: string;
+  customerId: number;
+  customerName: string;
+  amount: number;
+  appliedAmount: number;
+  arCodeId: number;
+  arCodeName?: string;
+  date: Date;
+  status: CreditMemoStatus;
+}
+
+interface ArCode {
+  id: number;
+  name: string;
+  code: string;
+}
+
+const USER_CONTEXT_STORAGE_KEY = 'userContext';
+
+@Component({
+  selector: 'app-credit-memo',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, Loader, Spinner],
+  templateUrl: './credit-memo.html',
+  styleUrl: './credit-memo.css',
+})
+export class CreditMemo implements OnInit {
+  records: CreditMemoRecord[] = [];
+  customers: Customer[] = [];
+  arCodes: ArCode[] = [];
+  creditMemoForm: FormGroup;
+  applyForm: FormGroup;
+  modalOpen = false;
+  applyModalOpen = false;
+  submitted = false;
+  applySubmitted = false;
+  editingRecordIndex: number | null = null;
+  applyingRecordIndex: number | null = null;
+  applyingRecord: CreditMemoRecord | null = null;
+  saving = false;
+  applying = false;
+  loading = true;
+  deleteModalOpen = false;
+  deleteTargetIndex: number | null = null;
+  deleting = false;
+  canViewCreditMemos = false;
+  canCreateCreditMemo = false;
+  canUpdateCreditMemo = false;
+  canDeleteCreditMemo = false;
+  canApplyCreditMemo = false;
+  showActionsColumn = false;
+  activeMenuIndex: number | null = null;
+  private deletingMemoIds = new Set<number>();
+
+  constructor(
+    private fb: FormBuilder,
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef,
+    private userContext: UserContextService,
+    private arCodeService: ArCodeService,
+    private customerService: Customer,
+    private companySelection: CompanySelectionService
+  ) {
+    this.canViewCreditMemos = this.userContext.hasPermission('VIEW_CREDIT_MEMO');
+    this.canCreateCreditMemo = this.userContext.hasPermission('CREATE_CREDIT_MEMO');
+    this.canUpdateCreditMemo = this.userContext.hasPermission('UPDATE_CREDIT_MEMO');
+    this.canDeleteCreditMemo = this.userContext.hasPermission('DELETE_CREDIT_MEMO');
+    this.canApplyCreditMemo = this.userContext.hasPermission('APPLY_CREDIT_MEMO');
+    this.showActionsColumn =
+      this.canUpdateCreditMemo || this.canDeleteCreditMemo || this.canApplyCreditMemo;
+
+    this.creditMemoForm = this.fb.group({
+      customerId: ['', Validators.required],
+      amount: ['', [Validators.required, Validators.min(0.01)]],
+      arCodeId: ['', Validators.required],
+    });
+
+    this.applyForm = this.fb.group({
+      applyAmount: ['', [Validators.required, Validators.min(0.01)]],
+    });
+  }
+
+  ngOnInit() {
+    if (!this.canViewCreditMemos) {
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+    this.fetchInitialData();
+  }
+
+  private fetchInitialData() {
+    this.loading = true;
+    this.cdr.detectChanges();
+
+    this.loadStaticCreditMemos();
+
+    // Simulate loading delay
+    setTimeout(() => {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }, 500);
+  }
+
+  private loadStaticCreditMemos() {
+    this.records = [
+      {
+        id: 1,
+        creditMemoNo: 'CM-2025-001',
+        customerId: 1,
+        customerName: 'Acme Corporation',
+        amount: 5000.0,
+        appliedAmount: 2500.0,
+        arCodeId: 1,
+        arCodeName: 'Early Payment Discount',
+        date: new Date('2025-01-05'),
+        status: 'ACTIVE',
+      },
+      {
+        id: 2,
+        creditMemoNo: 'CM-2025-002',
+        customerId: 2,
+        customerName: 'Tech Solutions Inc.',
+        amount: 3500.0,
+        appliedAmount: 3500.0,
+        arCodeId: 2,
+        arCodeName: 'Volume Discount',
+        date: new Date('2025-01-08'),
+        status: 'ACTIVE',
+      },
+      {
+        id: 3,
+        creditMemoNo: 'CM-2025-003',
+        customerId: 3,
+        customerName: 'Global Enterprises',
+        amount: 7500.0,
+        appliedAmount: 0.0,
+        arCodeId: 3,
+        arCodeName: 'Return Credit',
+        date: new Date('2025-01-10'),
+        status: 'ACTIVE',
+      },
+      {
+        id: 4,
+        creditMemoNo: 'CM-2025-004',
+        customerId: 4,
+        customerName: 'Metro Services LLC',
+        amount: 2000.0,
+        appliedAmount: 500.0,
+        arCodeId: 4,
+        arCodeName: 'Service Credit',
+        date: new Date('2025-01-11'),
+        status: 'INACTIVE',
+      },
+      {
+        id: 5,
+        creditMemoNo: 'CM-2025-005',
+        customerId: 5,
+        customerName: 'ABC Manufacturing',
+        amount: 10000.0,
+        appliedAmount: 4000.0,
+        arCodeId: 5,
+        arCodeName: 'Promotional Credit',
+        date: new Date('2025-01-12'),
+        status: 'ACTIVE',
+      },
+    ];
+  }
+
+  openModal() {
+    if (!this.canCreateCreditMemo) {
+      return;
+    }
+    this.loadCustomersForModal();
+    this.loadArCodesForModal();
+    this.creditMemoForm.reset();
+    this.submitted = false;
+    this.editingRecordIndex = null;
+    this.saving = false;
+    this.modalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeModal() {
+    this.modalOpen = false;
+    this.submitted = false;
+    this.editingRecordIndex = null;
+    this.saving = false;
+    this.cdr.detectChanges();
+  }
+
+  openApplyModal(index: number) {
+    if (!this.canApplyCreditMemo) {
+      return;
+    }
+    const record = this.records[index];
+    if (!record) {
+      return;
+    }
+    this.applyingRecordIndex = index;
+    this.applyingRecord = record;
+    this.applyForm.reset();
+
+    // Set max validator based on available amount
+    const availableAmount = record.amount - record.appliedAmount;
+    this.applyForm.controls['applyAmount'].setValidators([
+      Validators.required,
+      Validators.min(0.01),
+      Validators.max(availableAmount),
+    ]);
+    this.applyForm.controls['applyAmount'].updateValueAndValidity();
+
+    this.applySubmitted = false;
+    this.applying = false;
+    this.applyModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeApplyModal() {
+    this.applyModalOpen = false;
+    this.applySubmitted = false;
+    this.applyingRecordIndex = null;
+    this.applyingRecord = null;
+    this.applying = false;
+    this.cdr.detectChanges();
+  }
+
+  getAvailableAmount(): number {
+    if (!this.applyingRecord) {
+      return 0;
+    }
+    return this.applyingRecord.amount - this.applyingRecord.appliedAmount;
+  }
+
+  applyCreditMemo() {
+    this.applySubmitted = true;
+    if (this.applyForm.invalid || this.applying || !this.applyingRecord) {
+      return;
+    }
+
+    if (!this.canApplyCreditMemo) {
+      this.toastr.error('You do not have permission to apply credit memos.', 'Permission denied');
+      return;
+    }
+
+    if (!this.applyingRecord.id) {
+      this.toastr.error(
+        'Unable to apply this credit memo. Please refresh the page and try again.',
+        'Error'
+      );
+      return;
+    }
+
+    const applyAmount = Number(this.applyForm.value.applyAmount);
+
+    this.applying = true;
+
+    // Simulate API call with setTimeout
+    setTimeout(() => {
+      // Update the applied amount in the record
+      const recordIndex = this.records.findIndex((r) => r.id === this.applyingRecord!.id);
+      if (recordIndex !== -1) {
+        this.records[recordIndex].appliedAmount += applyAmount;
+        this.toastr.success('Credit memo applied successfully', 'Success');
+      }
+
+      this.applying = false;
+      this.closeApplyModal();
+      this.cdr.detectChanges();
+    }, 500);
+  }
+
+  saveCreditMemo() {
+    this.submitted = true;
+    if (this.creditMemoForm.invalid || this.saving) {
+      return;
+    }
+
+    const formValue = this.creditMemoForm.value;
+    const editingRecord =
+      this.editingRecordIndex !== null ? this.records[this.editingRecordIndex] : null;
+
+    this.saving = true;
+
+    // Simulate API call with setTimeout
+    setTimeout(() => {
+      if (this.editingRecordIndex !== null && editingRecord) {
+        if (!this.canUpdateCreditMemo) {
+          this.toastr.error(
+            'You do not have permission to update credit memos.',
+            'Permission denied'
+          );
+          this.saving = false;
+          return;
+        }
+
+        // Update existing record
+        const customer = this.customers.find((c) => c.id === Number(formValue.customerId));
+        const arCode = this.arCodes.find((ac) => ac.id === Number(formValue.arCodeId));
+
+        this.records[this.editingRecordIndex] = {
+          ...editingRecord,
+          customerId: Number(formValue.customerId),
+          customerName: customer?.name || 'Unknown',
+          amount: Number(formValue.amount),
+          arCodeId: Number(formValue.arCodeId),
+          arCodeName: arCode?.name,
+        };
+
+        this.toastr.success('Credit memo updated successfully', 'Success');
+      } else {
+        if (!this.canCreateCreditMemo) {
+          this.toastr.error(
+            'You do not have permission to create credit memos.',
+            'Permission denied'
+          );
+          this.saving = false;
+          return;
+        }
+
+        // Create new record
+        const customer = this.customers.find((c) => c.id === Number(formValue.customerId));
+        const arCode = this.arCodes.find((ac) => ac.id === Number(formValue.arCodeId));
+        const newId = Math.max(...this.records.map((r) => r.id || 0), 0) + 1;
+
+        const newRecord: CreditMemoRecord = {
+          id: newId,
+          creditMemoNo: `CM-2025-${String(newId).padStart(3, '0')}`,
+          customerId: Number(formValue.customerId),
+          customerName: customer?.name || 'Unknown',
+          amount: Number(formValue.amount),
+          appliedAmount: 0,
+          arCodeId: Number(formValue.arCodeId),
+          arCodeName: arCode?.name,
+          date: new Date(),
+          status: 'ACTIVE',
+        };
+
+        this.records = [newRecord, ...this.records];
+        this.toastr.success('Credit memo created successfully', 'Success');
+      }
+
+      this.saving = false;
+      this.closeModal();
+      this.cdr.detectChanges();
+    }, 500);
+  }
+
+  editCreditMemo(index: number) {
+    if (!this.canUpdateCreditMemo) {
+      return;
+    }
+    const record = this.records[index];
+    if (!record) {
+      return;
+    }
+    this.editingRecordIndex = index;
+    this.creditMemoForm.setValue({
+      customerId: record.customerId,
+      amount: record.amount,
+      arCodeId: record.arCodeId,
+    });
+    this.submitted = false;
+    this.modalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  openDeleteModal(index: number) {
+    if (!this.canDeleteCreditMemo) {
+      return;
+    }
+    const record = this.records[index];
+    if (!record) {
+      return;
+    }
+    this.deleteTargetIndex = index;
+    this.deleteModalOpen = true;
+    this.deleting = false;
+    this.cdr.detectChanges();
+  }
+
+  closeDeleteModal() {
+    this.deleteModalOpen = false;
+    this.deleteTargetIndex = null;
+    this.deleting = false;
+    this.cdr.detectChanges();
+  }
+
+  confirmDelete() {
+    if (this.deleteTargetIndex === null) {
+      return;
+    }
+    const record = this.records[this.deleteTargetIndex];
+    if (!record) {
+      this.closeDeleteModal();
+      return;
+    }
+
+    if (!this.canDeleteCreditMemo) {
+      this.toastr.error('You do not have permission to delete credit memos.', 'Permission denied');
+      this.closeDeleteModal();
+      return;
+    }
+
+    this.performDelete(record, this.deleteTargetIndex);
+  }
+
+  private performDelete(record: CreditMemoRecord, index: number) {
+    if (!record.id) {
+      const nextRecords = [...this.records];
+      nextRecords.splice(index, 1);
+      this.records = nextRecords;
+      if (this.editingRecordIndex !== null) {
+        if (index === this.editingRecordIndex) {
+          this.closeModal();
+        } else if (index < this.editingRecordIndex) {
+          this.editingRecordIndex = this.editingRecordIndex - 1;
+        }
+      }
+      this.toastr.success('Credit memo deleted successfully', 'Success');
+      this.closeDeleteModal();
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (this.deletingMemoIds.has(record.id)) {
+      return;
+    }
+
+    this.deleting = true;
+    this.deletingMemoIds.add(record.id);
+    this.cdr.detectChanges();
+
+    const editingRecordId =
+      this.editingRecordIndex !== null ? this.records[this.editingRecordIndex]?.id : null;
+
+    // Simulate API call with setTimeout
+    setTimeout(() => {
+      // Remove the record
+      this.records = this.records.filter((r) => r.id !== record.id);
+
+      if (editingRecordId === record.id) {
+        this.closeModal();
+      }
+
+      this.toastr.success('Credit memo deleted successfully', 'Success');
+      this.deleting = false;
+      this.deletingMemoIds.delete(record.id as number);
+      this.closeDeleteModal();
+      this.cdr.detectChanges();
+    }, 500);
+  }
+
+  toggleActionMenu(index: number, event: Event) {
+    event.stopPropagation();
+    this.activeMenuIndex = this.activeMenuIndex === index ? null : index;
+    this.cdr.detectChanges();
+  }
+
+  closeActionMenu() {
+    this.activeMenuIndex = null;
+    this.cdr.detectChanges();
+  }
+
+  getStatusLabel(status: CreditMemoStatus): string {
+    return status === 'ACTIVE' ? 'Active' : 'Inactive';
+  }
+
+  isDeleting(memoId?: number): boolean {
+    return typeof memoId === 'number' && this.deletingMemoIds.has(memoId);
+  }
+
+  private loadCustomersForModal() {
+    const companyId = this.getSelectedCompanyId();
+    if (!companyId) {
+      this.customers = [];
+      this.toastr.warning(
+        'Select a company to load available customers.',
+        'Company required'
+      );
+      return;
+    }
+
+    this.customerService.getCustomers(companyId, 0, 100).subscribe({
+      next: (res) => {
+        const list = Array.isArray(res?.data?.content) ? res.data.content : [];
+        this.customers = list
+          .filter((customer): customer is { id: number; customerName?: string | null } => {
+            return typeof customer?.id === 'number';
+          })
+          .map((customer) => ({
+            id: customer.id,
+            name: customer.customerName || `Customer ${customer.id}`,
+          }));
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load customers for credit memo modal', error);
+        this.customers = [];
+        this.toastr.error('Failed to load customers. Please try again.', 'Error');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private loadArCodesForModal() {
+    const userId = this.getCurrentUserId();
+    if (userId === null) {
+      this.arCodes = [];
+      this.toastr.error(
+        'Unable to determine the current user. Please sign in again.',
+        'Missing user'
+      );
+      return;
+    }
+
+    this.arCodeService.getCode(userId).subscribe({
+      next: (response) => {
+        const codes = Array.isArray(response?.data) ? response.data : [];
+        this.arCodes = codes
+          .filter((code): code is { id: number; name?: string; code: string } => {
+            return typeof code?.id === 'number';
+          })
+          .map((code) => ({
+            id: code.id,
+            name: code.name || code.code,
+            code: code.code,
+          }));
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load AR codes for credit memo modal', error);
+        this.arCodes = [];
+        this.toastr.error('Failed to load AR codes. Please try again.', 'Error');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private getCurrentUserId(): number | null {
+    const raw = localStorage.getItem(USER_CONTEXT_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      return typeof parsed?.userId === 'number' ? parsed.userId : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private getSelectedCompanyId(): number | null {
+    const stored = this.companySelection.getSelectedCompanyId();
+    const parsed = stored ? Number(stored) : NaN;
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+}

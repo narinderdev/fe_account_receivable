@@ -34,6 +34,8 @@ import { CompanyGuard } from './guards/company.guard';
 import { SetPassword } from './pages/set-password/set-password';
 import { VerifyOtp } from './pages/verify-otp/verify-otp';
 import { ArCodes } from './pages/ar-codes/ar-codes';
+import { CreditMemo } from './pages/credit-memo/credit-memo';
+import { WriteOff } from './pages/write-off/write-off';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -107,6 +109,8 @@ export const routes: Routes = [
       { path: 'collections/disputes/:disputeId', component: DisputeDetails },
 
       { path: 'ar-code', component: ArCodes },
+      { path: 'credit-memo', component: CreditMemo },
+      { path: 'write-off', component: WriteOff },
     ],
   },
 ];

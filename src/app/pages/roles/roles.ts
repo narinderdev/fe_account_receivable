@@ -238,6 +238,9 @@ export class Roles implements OnInit, OnDestroy {
   closeModal() {
     this.isModalOpen = false;
     this.cdr.detectChanges();
+    // if (this.activeCompanyId) {
+    //   this.loadRoles(this.activeCompanyId);
+    // }
   }
 
   saveRole() {

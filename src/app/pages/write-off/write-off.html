@@ -1,0 +1,186 @@
+<div class="write-off-container">
+  <div class="header-card">
+    <button class="btn-primary" (click)="openModal()">New Write-Off</button>
+  </div>
+
+  <div class="card">
+    <div *ngIf="loading" class="loader-block">
+      <app-loader [visible]="loading"></app-loader>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div *ngIf="writeOffsError" class="empty-text error">
+        {{ writeOffsError }}
+      </div>
+
+      <div *ngIf="!writeOffsError && records.length === 0" class="empty-text">
+        No write-offs have been created yet.
+      </div>
+
+      <div class="table-scroll" *ngIf="!writeOffsError && records.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Invoice #</th>
+              <th>Reason</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of records; let i = index">
+              <td>
+                <div class="customer-info">
+                  <!-- <div
+                    class="customer-initial"
+                    [ngStyle]="{
+                      backgroundColor: getInitialColor(i).background,
+                      color: getInitialColor(i).color
+                    }"
+                  >
+                    {{ getInitial(record.customerName) }}
+                  </div> -->
+                  <span class="customer-name">{{ record.customerName }}</span>
+                </div>
+              </td>
+              <td>{{ record.invoiceNumber }}</td>
+              <td>{{ record.reason }}</td>
+              <td>
+                <ng-container *ngIf="record.writeOffDate; else noDate">
+                  {{ record.writeOffDate | date: 'MM/dd/yyyy' }}
+                </ng-container>
+                <ng-template #noDate>N/A</ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="modal-overlay" *ngIf="modalOpen">
+    <div class="write-off-modal">
+      <div class="modal-header">
+        <h2>New Write-Off</h2>
+        <button class="btn-close" (click)="closeModal()" aria-label="Close" [disabled]="saving">
+          <span>&times;</span>
+        </button>
+      </div>
+
+      <form [formGroup]="writeOffForm" (ngSubmit)="saveWriteOff()">
+        <div class="modal-body">
+          <div class="form-field">
+            <label>Customer <span class="color">*</span></label>
+            <select
+              #customerSelect
+              formControlName="customerId"
+              (change)="handleCustomerSelection(customerSelect.value)"
+            >
+              <option value="">Select Customer</option>
+              <option *ngFor="let customer of customers" [value]="customer.id">
+                {{ customer.name }}
+              </option>
+            </select>
+            <p class="helper-text" *ngIf="customersLoading">Loading customers...</p>
+            <p class="error" *ngIf="submitted && writeOffForm.controls['customerId'].invalid">
+              Customer is required.
+            </p>
+          </div>
+
+          <input type="hidden" formControlName="invoiceId" />
+
+          <div class="form-field">
+            <label>AR Code <span class="color">*</span></label>
+            <select formControlName="arCodeId">
+              <option value="">Select AR Code</option>
+              <option *ngFor="let arCode of arCodes" [value]="arCode.id">
+                {{ arCode.name }}
+              </option>
+            </select>
+            <p class="helper-text" *ngIf="arCodesLoading">Loading AR codes...</p>
+            <p class="error" *ngIf="submitted && writeOffForm.controls['arCodeId'].invalid">
+              AR Code is required.
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>Reason <span class="color">*</span></label>
+            <textarea rows="3" formControlName="reason" placeholder="Enter reason"></textarea>
+            <p class="error" *ngIf="submitted && writeOffForm.controls['reason'].invalid">
+              Reason is required.
+            </p>
+          </div>
+
+          <div class="invoices-section">
+            <div class="section-header">
+              <h3>Customer Invoices</h3>
+              <p class="helper-text" *ngIf="customerInvoicesLoading">
+                <app-spinner></app-spinner>
+                Loading invoices...
+              </p>
+              <p
+                *ngIf="!customerInvoicesLoading && invoiceMessage"
+                [ngClass]="invoiceMessageIsError ? 'error' : 'info-message'"
+              >
+                {{ invoiceMessage }}
+              </p>
+            </div>
+
+            <div class="table-scroll invoice-table" *ngIf="customerInvoices.length > 0">
+              <table class="data-table mini">
+                <thead>
+                  <tr>
+                    <th class="checkbox-column"></th>
+                    <th>Invoice #</th>
+                    <th>Invoice Date</th>
+                    <th>Due Date</th>
+                    <th>Total</th>
+                    <th>Balance Due</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let invoice of customerInvoices"
+                    [class.selected-row]="isInvoiceSelected(invoice.id)"
+                    (click)="toggleInvoiceSelection(invoice.id)"
+                  >
+                    <td class="checkbox-column">
+                      <input
+                        type="checkbox"
+                        [checked]="isInvoiceSelected(invoice.id)"
+                        (click)="$event.stopPropagation()"
+                        (change)="toggleInvoiceSelection(invoice.id)"
+                      />
+                    </td>
+                    <td>{{ invoice.invoiceNumber }}</td>
+                    <td>{{ invoice.invoiceDate | date: 'MM/dd/yyyy' }}</td>
+                    <td>{{ invoice.dueDate | date: 'MM/dd/yyyy' }}</td>
+                    <td>{{ invoice.totalAmount | currency }}</td>
+                    <td>{{ invoice.balanceDue | currency }}</td>
+                    <td>{{ invoice.status || 'Unknown' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p class="error" *ngIf="submitted && writeOffForm.controls['invoiceId'].invalid">
+              Please select an invoice.
+            </p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="saving">
+            <app-spinner *ngIf="saving"></app-spinner>
+            <span *ngIf="!saving">Save Write-Off</span>
+            <span *ngIf="saving">Saving...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

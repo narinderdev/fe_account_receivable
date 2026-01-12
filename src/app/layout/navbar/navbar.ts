@@ -34,6 +34,8 @@ const TITLE_RULES: TitleRule[] = [
   { prefix: '/admin/ar-code', title: 'AR Codes' },
   { prefix: '/admin/collections', title: 'Collections' },
   { prefix: '/admin/dashboard', title: 'Dashboard' },
+  { prefix: '/admin/credit-memo', title: 'Credit Memo' },
+  { prefix: '/admin/write-off', title: 'Write-Off' },
 ];
 
 @Component({

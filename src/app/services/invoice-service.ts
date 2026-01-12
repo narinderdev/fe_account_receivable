@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { HttpHeaders } from '@angular/common/http';
 import {
   CreateInvoiceRequest,
+  CustomerInvoiceListResponse,
   InvoiceDetailResponse,
   InvoiceListResponse,
   InvoicePage,
@@ -63,6 +64,13 @@ export class InvoiceService {
     const headers = this.getAuthHeadersWithNgrok();
 
     return this.http.get<InvoiceListResponse>(`${this.baseUrl}/invoice/unpaid/${customerId}`, {
+      headers,
+    });
+  }
+
+  getCustomerInvoicesById(customerId: number): Observable<CustomerInvoiceListResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.get<CustomerInvoiceListResponse>(`${this.baseUrl}/invoice/customer/${customerId}`, {
       headers,
     });
   }
