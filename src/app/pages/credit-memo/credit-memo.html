@@ -25,7 +25,7 @@
               <th>Credit Memo No.</th>
               <th>Customer</th>
               <th>Amount</th>
-              <th>Applied Amount</th>
+              <!-- <th>Applied Amount</th> -->
               <th>AR Code</th>
               <th>Date</th>
               <th>Status</th>
@@ -50,7 +50,7 @@
                 </div>
               </td>
               <td>$ {{ record.amount | number : '1.2-2' }}</td>
-              <td>$ {{ record.appliedAmount || 0 | number : '1.2-2' }}</td>
+              <!-- <td>$ {{ record.appliedAmount || 0 | number : '1.2-2' }}</td> -->
               <td>{{ record.arCodeName || 'N/A' }}</td>
               <td>
                 <ng-container *ngIf="record.date; else noMemoDate">
