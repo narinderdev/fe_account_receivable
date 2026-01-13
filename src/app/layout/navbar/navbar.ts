@@ -14,6 +14,8 @@ type TitleRule = {
 };
 
 const TITLE_RULES: TitleRule[] = [
+  { prefix: '/admin/invoices-reports', title: 'Invoices Reports' },
+  { prefix: '/admin/payment-reports', title: 'Payments Reports' },
   { prefix: '/admin/company/add', title: 'Add Company' },
   { prefix: '/admin/company/edit', title: 'Edit Company' },
   { prefix: '/admin/company/onboarding-complete', title: 'Onboarding Complete' },
@@ -30,7 +32,7 @@ const TITLE_RULES: TitleRule[] = [
   { prefix: '/admin/payments', title: 'Payments' },
   { prefix: '/admin/users', title: 'Users' },
   { prefix: '/admin/roles', title: 'Roles' },
-  { prefix: '/admin/ar-reports', title: 'AR Reports' },
+  { prefix: '/admin/ar-reports', title: 'Aging Reports' },
   { prefix: '/admin/ar-code', title: 'AR Codes' },
   { prefix: '/admin/collections', title: 'Collections' },
   { prefix: '/admin/dashboard', title: 'Dashboard' },
