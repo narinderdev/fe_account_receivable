@@ -19,7 +19,7 @@
   font-weight: bold;
   gap: 12px;
   padding: 0 32px;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .sidebar-title {
@@ -38,11 +38,11 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 14px 32px;
+  padding: 12px 24px;
   border-radius: 8px;
   color: #475569;
   text-decoration: none;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -52,8 +52,8 @@
 }
 
 .nav-icon {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   opacity: 0.9;
 }
 
@@ -73,11 +73,11 @@
   border: none;
   color: #475569;
   text-align: left;
-  padding: 12px 32px;
+  padding: 12px 24px;
   border-radius: 8px;
   display: flex;
   align-items: center;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .logout-btn:hover {
@@ -88,7 +88,6 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 14px 32px;
   border-radius: 8px;
   color: #64748B;
   cursor: pointer;

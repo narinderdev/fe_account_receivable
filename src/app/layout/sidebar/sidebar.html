@@ -12,6 +12,7 @@
           routerLinkActive="active"
           #dashLink="routerLinkActive"
           class="nav-item"
+          (click)="handleNavClick()"
         >
           <img [src]="dashLink.isActive ? '/home1.svg' : '/home.svg'" class="nav-icon" />
           Dashboard
@@ -23,6 +24,7 @@
           routerLinkActive="active"
           #customersLink="routerLinkActive"
           class="nav-item"
+          (click)="handleNavClick()"
         >
           <img
             [src]="customersLink.isActive ? '/customers1.svg' : '/customers.svg'"
@@ -37,6 +39,7 @@
           routerLinkActive="active"
           #invoicesLink="routerLinkActive"
           class="nav-item"
+          (click)="handleNavClick()"
         >
           <img [src]="invoicesLink.isActive ? '/invoice1.svg' : '/invoice.svg'" class="nav-icon" />
           Invoices
@@ -48,21 +51,26 @@
           routerLinkActive="active"
           #paymentsLink="routerLinkActive"
           class="nav-item"
+          (click)="handleNavClick()"
         >
           <img [src]="paymentsLink.isActive ? '/payment1.svg' : '/payment.svg'" class="nav-icon" />
           Payments
         </a>
 
-        <a
+        <div
+          class="nav-item setup-parent"
           *ngIf="canViewReports"
-          routerLink="ar-reports"
-          routerLinkActive="active"
-          #reportsLink="routerLinkActive"
-          class="nav-item"
+          (click)="toggleReports()"
         >
-          <img [src]="reportsLink.isActive ? '/reports1.svg' : '/reports.svg'" class="nav-icon" />
+          <img [src]="arReportsActive ? '/reports1.svg' : '/reports.svg'" class="nav-icon" />
           Aging & Reports
-        </a>
+          <span class="arrow" [class.open]="reportsOpen">&rsaquo;</span>
+        </div>
+        <div class="setup-children" *ngIf="canViewReports && reportsOpen">
+          <a routerLink="ar-reports" routerLinkActive="active" class="sub-nav-item">AR Reports</a>
+          <a routerLink="invoices-reports" routerLinkActive="active" class="sub-nav-item">Invoices Reports</a>
+          <a routerLink="payment-reports" routerLinkActive="active" class="sub-nav-item">Payments Reports</a>
+        </div>
 
         <a
           *ngIf="canViewCollections"
@@ -70,6 +78,7 @@
           routerLinkActive="active"
           #collectionsLink="routerLinkActive"
           class="nav-item"
+          (click)="handleNavClick()"
         >
           <img
             [src]="collectionsLink.isActive ? '/collection1.svg' : '/collection.svg'"
@@ -83,6 +92,7 @@
           routerLinkActive="active"
           #creditMemoLink="routerLinkActive"
           class="nav-item"
+          (click)="handleNavClick()"
         >
           <img [src]="creditMemoLink.isActive ? '/credit1.svg' : '/credit.svg'" class="nav-icon" />
           Credit Memo
@@ -216,16 +226,23 @@
           Payments
         </a>
 
-        <a
+        <button
+          type="button"
+          class="mobile-setup-toggle"
           *ngIf="canViewReports"
-          routerLink="ar-reports"
-          routerLinkActive="active"
-          #mobileReports="routerLinkActive"
-          (click)="closeMobileMenu()"
+          (click)="toggleMobileReports($event)"
         >
-          <img [src]="mobileReports.isActive ? '/reports1.svg' : '/reports.svg'" class="nav-icon" />
-          Aging & Reports
-        </a>
+          <div class="label">
+            <img [src]="arReportsActive ? '/reports1.svg' : '/reports.svg'" class="nav-icon" />
+            Aging & Reports
+          </div>
+          <span class="arrow" [class.open]="mobileReportsOpen">&rsaquo;</span>
+        </button>
+        <div class="mobile-setup-children" *ngIf="canViewReports && mobileReportsOpen">
+          <a routerLink="ar-reports" routerLinkActive="active" (click)="closeMobileMenu()">AR Reports</a>
+          <a routerLink="invoices-reports" routerLinkActive="active" (click)="closeMobileMenu()">Invoices Reports</a>
+          <a routerLink="payment-reports" routerLinkActive="active" (click)="closeMobileMenu()">Payments Reports</a>
+        </div>
 
         <a
           *ngIf="canViewCollections"

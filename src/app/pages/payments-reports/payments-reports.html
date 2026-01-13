@@ -1,0 +1,155 @@
+<div class="payments-page">
+  <div class="search-card">
+    <div class="search-card-header">
+      <label class="search-card-label">Search & Filters</label>
+    </div>
+    <div class="search-card-body">
+      <div class="search-left">
+        <div class="search-input">
+          <span class="search-icon">
+            <img src="/search.svg" alt="Search Icon" />
+          </span>
+          <input
+            type="text"
+            [(ngModel)]="searchName"
+            placeholder="Enter customer name"
+            (input)="onSearchChange()"
+          />
+        </div>
+      </div>
+
+      <div class="search-right">
+        <div class="filter-field">
+          <label>From Date</label>
+          <input
+            type="date"
+            class="filter-input"
+            [(ngModel)]="fromDate"
+            (ngModelChange)="handleFromDateChange($event)"
+          />
+        </div>
+
+        <div class="filter-field">
+          <label>To Date</label>
+          <input
+            type="date"
+            class="filter-input"
+            [(ngModel)]="toDate"
+            (ngModelChange)="handleToDateChange($event)"
+          />
+        </div>
+
+        <button type="button" class="btn-generate" (click)="generatePdf()">
+          Generate PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loader-wrapper">
+    <app-loader [visible]="loading"></app-loader>
+  </div>
+
+  <div class="payments-card" *ngIf="!loading" id="paymentsReportsTable">
+    <div class="pdf-filter-summary">
+      <h3 class="pdf-title">Payments Reports</h3>
+      <div class="pdf-filters">
+        <div class="pdf-filter-label">Applied Filters:</div>
+        <div class="pdf-filter-items">
+          <div class="pdf-filter-item" *ngIf="fromDate">
+            <span class="pdf-filter-key">From Date:</span>
+            <span class="pdf-filter-value">{{ formatDateValue(fromDate) }}</span>
+          </div>
+          <div class="pdf-filter-item" *ngIf="toDate">
+            <span class="pdf-filter-key">To Date:</span>
+            <span class="pdf-filter-value">{{ formatDateValue(toDate) }}</span>
+          </div>
+          <div class="pdf-filter-item" *ngIf="searchName.trim().length >= 3">
+            <span class="pdf-filter-key">Customer Search:</span>
+            <span class="pdf-filter-value">{{ searchName }}</span>
+          </div>
+          <div class="pdf-filter-item">
+            <span class="pdf-filter-key">Generated On:</span>
+            <span class="pdf-filter-value">{{ getCurrentDate() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <table class="payments-table">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Status</th>
+          <th>Applied Amount</th>
+          <th>Bank Deposit</th>
+          <th>Service Fee</th>
+          <th>Payment Method</th>
+          <th>Payment Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="payments.length === 0" class="no-data-row">
+          <td colspan="7">No payments found.</td>
+        </tr>
+        <tr
+          *ngFor="let payment of payments; let i = index"
+          (click)="openPaymentDetails(payment.id)"
+        >
+          <td>
+            <div class="customer-info">
+              <div
+                class="customer-initial"
+                [ngStyle]="{
+                  backgroundColor: getInitialColor(i).background,
+                  color: getInitialColor(i).color
+                }"
+              >
+                {{ getCustomerInitial(payment) }}
+              </div>
+              <span class="customer-name">{{ getCustomerName(payment) }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(payment)">
+              {{ getInvoiceStatus(payment) }}
+            </span>
+          </td>
+          <td>{{ getAppliedAmount(payment) | currency }}</td>
+          <td>{{ payment.bankDeposit || 0 | currency }}</td>
+          <td>{{ payment.serviceFee || 0 | currency }}</td>
+          <td>{{ payment.paymentMethod || '--' }}</td>
+          <td>{{ payment.paymentDate | date : 'mediumDate' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination-wrapper" *ngIf="totalPages > 1 && !loading">
+      <div class="pagination-info">
+        Showing {{ totalItems === 0 ? 0 : currentPage * pageSize + 1 }} to
+        {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
+      </div>
+      <div class="pagination-controls">
+        <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
+          <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+        </button>
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number-btn"
+          [class.active]="page === currentPage + 1"
+          [class.ellipsis]="page === -1"
+          (click)="page !== -1 && goToPage(page - 1)"
+          [disabled]="page === -1"
+        >
+          {{ page === -1 ? '...' : page }}
+        </button>
+        <button
+          class="page-nav-btn"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages - 1"
+        >
+          <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

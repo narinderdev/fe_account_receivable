@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { UserContextService } from '../../services/user-context.service';
 
 @Component({
@@ -11,8 +11,11 @@ import { UserContextService } from '../../services/user-context.service';
 })
 export class Sidebar {
   setupOpen = false;
+  reportsOpen = false;
   mobileMenuOpen = false;
   mobileSetupOpen = false;
+  mobileReportsOpen = false;
+  arReportsActive = false;
   canViewDashboard = false;
   canViewCustomers = false;
   canViewInvoices = false;
@@ -27,6 +30,12 @@ export class Sidebar {
 
   constructor(private router: Router, private userContext: UserContextService) {
     this.refreshPermissions();
+    this.updateArReportsState();
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.updateArReportsState();
+      }
+    });
   }
 
   private refreshPermissions() {
@@ -55,7 +64,24 @@ export class Sidebar {
   }
 
   toggleSetup() {
-    this.setupOpen = !this.setupOpen;
+    const shouldOpen = !this.setupOpen;
+    this.setupOpen = shouldOpen;
+    if (shouldOpen) {
+      this.reportsOpen = false;
+    }
+  }
+
+  toggleReports() {
+    const shouldOpen = !this.reportsOpen;
+    this.reportsOpen = shouldOpen;
+    if (shouldOpen) {
+      this.setupOpen = false;
+    }
+  }
+
+  handleNavClick() {
+    this.setupOpen = false;
+    this.reportsOpen = false;
   }
 
   toggleMobileMenu() {
@@ -65,11 +91,31 @@ export class Sidebar {
   closeMobileMenu() {
     this.mobileMenuOpen = false;
     this.mobileSetupOpen = false;
+    this.mobileReportsOpen = false;
   }
 
   toggleMobileSetup(event: Event) {
     event.stopPropagation();
-    this.mobileSetupOpen = !this.mobileSetupOpen;
+    const shouldOpen = !this.mobileSetupOpen;
+    this.mobileSetupOpen = shouldOpen;
+    if (shouldOpen) {
+      this.mobileReportsOpen = false;
+    }
+  }
+
+  toggleMobileReports(event: Event) {
+    event.stopPropagation();
+    const shouldOpen = !this.mobileReportsOpen;
+    this.mobileReportsOpen = shouldOpen;
+    if (shouldOpen) {
+      this.mobileSetupOpen = false;
+    }
+  }
+
+  private updateArReportsState() {
+    this.arReportsActive = this.router.url.includes('/admin/ar-reports');
+    this.reportsOpen = this.arReportsActive || this.reportsOpen;
+    this.mobileReportsOpen = this.arReportsActive || this.mobileReportsOpen;
   }
 
   signOut() {

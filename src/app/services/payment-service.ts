@@ -16,7 +16,7 @@ export class PaymentService {
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('logintoken');
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     });
   }
 
@@ -24,8 +24,8 @@ export class PaymentService {
   private getAuthHeadersWithNgrok(): HttpHeaders {
     const token = localStorage.getItem('logintoken');
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true'
+      Authorization: `Bearer ${token}`,
+      // 'ngrok-skip-browser-warning': 'true',
     });
   }
 
@@ -43,6 +43,36 @@ export class PaymentService {
     return this.http.post<ApplyPaymentResponse>(
       `${this.baseUrl}/payment/apply/${customerId}`,
       data,
+      { headers }
+    );
+  }
+
+  getFilteredPayments(
+    companyId: number,
+    params: {
+      statuses?: string[];
+      fromDate?: string;
+      toDate?: string;
+      page?: number;
+      size?: number;
+    }
+  ): Observable<PaymentPage> {
+    const headers = this.getAuthHeadersWithNgrok();
+
+    let queryParams: string[] = [];
+
+    if (params.fromDate) {
+      queryParams.push(`fromDate=${params.fromDate}`);
+    }
+    if (params.toDate) {
+      queryParams.push(`toDate=${params.toDate}`);
+    }
+
+    queryParams.push(`page=${params.page ?? 0}`);
+    queryParams.push(`size=${params.size ?? 10}`);
+
+    return this.http.get<PaymentPage>(
+      `${this.baseUrl}/payment/company/${companyId}/filter?${queryParams.join('&')}`,
       { headers }
     );
   }
