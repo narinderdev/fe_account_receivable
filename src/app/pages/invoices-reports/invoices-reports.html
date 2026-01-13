@@ -1,0 +1,211 @@
+<div class="invoice-container">
+  <div class="search-card">
+    <div class="search-card-body">
+      <div class="search-left">
+        <div class="search-input">
+          <span class="search-icon">
+            <img src="/search.svg" alt="Search Icon" />
+          </span>
+          <input
+            type="text"
+            [(ngModel)]="searchName"
+            placeholder="Enter customer name"
+            (input)="onSearchChange()"
+          />
+        </div>
+      </div>
+
+      <div class="search-right">
+        <div class="filter-field">
+          <label>Status</label>
+          <div
+            class="status-dropdown-toggle"
+            [class.open]="isStatusDropdownOpen"
+            (click)="toggleStatusDropdown()"
+          >
+            <span
+              class="dropdown-display-text"
+              [class.placeholder]="tempSelectedStatuses.length === 0"
+            >
+              {{ getStatusDisplayText() }}
+            </span>
+            <svg
+              class="dropdown-arrow"
+              [class.open]="isStatusDropdownOpen"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+
+          <div class="status-dropdown-menu" *ngIf="isStatusDropdownOpen">
+            <div class="dropdown-options">
+              <div
+                class="dropdown-option"
+                *ngFor="let status of statusOptions"
+                (click)="toggleStatusSelection(status)"
+              >
+                <input
+                  type="checkbox"
+                  [checked]="isStatusSelected(status)"
+                  (click)="$event.stopPropagation()"
+                  (change)="toggleStatusSelection(status)"
+                />
+                <label>{{ status }}</label>
+              </div>
+            </div>
+            <div class="dropdown-actions">
+              <button class="btn-clear" (click)="clearStatusSelection(); $event.stopPropagation()">
+                Clear
+              </button>
+              <button class="btn-apply" (click)="applyStatusFilter(); $event.stopPropagation()">
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-field">
+          <label>From Date</label>
+          <input
+            type="date"
+            class="filter-input"
+            [(ngModel)]="fromDate"
+            (ngModelChange)="handleFromDateChange($event)"
+          />
+        </div>
+
+        <div class="filter-field">
+          <label>To Date</label>
+          <input
+            type="date"
+            class="filter-input"
+            [(ngModel)]="toDate"
+            (ngModelChange)="handleToDateChange($event)"
+          />
+        </div>
+
+        <button type="button" class="btn-generate" (click)="generatePdf()">
+          Generate PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loader-wrapper">
+    <app-loader [visible]="loading"></app-loader>
+  </div>
+
+  <div class="backgrount-table" *ngIf="!loading" id="invoiceReportsTable">
+    <!-- Filter Summary for PDF -->
+    <div class="pdf-filter-summary">
+      <h3 class="pdf-title">Invoice Reports</h3>
+      <div class="pdf-filters">
+        <div class="pdf-filter-label">Applied Filters:</div>
+        <div class="pdf-filter-items">
+          <div class="pdf-filter-item">
+            <span class="pdf-filter-key">Status:</span>
+            <span class="pdf-filter-value">
+              {{ selectedStatuses.length > 0 ? selectedStatuses.join(', ') : 'All' }}
+            </span>
+          </div>
+          <div class="pdf-filter-item" *ngIf="fromDate">
+            <span class="pdf-filter-key">From Date:</span>
+            <span class="pdf-filter-value">{{ formatDate(fromDate) }}</span>
+          </div>
+          <div class="pdf-filter-item" *ngIf="toDate">
+            <span class="pdf-filter-key">To Date:</span>
+            <span class="pdf-filter-value">{{ formatDate(toDate) }}</span>
+          </div>
+          <div class="pdf-filter-item" *ngIf="searchName.trim().length >= 3">
+            <span class="pdf-filter-key">Customer Search:</span>
+            <span class="pdf-filter-value">{{ searchName }}</span>
+          </div>
+          <div class="pdf-filter-item">
+            <span class="pdf-filter-key">Generated On:</span>
+            <span class="pdf-filter-value">{{ getCurrentDate() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <table class="invoice-table">
+      <thead class="head">
+        <tr>
+          <th>INVOICE</th>
+          <th>CUSTOMER</th>
+          <th>DATE</th>
+          <th>DUE DATE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="invoices.length === 0">
+          <td colspan="5" style="text-align: center; padding: 20px">No invoices found.</td>
+        </tr>
+        <tr
+          *ngFor="let inv of invoices; let i = index"
+          class="invoice-row"
+          (click)="openInvoice(inv.id)"
+        >
+          <td class="invoice-number">{{ inv.invoiceNumber }}</td>
+          <td>
+            <div class="customer-info">
+              <div
+                class="customer-initial"
+                [ngStyle]="{
+                  backgroundColor: getInitialColor(i).background,
+                  color: getInitialColor(i).color
+                }"
+              >
+                {{ inv.customer.customerName[0] }}
+              </div>
+              <span class="customer-name">{{ inv.customer.customerName }}</span>
+            </div>
+          </td>
+          <td>{{ formatDate(inv.invoiceDate) }}</td>
+          <td>{{ formatDate(inv.dueDate) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination-wrapper" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ totalItems === 0 ? 0 : currentPage * pageSize + 1 }} to
+        {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of
+        {{ totalItems }} results
+      </div>
+      <div class="pagination-controls">
+        <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
+          <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+        </button>
+
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number-btn"
+          [class.active]="page === currentPage + 1"
+          [class.ellipsis]="page === -1"
+          (click)="page !== -1 && goToPage(page - 1)"
+          [disabled]="page === -1"
+        >
+          {{ page === -1 ? '...' : page }}
+        </button>
+
+        <button
+          class="page-nav-btn"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages - 1"
+        >
+          <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

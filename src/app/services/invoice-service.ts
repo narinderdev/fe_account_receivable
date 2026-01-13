@@ -74,4 +74,38 @@ export class InvoiceService {
       headers,
     });
   }
+
+  getFilteredInvoices(
+  companyId: number,
+  params: {
+    statuses?: string[];
+    fromDate?: string;
+    toDate?: string;
+    page?: number;
+    size?: number;
+  }
+): Observable<InvoicePage> {
+  const headers = this.getAuthHeadersWithNgrok();
+
+  let queryParams: string[] = [];
+
+  if (params.statuses?.length) {
+    queryParams.push(`statuses=${params.statuses.join(',')}`);
+  }
+  if (params.fromDate) {
+    queryParams.push(`fromDate=${params.fromDate}`);
+  }
+  if (params.toDate) {
+    queryParams.push(`toDate=${params.toDate}`);
+  }
+
+  queryParams.push(`page=${params.page ?? 0}`);
+  queryParams.push(`size=${params.size ?? 10}`);
+
+  return this.http.get<InvoicePage>(
+    `${this.baseUrl}/invoice/company/${companyId}?${queryParams.join('&')}`,
+    { headers }
+  );
+}
+
 }

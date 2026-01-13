@@ -36,6 +36,8 @@ import { VerifyOtp } from './pages/verify-otp/verify-otp';
 import { ArCodes } from './pages/ar-codes/ar-codes';
 import { CreditMemo } from './pages/credit-memo/credit-memo';
 import { WriteOff } from './pages/write-off/write-off';
+import { InvoicesReports } from './pages/invoices-reports/invoices-reports';
+import { PaymentsReports } from './pages/payments-reports/payments-reports';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -105,6 +107,8 @@ export const routes: Routes = [
       { path: 'roles/details/:roleId', component: RolesDetail },
 
       { path: 'ar-reports', component: Aging },
+      { path: 'invoices-reports', component: InvoicesReports },
+      { path: 'payment-reports', component: PaymentsReports },
       { path: 'collections', component: Collections },
       { path: 'collections/disputes/:disputeId', component: DisputeDetails },
 
