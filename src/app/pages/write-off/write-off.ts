@@ -356,4 +356,25 @@ export class WriteOff implements OnInit, OnDestroy {
     const invoice = this.customerInvoices.find(inv => inv.id === this.selectedInvoiceId);
     return invoice?.invoiceNumber || String(this.selectedInvoiceId);
   }
+
+  getInitialColor(index: number): { background: string; color: string } {
+    const palette = [
+      { background: '#DBEAFE', color: '#2563EB' },
+      { background: '#F3E8FF', color: '#9333EA' },
+      { background: '#FFEDD5', color: '#EA580C' },
+      { background: '#FEE2E2', color: '#DC2626' },
+      { background: '#E0E7FF', color: '#4F46E5' },
+      { background: '#CCFBF1', color: '#0D9488' },
+    ];
+
+    return palette[index % palette.length];
+  }
+
+  getInitial(name?: string | null): string {
+    if (!name) {
+      return 'U';
+    }
+    const trimmed = name.trim();
+    return trimmed ? trimmed.charAt(0).toUpperCase() : 'U';
+  }
 }

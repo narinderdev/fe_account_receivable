@@ -31,7 +31,7 @@
             <tr *ngFor="let record of records; let i = index">
               <td>
                 <div class="customer-info">
-                  <!-- <div
+                  <div
                     class="customer-initial"
                     [ngStyle]="{
                       backgroundColor: getInitialColor(i).background,
@@ -39,7 +39,7 @@
                     }"
                   >
                     {{ getInitial(record.customerName) }}
-                  </div> -->
+                  </div>
                   <span class="customer-name">{{ record.customerName }}</span>
                 </div>
               </td>

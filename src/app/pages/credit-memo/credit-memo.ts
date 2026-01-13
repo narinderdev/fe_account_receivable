@@ -11,7 +11,7 @@ import { Customer as CustomerService } from '../../services/customer';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { ArCodeService } from '../../services/ar-code-service';
 import { CreditMemoService } from '../../services/credit-memo-service';
-import { CreditMemoEntity } from '../../models/credit-memo.model';
+import { CreditMemoEntity, CreateCreditMemoPayload } from '../../models/credit-memo.model';
 import { Subject, takeUntil } from 'rxjs';
 
 type CreditMemoStatus = string;
@@ -41,6 +41,10 @@ interface ArCodeOption {
   name: string;
   code: string;
 }
+
+const CREDIT_MEMO_CURRENCY = 'USD';
+const CREDIT_REASON_ON_ACCOUNT = 'Manual credit memo';
+const CREDIT_REASON_APPLIED = 'Credit memo applied to invoice';
 
 @Component({
   selector: 'app-credit-memo',
@@ -270,7 +274,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     this.creditMemosError = null;
     this.cdr.detectChanges();
 
-    this.creditMemoService.getCompanyCreditMemos(companyId, 0, 25).subscribe({
+    this.creditMemoService.getCompanyCreditMemos(companyId, 0, 10).subscribe({
       next: (response) => {
         const content = response?.data?.content ?? [];
         this.records = content.map((memo) => this.transformCreditMemo(memo));
@@ -516,67 +520,128 @@ export class CreditMemo implements OnInit, OnDestroy {
       this.editingRecordIndex !== null ? this.records[this.editingRecordIndex] : null;
 
     this.saving = true;
+    this.cdr.detectChanges();
+
+    if (this.editingRecordIndex !== null && editingRecord) {
+      this.updateExistingCreditMemo(editingRecord, formValue);
+      return;
+    }
+
+    this.createCreditMemoOnServer(formValue, applyToInvoiceNow);
+  }
+
+  private updateExistingCreditMemo(
+    editingRecord: CreditMemoRecord,
+    formValue: Record<string, unknown>
+  ) {
+    if (!this.canUpdateCreditMemo) {
+      this.toastr.error('You do not have permission to update credit memos.', 'Permission denied');
+      this.saving = false;
+      this.cdr.detectChanges();
+      return;
+    }
 
     setTimeout(() => {
-      if (this.editingRecordIndex !== null && editingRecord) {
-        if (!this.canUpdateCreditMemo) {
-          this.toastr.error('You do not have permission to update credit memos.', 'Permission denied');
-          this.saving = false;
-          return;
-        }
-
-        const customer = this.customers.find(c => c.id === Number(formValue.customerId));
-        const arCode = this.arCodes.find(ac => ac.id === Number(formValue.arCodeId));
-        
-        this.records[this.editingRecordIndex] = {
-          ...editingRecord,
-          customerId: Number(formValue.customerId),
-          customerName: customer?.name || 'Unknown',
-          amount: Number(formValue.amount),
-          arCodeId: Number(formValue.arCodeId),
-          arCodeName: arCode?.name,
-        };
-
-        this.toastr.success('Credit memo updated successfully', 'Success');
-      } else {
-        if (!this.canCreateCreditMemo) {
-          this.toastr.error('You do not have permission to create credit memos.', 'Permission denied');
-          this.saving = false;
-          return;
-        }
-
-        const customer = this.customers.find(c => c.id === Number(formValue.customerId));
-        const arCode = this.arCodes.find(ac => ac.id === Number(formValue.arCodeId));
-        const newId = Math.max(...this.records.map(r => r.id || 0), 0) + 1;
-        
-        const newRecord: CreditMemoRecord = {
-          id: newId,
-          creditMemoNo: `CM-2025-${String(newId).padStart(3, '0')}`,
-          customerId: Number(formValue.customerId),
-          customerName: customer?.name || 'Unknown',
-          amount: Number(formValue.amount),
-          appliedAmount: 0,
-          arCodeId: Number(formValue.arCodeId),
-          arCodeName: arCode?.name,
-          linkedInvoiceId: this.selectedInvoiceIds.length > 0 ? this.selectedInvoiceIds[0] : undefined,
-          date: new Date(),
-          status: 'DRAFTED',
-          currency: 'USD'
-        };
-
-        this.records = [newRecord, ...this.records];
-        
-        let message = 'Credit memo created successfully';
-        if (applyToInvoiceNow && this.selectedInvoiceIds.length > 0) {
-          message += ` and will be applied to ${this.selectedInvoiceIds.length} invoice(s)`;
-        }
-        this.toastr.success(message, 'Success');
+      if (this.editingRecordIndex === null) {
+        this.saving = false;
+        this.cdr.detectChanges();
+        return;
       }
 
-      this.saving = false;
+      const customer = this.customers.find((c) => c.id === Number(formValue['customerId']));
+      const arCode = this.arCodes.find((ac) => ac.id === Number(formValue['arCodeId']));
+
+      this.records[this.editingRecordIndex] = {
+        ...editingRecord,
+        customerId: Number(formValue['customerId']),
+        customerName: customer?.name || 'Unknown',
+        amount: Number(formValue['amount']),
+        arCodeId: Number(formValue['arCodeId']),
+        arCodeName: arCode?.name,
+      };
+
+      this.toastr.success('Credit memo updated successfully', 'Success');
       this.closeModal();
       this.cdr.detectChanges();
     }, 500);
+  }
+
+  private createCreditMemoOnServer(
+    formValue: Record<string, unknown>,
+    applyToInvoiceNow: boolean
+  ) {
+    if (!this.canCreateCreditMemo) {
+      this.toastr.error('You do not have permission to create credit memos.', 'Permission denied');
+      this.saving = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const customerId = Number(formValue['customerId']);
+    if (!Number.isFinite(customerId) || customerId <= 0) {
+      this.toastr.error('Select a valid customer before saving.', 'Error');
+      this.saving = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const payload = this.buildCreateMemoPayload(formValue, applyToInvoiceNow);
+
+    this.creditMemoService
+      .createMemo(payload, customerId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          const createdMemo = response?.data ? this.transformCreditMemo(response.data) : null;
+          if (createdMemo) {
+            this.records = [createdMemo, ...this.records];
+          } else {
+            this.loadCompanyCreditMemos();
+          }
+
+          let message = response?.message || 'Credit memo created successfully';
+          // if (payload.invoiceId) {
+          //   message += ' Credit memo applied to the selected invoice.';
+          // } else if (applyToInvoiceNow) {
+          //   message += ' No invoice was selected, so the credit remains on-account.';
+          // }
+
+          this.toastr.success(message, 'Success');
+          this.closeModal();
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Unable to create credit memo.';
+          this.toastr.error(message, 'Error');
+          this.saving = false;
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private buildCreateMemoPayload(
+    formValue: Record<string, unknown>,
+    applyToInvoiceNow: boolean
+  ): CreateCreditMemoPayload {
+    const amount = Number(formValue['amount']);
+    const arCodeId = Number(formValue['arCodeId']);
+    const invoiceId =
+      applyToInvoiceNow && this.selectedInvoiceIds.length > 0
+        ? this.selectedInvoiceIds[0]
+        : undefined; // API currently supports linking a single invoice per memo.
+
+    const payload: CreateCreditMemoPayload = {
+      creditReason: invoiceId ? CREDIT_REASON_APPLIED : CREDIT_REASON_ON_ACCOUNT,
+      amount,
+      currency: CREDIT_MEMO_CURRENCY,
+      arCodeId,
+    };
+
+    if (typeof invoiceId === 'number') {
+      payload.invoiceId = invoiceId;
+    }
+
+    return payload;
   }
 
   editCreditMemo(index: number) {
