@@ -4,21 +4,38 @@
       New Credit Memo
     </button>
   </div>
+
+  <div class="tabs" *ngIf="canViewCreditMemos">
+    <button class="tab" [class.active]="activeTab === 'DRAFT'" (click)="setTab('DRAFT')">
+      Draft
+    </button>
+    <button class="tab" [class.active]="activeTab === 'APPROVED'" (click)="setTab('APPROVED')">
+      Approved
+    </button>
+  </div>
+
   <div class="card" *ngIf="canViewCreditMemos; else noPermission">
-    <div *ngIf="loading" class="loader-block">
-      <app-loader [visible]="loading"></app-loader>
+    <div *ngIf="activeTabState.loading" class="loader-block">
+      <app-loader [visible]="activeTabState.loading"></app-loader>
     </div>
 
-    <ng-container *ngIf="!loading">
-      <div *ngIf="creditMemosError" class="empty-text error">
-        {{ creditMemosError }}
+    <ng-container *ngIf="!activeTabState.loading">
+      <div *ngIf="activeTabState.error" class="empty-text error">
+        {{ activeTabState.error }}
       </div>
 
-      <div *ngIf="!creditMemosError && records.length === 0" class="empty-text">
-        No credit memos have been created yet.
+      <div
+        *ngIf="!activeTabState.error && activeTabState.records.length === 0"
+        class="empty-text"
+      >
+        {{
+          activeTab === 'DRAFT'
+            ? 'No draft credit memos have been created yet.'
+            : 'No approved credit memos available.'
+        }}
       </div>
 
-      <div class="table-scroll" *ngIf="!creditMemosError && records.length > 0">
+      <div class="table-scroll" *ngIf="!activeTabState.error && activeTabState.records.length > 0">
         <table class="data-table">
           <thead>
             <tr>
@@ -29,11 +46,12 @@
               <th>AR Code</th>
               <th>Date</th>
               <th>Status</th>
+              <th *ngIf="activeTab === 'DRAFT' && canUpdateCreditMemo">Actions</th>
               <!-- <th *ngIf="showActionsColumn">Actions</th> -->
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let record of records; let i = index">
+            <tr *ngFor="let record of activeTabState.records; let i = index">
               <td>{{ record.creditMemoNo || 'N/A' }}</td>
               <td>
                 <div class="customer-info">
@@ -61,14 +79,22 @@
               <td>
                 <span
                   class="status-badge"
-                  [ngClass]="{
-                    'status-draft': getStatusLabel(record.status) === 'Draft',
-                    'status-posted': getStatusLabel(record.status) === 'Posted',
-                    'status-allowed': getStatusLabel(record.status) === 'Allowed'
-                  }"
+                  [ngClass]="getStatusClass(record.status)"
                 >
                   {{ getStatusLabel(record.status) }}
                 </span>
+              </td>
+              <td *ngIf="activeTab === 'DRAFT' && canApproveCreditMemo">
+                <button
+                  type="button"
+                  class="btn-approve"
+                  (click)="openApproveModal(record)"
+                  [disabled]="approvingCreditMemoId === record.id"
+                >
+                  <app-spinner *ngIf="approvingCreditMemoId === record.id"></app-spinner>
+                  <span *ngIf="approvingCreditMemoId !== record.id">Approve</span>
+                  <span *ngIf="approvingCreditMemoId === record.id">Approving...</span>
+                </button>
               </td>
               <!-- <td class="actions" *ngIf="showActionsColumn">
                 <div class="action-menu-container">
@@ -387,6 +413,62 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Approve Credit Memo Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="approveModalOpen">
+    <div class="approve-modal">
+      <div class="modal-header">
+        <h2>Approve Credit Memo</h2>
+        <button
+          class="btn-close"
+          (click)="closeApproveModal()"
+          aria-label="Close"
+          [disabled]="approvingCreditMemoId"
+        >
+          <span>&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="confirmation-text">Are you sure you want to approve this credit memo?</p>
+        <div class="approve-details" *ngIf="creditMemoToApprove">
+          <div class="detail-row">
+            <span class="detail-label">Credit Memo #:</span>
+            <span class="detail-value">{{ creditMemoToApprove.creditMemoNo || 'N/A' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Customer:</span>
+            <span class="detail-value">{{ creditMemoToApprove.customerName || 'Unknown' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Amount:</span>
+            <span class="detail-value">{{ creditMemoToApprove.amount | currency }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeApproveModal()"
+          [disabled]="approvingCreditMemoId"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="confirmApproveCreditMemo()"
+          [disabled]="approvingCreditMemoId"
+        >
+          <app-spinner *ngIf="approvingCreditMemoId"></app-spinner>
+          <span *ngIf="!approvingCreditMemoId">Confirm Approval</span>
+          <span *ngIf="approvingCreditMemoId">Approving...</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>

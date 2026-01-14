@@ -23,12 +23,24 @@ interface ArCodeOption {
   name: string;
 }
 
+type WriteOffStatus = 'DRAFT' | 'APPROVED';
+
 interface WriteOffRecord {
   id: number;
   customerName: string;
   invoiceNumber: string;
   reason: string;
   writeOffDate: string | null;
+  status: WriteOffStatus;
+}
+
+type WriteOffTab = 'DRAFT' | 'APPROVED';
+
+interface WriteOffTabState {
+  records: WriteOffRecord[];
+  loading: boolean;
+  error: string | null;
+  initialized: boolean;
 }
 
 @Component({
@@ -39,24 +51,28 @@ interface WriteOffRecord {
   styleUrl: './write-off.css',
 })
 export class WriteOff implements OnInit, OnDestroy {
-  records: WriteOffRecord[] = [];
   customers: CustomerOption[] = [];
   arCodes: ArCodeOption[] = [];
   customerInvoices: InvoiceWithItems[] = [];
   writeOffForm: FormGroup;
   modalOpen = false;
+  approveModalOpen = false;
   submitted = false;
   saving = false;
-  loading = true;
+  canCreateWriteOff = false;
+  canApproveWriteOff = false;
   customerInvoicesLoading = false;
   invoiceMessage: string | null = null;
   invoiceMessageIsError = false;
   customersLoading = false;
   arCodesLoading = false;
-  writeOffsError: string | null = null;
+  approvingWriteOffId: number | null = null;
+  writeOffToApprove: WriteOffRecord | null = null;
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   selectedInvoiceId: number | null = null;
+  activeTab: WriteOffTab = 'DRAFT';
+  tabStates: Record<WriteOffTab, WriteOffTabState> = this.createInitialTabStates();
 
   constructor(
     private fb: FormBuilder,
@@ -68,6 +84,8 @@ export class WriteOff implements OnInit, OnDestroy {
     private writeOffService: WriteOffService,
     private userContext: UserContextService
   ) {
+    this.canCreateWriteOff = this.userContext.hasPermission('CREATE_WRITE_OFF');
+    this.canApproveWriteOff = this.userContext.hasPermission('APPROVE_WRITE_OFF');
     this.writeOffForm = this.fb.group({
       customerId: ['', Validators.required],
       invoiceId: [{ value: '', disabled: true }, Validators.required],
@@ -86,20 +104,35 @@ export class WriteOff implements OnInit, OnDestroy {
         }
         this.activeCompanyId = companyId;
         if (!companyId) {
-          this.records = [];
-          this.writeOffsError = 'Select a company to view write-offs.';
-          this.loading = false;
+          this.activeTab = 'DRAFT';
+          this.resetTabStates('Select a company to view write-offs.');
           this.cdr.detectChanges();
           return;
         }
 
-        this.writeOffsError = null;
-        this.loading = true;
+        this.activeTab = 'DRAFT';
+        this.resetTabStates();
         this.cdr.detectChanges();
         this.loadCustomers(companyId, true);
         this.loadArCodes();
-        this.loadWriteOffs(companyId);
+        this.loadWriteOffs(companyId, 'DRAFT');
+        this.loadWriteOffs(companyId, 'APPROVED');
       });
+  }
+
+  get activeTabState(): WriteOffTabState {
+    return this.tabStates[this.activeTab];
+  }
+
+  setTab(tab: WriteOffTab) {
+    if (this.activeTab === tab) {
+      return;
+    }
+    this.activeTab = tab;
+    this.cdr.detectChanges();
+    if (this.activeCompanyId && !this.tabStates[tab].initialized) {
+      this.loadWriteOffs(this.activeCompanyId, tab);
+    }
   }
 
   ngOnDestroy() {
@@ -108,6 +141,9 @@ export class WriteOff implements OnInit, OnDestroy {
   }
 
   openModal() {
+    if (!this.canCreateWriteOff) {
+      return;
+    }
     if (!this.activeCompanyId) {
       this.toastr.warning('Select a company before creating a write-off.', 'Company Required');
       return;
@@ -172,12 +208,14 @@ export class WriteOff implements OnInit, OnDestroy {
     };
 
     this.saving = true;
+    this.cdr.detectChanges();
     this.writeOffService.createWriteOff(payload, companyId, invoiceId).subscribe({
       next: () => {
         this.toastr.success('Write-off created successfully.', 'Success');
         this.saving = false;
         this.closeModal();
-        this.loadWriteOffs(companyId);
+        this.loadWriteOffs(companyId, 'DRAFT');
+        this.cdr.detectChanges();
       },
       error: (error) => {
         const message = error?.error?.message || 'Unable to create write-off.';
@@ -186,6 +224,110 @@ export class WriteOff implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  openApproveModal(record: WriteOffRecord) {
+    if (!this.canApproveWriteOff) {
+      return;
+    }
+    this.writeOffToApprove = record;
+    this.approveModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeApproveModal() {
+    if (this.approvingWriteOffId) {
+      return;
+    }
+    this.approveModalOpen = false;
+    this.writeOffToApprove = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmApproveWriteOff() {
+    if (!this.canApproveWriteOff || !this.writeOffToApprove || this.approvingWriteOffId) {
+      return;
+    }
+
+    const recordId = this.writeOffToApprove.id;
+    this.approvingWriteOffId = recordId;
+    this.cdr.detectChanges();
+
+    this.writeOffService.approveWriteOff(recordId).subscribe({
+      next: () => {
+        this.toastr.success('Write-off approved successfully.', 'Success');
+        this.approvingWriteOffId = null;
+        this.approveModalOpen = false;
+        this.writeOffToApprove = null;
+        if (this.activeCompanyId) {
+          this.loadWriteOffs(this.activeCompanyId, 'DRAFT');
+          this.loadWriteOffs(this.activeCompanyId, 'APPROVED');
+        } else {
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        const message = error?.error?.message || 'Unable to approve write-off.';
+        this.toastr.error(message, 'Error');
+        this.approvingWriteOffId = null;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  approveWriteOff(record: WriteOffRecord) {
+    if (
+      !this.canApproveWriteOff ||
+      !record ||
+      record.writeOffDate ||
+      this.approvingWriteOffId === record.id
+    ) {
+      return;
+    }
+
+    this.approvingWriteOffId = record.id;
+    this.cdr.detectChanges();
+    this.writeOffService.approveWriteOff(record.id).subscribe({
+      next: () => {
+        this.toastr.success('Write-off approved successfully.', 'Success');
+        this.approvingWriteOffId = null;
+        if (this.activeCompanyId) {
+          this.loadWriteOffs(this.activeCompanyId, 'DRAFT');
+          this.loadWriteOffs(this.activeCompanyId, 'APPROVED');
+        } else {
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        const message = error?.error?.message || 'Unable to approve write-off.';
+        this.toastr.error(message, 'Error');
+        this.approvingWriteOffId = null;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private createInitialTabStates(
+    errorMessage: string | null = null
+  ): Record<WriteOffTab, WriteOffTabState> {
+    return {
+      DRAFT: { records: [], loading: false, error: errorMessage, initialized: false },
+      APPROVED: { records: [], loading: false, error: errorMessage, initialized: false },
+    };
+  }
+
+  private resetTabStates(errorMessage: string | null = null) {
+    this.tabStates = this.createInitialTabStates(errorMessage);
+  }
+
+  private setTabState(status: WriteOffTab, update: Partial<WriteOffTabState>) {
+    this.tabStates = {
+      ...this.tabStates,
+      [status]: {
+        ...this.tabStates[status],
+        ...update,
+      },
+    };
   }
 
   private fetchCustomerInvoices(customerId: number) {
@@ -218,24 +360,30 @@ export class WriteOff implements OnInit, OnDestroy {
     });
   }
 
-  private loadWriteOffs(companyId: number) {
-    this.loading = true;
-    this.writeOffsError = null;
+  private loadWriteOffs(companyId: number, status: WriteOffTab) {
+    this.setTabState(status, { loading: true, error: null });
     this.cdr.detectChanges();
 
-    this.writeOffService.getCompanyWriteOff(companyId).subscribe({
+    this.writeOffService.getCompanyWriteOff(companyId, status).subscribe({
       next: (response) => {
         const content = response?.data?.content ?? [];
-        this.records = content.map((item) => this.transformWriteOff(item));
-        this.loading = false;
-        this.writeOffsError = null;
+        this.setTabState(status, {
+          records: content.map((item) => this.transformWriteOff(item)),
+          loading: false,
+          error: null,
+          initialized: true,
+        });
         this.cdr.detectChanges();
       },
       error: (error) => {
-        this.records = [];
-        this.loading = false;
-        this.writeOffsError = error?.error?.message || 'Unable to load write-offs.';
-        this.toastr.error(this.writeOffsError || 'Unable to load write-offs.', 'Error');
+        const message = error?.error?.message || 'Unable to load write-offs.';
+        this.setTabState(status, {
+          records: [],
+          loading: false,
+          error: message,
+          initialized: true,
+        });
+        this.toastr.error(message, 'Error');
         this.cdr.detectChanges();
       },
     });
@@ -313,14 +461,28 @@ export class WriteOff implements OnInit, OnDestroy {
     this.selectedInvoiceId = null;
   }
 
-  private transformWriteOff(entity: WriteOffEntity): WriteOffRecord {
+  private transformWriteOff(entity: WriteOffEntity | any): WriteOffRecord {
     return {
-      id: entity.id,
+      id: entity.id ?? entity.Id,
       customerName: entity.customerName,
       invoiceNumber: entity.invoiceNumber,
       reason: entity.reason,
       writeOffDate: entity.writeOffDate,
+      status: entity.status,
     };
+  }
+
+  formatStatus(status: WriteOffStatus | null): string {
+    if (!status) return '—';
+
+    switch (status) {
+      case 'DRAFT':
+        return 'Draft';
+      case 'APPROVED':
+        return 'Approved';
+      default:
+        return status;
+    }
   }
 
   private normalizeCompanyId(value: string | number | null): number | null {
@@ -353,7 +515,7 @@ export class WriteOff implements OnInit, OnDestroy {
     if (!this.selectedInvoiceId) {
       return '';
     }
-    const invoice = this.customerInvoices.find(inv => inv.id === this.selectedInvoiceId);
+    const invoice = this.customerInvoices.find((inv) => inv.id === this.selectedInvoiceId);
     return invoice?.invoiceNumber || String(this.selectedInvoiceId);
   }
 
