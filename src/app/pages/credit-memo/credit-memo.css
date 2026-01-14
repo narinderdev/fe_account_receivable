@@ -4,6 +4,45 @@
   margin-bottom: 1rem;
 }
 
+.tabs {
+  display: flex;
+  gap: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tab {
+  position: relative;
+  padding: 0.75rem 0.25rem;
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.tab:hover {
+  color: #111827;
+}
+
+.tab.active {
+  color: #3b82f6;
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 2px;
+  background-color: #3b82f6;
+  border-radius: 999px;
+}
+
 .card {
   background: white;
   border-radius: 8px;
@@ -87,28 +126,30 @@
 
 /* Status Badges */
 .status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
+  padding: 4px 10px;
   border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-block;
 }
 
-.status-draft {
+.status-badge.draft {
   background-color: #fef3c7;
   color: #92400e;
 }
 
-.status-posted {
-  background-color: #d1fae5;
-  color: #065f46;
+.status-badge.approved {
+  background-color: #dcfce7;
+  color: #166534;
 }
 
-.status-allowed {
-  background-color: #dbeafe;
-  color: #1e40af;
+.btn-approve {
+  color: #3b82f6;
+}
+
+.btn-approve:hover:not(:disabled) {
+  border-bottom: 1px solid #3b82f6;
 }
 
 /* Actions Menu */
@@ -226,6 +267,14 @@
   max-width: 500px;
 }
 
+.approve-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -269,6 +318,44 @@
 
 .modal-body {
   padding: 1.5rem;
+}
+
+.confirmation-text {
+  font-size: 0.9375rem;
+  color: #374151;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.approve-details {
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.detail-row:not(:last-child) {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.detail-value {
+  font-size: 0.875rem;
+  color: #111827;
+  text-align: right;
+  margin-left: 1rem;
 }
 
 /* Form Fields */

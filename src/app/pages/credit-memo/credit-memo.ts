@@ -46,6 +46,15 @@ const CREDIT_MEMO_CURRENCY = 'USD';
 const CREDIT_REASON_ON_ACCOUNT = 'Manual credit memo';
 const CREDIT_REASON_APPLIED = 'Credit memo applied to invoice';
 
+type CreditMemoTab = 'DRAFT' | 'APPROVED';
+
+interface CreditMemoTabState {
+  records: CreditMemoRecord[];
+  loading: boolean;
+  error: string | null;
+  initialized: boolean;
+}
+
 @Component({
   selector: 'app-credit-memo',
   standalone: true,
@@ -54,7 +63,6 @@ const CREDIT_REASON_APPLIED = 'Credit memo applied to invoice';
   styleUrl: './credit-memo.css',
 })
 export class CreditMemo implements OnInit, OnDestroy {
-  records: CreditMemoRecord[] = [];
   customers: CustomerOption[] = [];
   arCodes: ArCodeOption[] = [];
   creditMemoForm: FormGroup;
@@ -68,7 +76,9 @@ export class CreditMemo implements OnInit, OnDestroy {
   applyingRecord: CreditMemoRecord | null = null;
   saving = false;
   applying = false;
-  loading = true;
+  approveModalOpen = false;
+  creditMemoToApprove: CreditMemoRecord | null = null;
+  approvingCreditMemoId: number | null = null;
   deleteModalOpen = false;
   deleteTargetIndex: number | null = null;
   deleting = false;
@@ -77,6 +87,7 @@ export class CreditMemo implements OnInit, OnDestroy {
   canUpdateCreditMemo = false;
   canDeleteCreditMemo = false;
   canApplyCreditMemo = false;
+  canApproveCreditMemo = false;
   showActionsColumn = false;
   activeMenuIndex: number | null = null;
   customerInvoices: InvoiceWithItems[] = [];
@@ -86,10 +97,11 @@ export class CreditMemo implements OnInit, OnDestroy {
   invoiceMessageIsError = false;
   customersLoading = false;
   arCodesLoading = false;
-  creditMemosError: string | null = null;
   private deletingMemoIds = new Set<number>();
   private destroy$ = new Subject<void>();
   private lastCompanyId: number | null = null;
+  activeTab: CreditMemoTab = 'DRAFT';
+  tabStates: Record<CreditMemoTab, CreditMemoTabState> = this.createInitialTabStates();
 
   constructor(
     private fb: FormBuilder,
@@ -102,12 +114,14 @@ export class CreditMemo implements OnInit, OnDestroy {
     private arCodeService: ArCodeService,
     private creditMemoService: CreditMemoService
   ) {
-    this.canViewCreditMemos = this.userContext.hasPermission('VIEW_CREDIT_MEMO');
-    this.canCreateCreditMemo = this.userContext.hasPermission('CREATE_CREDIT_MEMO');
+    this.canViewCreditMemos = this.userContext.hasPermission('VIEW_MEMOS');
+    this.canCreateCreditMemo = this.userContext.hasPermission('CREATE_MEMOS');
     this.canUpdateCreditMemo = this.userContext.hasPermission('UPDATE_CREDIT_MEMO');
     this.canDeleteCreditMemo = this.userContext.hasPermission('DELETE_CREDIT_MEMO');
     this.canApplyCreditMemo = this.userContext.hasPermission('APPLY_CREDIT_MEMO');
-    this.showActionsColumn = this.canUpdateCreditMemo || this.canDeleteCreditMemo || this.canApplyCreditMemo;
+    this.canApproveCreditMemo = this.userContext.hasPermission('APPROVE_MEMOS');
+    this.showActionsColumn =
+      this.canUpdateCreditMemo || this.canDeleteCreditMemo || this.canApplyCreditMemo || this.canApproveCreditMemo;
 
     this.creditMemoForm = this.fb.group({
       customerId: ['', Validators.required],
@@ -127,7 +141,7 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   ngOnInit() {
     if (!this.canViewCreditMemos) {
-      this.loading = false;
+      this.resetTabStates('You do not have permission to view credit memos.');
       this.cdr.detectChanges();
       return;
     }
@@ -150,14 +164,16 @@ export class CreditMemo implements OnInit, OnDestroy {
 
         if (companyId === null) {
           this.lastCompanyId = null;
-          this.records = [];
-          this.creditMemosError = 'Select a company to view credit memos.';
-          this.loading = false;
+          this.activeTab = 'DRAFT';
+          this.resetTabStates('Select a company to view credit memos.');
           this.cdr.detectChanges();
           return;
         }
 
         this.lastCompanyId = companyId;
+        this.activeTab = 'DRAFT';
+        this.resetTabStates();
+        this.cdr.detectChanges();
         this.fetchInitialData(companyId);
       });
   }
@@ -165,7 +181,8 @@ export class CreditMemo implements OnInit, OnDestroy {
   private fetchInitialData(companyId: number) {
     this.loadCustomersFromService(true, companyId);
     this.loadArCodesFromService();
-    this.loadCompanyCreditMemos(companyId);
+    this.loadCreditMemos(companyId, 'DRAFT');
+    this.loadCreditMemos(companyId, 'APPROVED');
   }
 
   private normalizeCompanyId(value: string | number | null | undefined): number | null {
@@ -258,36 +275,30 @@ export class CreditMemo implements OnInit, OnDestroy {
     });
   }
 
-  private loadCompanyCreditMemos(companyIdOverride?: number) {
-    const companyId =
-      typeof companyIdOverride === 'number' ? companyIdOverride : this.getSelectedCompanyId();
-
-    if (companyId === null) {
-      this.records = [];
-      this.creditMemosError = 'Select a company to view credit memos.';
-      this.loading = false;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    this.loading = true;
-    this.creditMemosError = null;
+  private loadCreditMemos(companyId: number, status: CreditMemoTab) {
+    this.setTabState(status, { loading: true, error: null });
     this.cdr.detectChanges();
 
-    this.creditMemoService.getCompanyCreditMemos(companyId, 0, 10).subscribe({
+    this.creditMemoService.getCompanyCreditMemos(companyId, status, 0, 10).subscribe({
       next: (response) => {
         const content = response?.data?.content ?? [];
-        this.records = content.map((memo) => this.transformCreditMemo(memo));
-        this.loading = false;
-        this.creditMemosError = null;
+        this.setTabState(status, {
+          records: content.map((memo) => this.transformCreditMemo(memo)),
+          loading: false,
+          error: null,
+          initialized: true,
+        });
         this.cdr.detectChanges();
       },
       error: (error) => {
-        this.records = [];
-        this.loading = false;
-        this.creditMemosError =
-          error?.error?.message || 'Unable to load credit memos.';
-        this.toastr.error(this.creditMemosError || 'Unable to load credit memos.', 'Error');
+        const message = error?.error?.message || 'Unable to load credit memos.';
+        this.setTabState(status, {
+          records: [],
+          loading: false,
+          error: message,
+          initialized: true,
+        });
+        this.toastr.error(message, 'Error');
         this.cdr.detectChanges();
       },
     });
@@ -429,7 +440,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     if (!this.canApplyCreditMemo) {
       return;
     }
-    const record = this.records[index];
+    const record = this.getRecordFromActiveTab(index);
     if (!record) {
       return;
     }
@@ -459,6 +470,61 @@ export class CreditMemo implements OnInit, OnDestroy {
     this.applyingRecord = null;
     this.applying = false;
     this.cdr.detectChanges();
+  }
+
+  openApproveModal(record: CreditMemoRecord) {
+    if (!this.canApproveCreditMemo || !record || this.approvingCreditMemoId) {
+      return;
+    }
+    if (!record.id) {
+      this.toastr.error('Unable to approve this credit memo without an identifier.', 'Error');
+      return;
+    }
+    this.creditMemoToApprove = record;
+    this.approveModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeApproveModal() {
+    if (this.approvingCreditMemoId) {
+      return;
+    }
+    this.approveModalOpen = false;
+    this.creditMemoToApprove = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmApproveCreditMemo() {
+    if (!this.canApproveCreditMemo || !this.creditMemoToApprove || this.approvingCreditMemoId) {
+      return;
+    }
+    if (!this.creditMemoToApprove.id) {
+      this.toastr.error('Unable to approve this credit memo without an identifier.', 'Error');
+      return;
+    }
+
+    const memoId = this.creditMemoToApprove.id;
+    this.approvingCreditMemoId = memoId;
+    this.cdr.detectChanges();
+    this.creditMemoService.approveCreditMemo(memoId).subscribe({
+      next: () => {
+        this.toastr.success('Credit memo approved successfully.', 'Success');
+        this.approvingCreditMemoId = null;
+        this.approveModalOpen = false;
+        this.creditMemoToApprove = null;
+        if (this.lastCompanyId !== null) {
+          this.loadCreditMemos(this.lastCompanyId, 'DRAFT');
+          this.loadCreditMemos(this.lastCompanyId, 'APPROVED');
+        }
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        const message = error?.error?.message || 'Unable to approve credit memo.';
+        this.toastr.error(message, 'Error');
+        this.approvingCreditMemoId = null;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   getAvailableAmount(): number {
@@ -493,15 +559,20 @@ export class CreditMemo implements OnInit, OnDestroy {
     this.applying = true;
     
     setTimeout(() => {
-      const recordIndex = this.records.findIndex(r => r.id === this.applyingRecord!.id);
+      const targetTab = this.activeTab;
+      const records = this.tabStates[targetTab].records;
+      const recordIndex = records.findIndex((r) => r.id === this.applyingRecord!.id);
       if (recordIndex !== -1) {
-        const targetRecord = this.records[recordIndex];
+        const targetRecord = records[recordIndex];
         const currentApplied = Number(targetRecord.appliedAmount || 0);
-        targetRecord.appliedAmount = currentApplied + applyAmount;
-        this.records[recordIndex] = { ...targetRecord };
+        const updatedRecord: CreditMemoRecord = {
+          ...targetRecord,
+          appliedAmount: currentApplied + applyAmount,
+        };
+        this.replaceRecordInTab(targetTab, recordIndex, updatedRecord);
         this.toastr.success('Credit memo applied successfully', 'Success');
       }
-      
+
       this.applying = false;
       this.closeApplyModal();
       this.cdr.detectChanges();
@@ -517,7 +588,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     const formValue = this.creditMemoForm.getRawValue();
     const applyToInvoiceNow = Boolean(formValue.applyToInvoiceNow);
     const editingRecord =
-      this.editingRecordIndex !== null ? this.records[this.editingRecordIndex] : null;
+      this.editingRecordIndex !== null ? this.getRecordFromActiveTab(this.editingRecordIndex) : null;
 
     this.saving = true;
     this.cdr.detectChanges();
@@ -551,14 +622,14 @@ export class CreditMemo implements OnInit, OnDestroy {
       const customer = this.customers.find((c) => c.id === Number(formValue['customerId']));
       const arCode = this.arCodes.find((ac) => ac.id === Number(formValue['arCodeId']));
 
-      this.records[this.editingRecordIndex] = {
+      this.replaceRecordInActiveTab(this.editingRecordIndex, {
         ...editingRecord,
         customerId: Number(formValue['customerId']),
         customerName: customer?.name || 'Unknown',
         amount: Number(formValue['amount']),
         arCodeId: Number(formValue['arCodeId']),
         arCodeName: arCode?.name,
-      };
+      });
 
       this.toastr.success('Credit memo updated successfully', 'Success');
       this.closeModal();
@@ -594,9 +665,10 @@ export class CreditMemo implements OnInit, OnDestroy {
         next: (response) => {
           const createdMemo = response?.data ? this.transformCreditMemo(response.data) : null;
           if (createdMemo) {
-            this.records = [createdMemo, ...this.records];
-          } else {
-            this.loadCompanyCreditMemos();
+            const targetTab = this.mapStatusToTab(createdMemo.status);
+            this.updateTabRecords(targetTab, (records) => [createdMemo, ...records]);
+          } else if (this.lastCompanyId) {
+            this.loadCreditMemos(this.lastCompanyId, 'DRAFT');
           }
 
           let message = response?.message || 'Credit memo created successfully';
@@ -648,7 +720,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     if (!this.canUpdateCreditMemo) {
       return;
     }
-    const record = this.records[index];
+    const record = this.getRecordFromActiveTab(index);
     if (!record) {
       return;
     }
@@ -675,7 +747,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     if (!this.canDeleteCreditMemo) {
       return;
     }
-    const record = this.records[index];
+    const record = this.getRecordFromActiveTab(index);
     if (!record) {
       return;
     }
@@ -696,7 +768,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     if (this.deleteTargetIndex === null) {
       return;
     }
-    const record = this.records[this.deleteTargetIndex];
+    const record = this.getRecordFromActiveTab(this.deleteTargetIndex);
     if (!record) {
       this.closeDeleteModal();
       return;
@@ -712,10 +784,13 @@ export class CreditMemo implements OnInit, OnDestroy {
   }
 
   private performDelete(record: CreditMemoRecord, index: number) {
+    const targetTab = this.activeTab;
     if (!record.id) {
-      const nextRecords = [...this.records];
-      nextRecords.splice(index, 1);
-      this.records = nextRecords;
+      this.updateTabRecords(targetTab, (records) => {
+        const next = [...records];
+        next.splice(index, 1);
+        return next;
+      });
       if (this.editingRecordIndex !== null) {
         if (index === this.editingRecordIndex) {
           this.closeModal();
@@ -738,10 +813,15 @@ export class CreditMemo implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     const editingRecordId =
-      this.editingRecordIndex !== null ? this.records[this.editingRecordIndex]?.id : null;
+      this.editingRecordIndex !== null
+        ? this.getRecordFromActiveTab(this.editingRecordIndex)?.id ?? null
+        : null;
 
     setTimeout(() => {
-      this.records = this.records.filter(r => r.id !== record.id);
+      this.updateTabRecords(targetTab, (records) => records.filter((r) => r.id !== record.id));
+      if (this.editingRecordIndex !== null && index < this.editingRecordIndex) {
+        this.editingRecordIndex = this.editingRecordIndex - 1;
+      }
       
       if (editingRecordId === record.id) {
         this.closeModal();
@@ -766,6 +846,21 @@ export class CreditMemo implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  get activeTabState(): CreditMemoTabState {
+    return this.tabStates[this.activeTab];
+  }
+
+  setTab(tab: CreditMemoTab) {
+    if (this.activeTab === tab) {
+      return;
+    }
+    this.activeTab = tab;
+    this.cdr.detectChanges();
+    if (!this.tabStates[tab].initialized && this.lastCompanyId) {
+      this.loadCreditMemos(this.lastCompanyId, tab);
+    }
+  }
+
   getStatusLabel(status: CreditMemoStatus): string {
     if (!status) {
       return 'Unknown';
@@ -781,6 +876,20 @@ export class CreditMemo implements OnInit, OnDestroy {
       default:
         return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
     }
+  }
+
+  getStatusClass(status: CreditMemoStatus | null | undefined): string {
+    if (!status) {
+      return '';
+    }
+    const normalized = String(status).toUpperCase();
+    if (normalized === 'DRAFT' || normalized === 'DRAFTED') {
+      return 'draft';
+    }
+    if (['APPROVED', 'POSTED', 'ALLOWED'].includes(normalized)) {
+      return 'approved';
+    }
+    return normalized.toLowerCase();
   }
 
   isDeleting(memoId?: number): boolean {
@@ -806,5 +915,61 @@ export class CreditMemo implements OnInit, OnDestroy {
     }
     const trimmed = name.trim();
     return trimmed ? trimmed.charAt(0).toUpperCase() : 'U';
+  }
+
+  private createInitialTabStates(errorMessage: string | null = null): Record<CreditMemoTab, CreditMemoTabState> {
+    return {
+      DRAFT: { records: [], loading: false, error: errorMessage, initialized: false },
+      APPROVED: { records: [], loading: false, error: errorMessage, initialized: false },
+    };
+  }
+
+  private resetTabStates(errorMessage: string | null = null) {
+    this.tabStates = this.createInitialTabStates(errorMessage);
+  }
+
+  private setTabState(tab: CreditMemoTab, patch: Partial<CreditMemoTabState>) {
+    this.tabStates = {
+      ...this.tabStates,
+      [tab]: {
+        ...this.tabStates[tab],
+        ...patch,
+      },
+    };
+  }
+
+  private updateTabRecords(
+    tab: CreditMemoTab,
+    updater: (records: CreditMemoRecord[]) => CreditMemoRecord[]
+  ) {
+    const updatedRecords = updater(this.tabStates[tab].records);
+    this.setTabState(tab, { records: updatedRecords, initialized: true });
+  }
+
+  private replaceRecordInTab(tab: CreditMemoTab, index: number, record: CreditMemoRecord) {
+    this.updateTabRecords(tab, (records) => {
+      const next = [...records];
+      next[index] = record;
+      return next;
+    });
+  }
+
+  private replaceRecordInActiveTab(index: number, record: CreditMemoRecord) {
+    this.replaceRecordInTab(this.activeTab, index, record);
+  }
+
+  private getRecordFromActiveTab(index: number): CreditMemoRecord | undefined {
+    return this.activeTabState.records[index];
+  }
+
+  private mapStatusToTab(status?: CreditMemoStatus | null): CreditMemoTab {
+    if (!status) {
+      return 'DRAFT';
+    }
+    const normalized = String(status).toUpperCase();
+    if (normalized === 'APPROVED' || normalized === 'POSTED' || normalized === 'ALLOWED') {
+      return 'APPROVED';
+    }
+    return 'DRAFT';
   }
 }

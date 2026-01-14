@@ -47,12 +47,14 @@ export class CreditMemoService {
 
   getCompanyCreditMemos(
     companyId: number,
+    status?: 'DRAFT' | 'APPROVED',
     page = 0,
     size = 10
   ): Observable<CreditMemoPageResponse> {
     const headers = this.getAuthHeadersWithNgrok();
+    const statusQuery = status ? `&status=${status}` : '';
     return this.http.get<CreditMemoPageResponse>(
-      `${this.baseUrl}/credit-memos/company/${companyId}?page=${page}&size=${size}`,
+      `${this.baseUrl}/credit-memos/company/${companyId}?page=${page}&size=${size}${statusQuery}`,
       {
         headers,
       }
@@ -68,4 +70,15 @@ export class CreditMemoService {
       }
     );
   }
+
+  approveCreditMemo(creditMemoId: number): Observable<any> {
+      const headers = this.getAuthHeaders();
+      return this.http.post<any>(
+        `${this.baseUrl}/credit-memos/${creditMemoId}/approve`,
+        {},
+        {
+          headers,
+        }
+      );
+    }
 }
