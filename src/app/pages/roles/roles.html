@@ -110,6 +110,7 @@
                 <th class="permission-col">Create</th>
                 <th class="permission-col">Update</th>
                 <th class="permission-col">Delete</th>
+                <th class="permission-col">Approve</th>
               </tr>
             </thead>
             <tbody>
@@ -151,6 +152,15 @@
                       type="checkbox"
                       [checked]="isPermissionSelected(row.permissions.delete)"
                       (change)="onPermissionToggle(row, 'delete')"
+                    />
+                  </label>
+                </td>
+                <td class="permission-cell">
+                  <label class="checkbox-wrapper" *ngIf="row.permissions.approve">
+                    <input
+                      type="checkbox"
+                      [checked]="isPermissionSelected(row.permissions.approve)"
+                      (change)="onPermissionToggle(row, 'approve')"
                     />
                   </label>
                 </td>

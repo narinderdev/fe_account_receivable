@@ -16,6 +16,7 @@ interface PermissionColumn {
   create?: string;
   update?: string;
   delete?: string;
+  approve?: string;
 }
 
 interface PermissionRow {
@@ -69,8 +70,6 @@ export class Roles implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_INVOICES',
         create: 'CREATE_INVOICE',
-        // update: 'EDIT_INVOICE',
-        // delete: 'DELETE_INVOICE',
       },
     },
     {
@@ -78,6 +77,22 @@ export class Roles implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_PAYMENTS',
         create: 'APPLY_PAYMENT',
+      },
+    },
+    {
+      label: 'Credit Memos',
+      permissions: {
+        view: 'VIEW_MEMOS',
+        create: 'CREATE_MEMOS',
+        approve: 'APPROVE_MEMOS',
+      },
+    },
+    {
+      label: 'Write-Off',
+      permissions: {
+        view: 'VIEW_WRITE_OFF',
+        create: 'CREATE_WRITE_OFF',
+        approve: 'APPROVE_WRITE_OFF',
       },
     },
     {
@@ -134,7 +149,7 @@ export class Roles implements OnInit, OnDestroy {
       label: 'Users',
       permissions: {
         view: 'VIEW_USER',
-        create: 'INVITE_USER', // Invite treated as Create
+        create: 'INVITE_USER',
       },
     },
     {
@@ -238,9 +253,6 @@ export class Roles implements OnInit, OnDestroy {
   closeModal() {
     this.isModalOpen = false;
     this.cdr.detectChanges();
-    // if (this.activeCompanyId) {
-    //   this.loadRoles(this.activeCompanyId);
-    // }
   }
 
   saveRole() {
@@ -321,7 +333,7 @@ export class Roles implements OnInit, OnDestroy {
     if (action === 'view') {
       // Trying to uncheck view
       if (isSelected) {
-        // Check if any dependent permissions (create, update, delete) are selected
+        // Check if any dependent permissions (create, update, delete, approve) are selected
         const hasDependents = this.hasDependentPermissionSelected(row, current);
         // Prevent unchecking if there are dependents OR if it's required
         if (hasDependents || this.isPermissionRequired(code)) {
@@ -338,24 +350,16 @@ export class Roles implements OnInit, OnDestroy {
       return;
     }
 
-    // Handling create, update, or delete
+    // Handling create, update, delete, or approve
     if (isSelected) {
-      // Unchecking create/update/delete - simply remove it
+      // Unchecking create/update/delete/approve - simply remove it
       const updated = current.filter((val) => val !== code);
       control.setValue(updated);
-
-      // After unchecking, check if view should still be disabled
-      const viewCode = row.permissions.view;
-      if (viewCode) {
-        const stillHasDependents = this.hasDependentPermissionSelected(row, updated);
-        // If no more dependents and view is checked, allow user to uncheck it later
-        // If VIEW_COMPANY is required, it stays disabled
-      }
       this.cdr.detectChanges();
       return;
     }
 
-    // Checking create/update/delete - add it AND ensure view is also checked
+    // Checking create/update/delete/approve - add it AND ensure view is also checked
     const updated = [...current];
 
     // First, add the view permission if not already present
@@ -364,7 +368,7 @@ export class Roles implements OnInit, OnDestroy {
       updated.push(viewCode);
     }
 
-    // Then add the selected permission (create/update/delete)
+    // Then add the selected permission (create/update/delete/approve)
     if (!updated.includes(code)) {
       updated.push(code);
     }
@@ -384,7 +388,7 @@ export class Roles implements OnInit, OnDestroy {
   }
 
   private hasDependentPermissionSelected(row: PermissionRow, current: string[]): boolean {
-    const dependentActions: PermissionType[] = ['create', 'update', 'delete'];
+    const dependentActions: PermissionType[] = ['create', 'update', 'delete', 'approve'];
     return dependentActions.some((action) => {
       const perm = row.permissions[action];
       return perm ? current.includes(perm) : false;

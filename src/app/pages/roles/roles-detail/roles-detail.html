@@ -56,6 +56,7 @@
                 <th>Create</th>
                 <th>Update</th>
                 <th>Delete</th>
+                <th>Approve</th>
               </tr>
             </thead>
             <tbody>
@@ -89,6 +90,15 @@
                     {{
                       row.permissions.delete
                         ? (hasPermission(row.permissions.delete) ? 'Allowed' : 'No Access')
+                        : '--'
+                    }}
+                  </span>
+                </td>
+                <td>
+                  <span class="perm-pill" [class.active]="hasPermission(row.permissions.approve)">
+                    {{
+                      row.permissions.approve
+                        ? (hasPermission(row.permissions.approve) ? 'Allowed' : 'No Access')
                         : '--'
                     }}
                   </span>
