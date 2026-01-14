@@ -12,6 +12,7 @@ interface PermissionColumn {
   create?: string;
   update?: string;
   delete?: string;
+  approve?: string;
 }
 
 interface PermissionRow {
@@ -60,6 +61,22 @@ export class RolesDetail implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_PAYMENTS',
         create: 'APPLY_PAYMENT',
+      },
+    },
+    {
+      label: 'Credit Memos',
+      permissions: {
+        view: 'VIEW_MEMOS',
+        create: 'CREATE_MEMOS',
+        approve: 'APPROVE_MEMOS',
+      },
+    },
+    {
+      label: 'Write-Off',
+      permissions: {
+        view: 'VIEW_WRITE_OFF',
+        create: 'CREATE_WRITE_OFF',
+        approve: 'APPROVE_WRITE_OFF',
       },
     },
     {
