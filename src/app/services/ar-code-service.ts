@@ -34,57 +34,57 @@ export class ArCodeService {
     });
   }
 
-  getCode(userId: number): Observable<ArCodeListResponse> {
+  getCode(companyId: number): Observable<ArCodeListResponse> {
     const headers = this.getAuthHeadersWithNgrok();
 
-    return this.http.get<ArCodeListResponse>(`${this.baseUrl}/codes/ar-codes/${userId}`, {
+    return this.http.get<ArCodeListResponse>(`${this.baseUrl}/codes/ar-codes/${companyId}`, {
       headers,
     });
   }
 
-  createCode(data: CreateArCodePayload, userId: number): Observable<CreateArCodeResponse> {
+  createCode(data: CreateArCodePayload, companyId: number): Observable<CreateArCodeResponse> {
     const headers = this.getAuthHeaders();
-    return this.http.post<CreateArCodeResponse>(`${this.baseUrl}/codes/ar-codes/${userId}`, data, {
+    return this.http.post<CreateArCodeResponse>(`${this.baseUrl}/codes/ar-codes/${companyId}`, data, {
       headers,
     });
   }
 
   updateCode(
     codeId: number,
-    userId: number,
+    companyId: number,
     data: UpdateArCodePayload
   ): Observable<UpdateArCodeResponse> {
     const headers = this.getAuthHeaders();
     return this.http.put<UpdateArCodeResponse>(
-      `${this.baseUrl}/codes/ar-codes/${codeId}/${userId}`,
+      `${this.baseUrl}/codes/ar-codes/${codeId}/${companyId}`,
       data,
       { headers }
     );
   }
 
-  deleteCode(codeId: number, userId: number): Observable<DeleteArCodeResponse> {
+  deleteCode(codeId: number, companyId: number): Observable<DeleteArCodeResponse> {
     const headers = this.getAuthHeaders();
     return this.http.delete<DeleteArCodeResponse>(
-      `${this.baseUrl}/codes/ar-codes/${codeId}/${userId}`,
+      `${this.baseUrl}/codes/ar-codes/${codeId}/${companyId}`,
       {
         headers,
       }
     );
   }
 
-  activateCode(codeId: number, userId: number): Observable<ToggleArCodeResponse> {
+  activateCode(codeId: number, companyId: number): Observable<ToggleArCodeResponse> {
     const headers = this.getAuthHeaders();
     return this.http.patch<ToggleArCodeResponse>(
-      `${this.baseUrl}/codes/ar-codes/${codeId}/active/${userId}`,
+      `${this.baseUrl}/codes/ar-codes/${codeId}/active/${companyId}`,
       {},
       { headers }
     );
   }
 
-  deactivateCode(codeId: number, userId: number): Observable<ToggleArCodeResponse> {
+  deactivateCode(codeId: number, companyId: number): Observable<ToggleArCodeResponse> {
     const headers = this.getAuthHeaders();
     return this.http.patch<ToggleArCodeResponse>(
-      `${this.baseUrl}/codes/ar-codes/${codeId}/inactive/${userId}`,
+      `${this.baseUrl}/codes/ar-codes/${codeId}/inactive/${companyId}`,
       {},
       { headers }
     );

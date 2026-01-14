@@ -1,13 +1,15 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
-import { finalize } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { finalize, takeUntil } from 'rxjs/operators';
 import { ArCodeService } from '../../services/ar-code-service';
 import { CreateArCodePayload, ArCodeEntity, UpdateArCodePayload } from '../../models/ar-code.model';
 import { Loader } from '../../shared/loader/loader';
 import { Spinner } from '../../shared/spinner/spinner';
 import { UserContextService } from '../../services/user-context.service';
+import { CompanySelectionService } from '../../services/company-selection.service';
 
 type ArCodeStatus = 'ACTIVE' | 'INACTIVE';
 
@@ -20,8 +22,6 @@ interface ArCodeRecord {
   status: ArCodeStatus;
 }
 
-const USER_CONTEXT_STORAGE_KEY = 'userContext';
-
 @Component({
   selector: 'app-ar-codes',
   standalone: true,
@@ -29,7 +29,7 @@ const USER_CONTEXT_STORAGE_KEY = 'userContext';
   templateUrl: './ar-codes.html',
   styleUrl: './ar-codes.css',
 })
-export class ArCodes implements OnInit {
+export class ArCodes implements OnInit, OnDestroy {
   records: ArCodeRecord[] = [];
   arCodeForm: FormGroup;
   modalOpen = false;
@@ -47,6 +47,8 @@ export class ArCodes implements OnInit {
   showActionsColumn = false;
   private deletingCodeIds = new Set<number>();
   private togglingCodeIds = new Set<number>();
+  private destroy$ = new Subject<void>();
+  private activeCompanyId: number | null = null;
 
   readonly statusOptions = [
     { label: 'Active', value: 'ACTIVE' as ArCodeStatus },
@@ -76,7 +78,8 @@ export class ArCodes implements OnInit {
     private arCodeService: ArCodeService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
-    private userContext: UserContextService
+    private userContext: UserContextService,
+    private companySelection: CompanySelectionService
   ) {
     this.canViewArCodes = this.userContext.hasPermission('VIEW_CODE');
     this.canCreateArCode = this.userContext.hasPermission('CREATE_CODE');
@@ -98,7 +101,29 @@ export class ArCodes implements OnInit {
       this.cdr.detectChanges();
       return;
     }
-    this.fetchArCodes();
+
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+      const nextCompanyId = this.normalizeCompanyId(value);
+      if (this.activeCompanyId === nextCompanyId) {
+        if (nextCompanyId && this.records.length === 0 && !this.loading) {
+          this.fetchArCodes();
+        }
+        return;
+      }
+      this.activeCompanyId = nextCompanyId;
+      if (!this.activeCompanyId) {
+        this.records = [];
+        this.loading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+      this.fetchArCodes();
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   openModal() {
@@ -141,12 +166,9 @@ export class ArCodes implements OnInit {
       status: editingRecord?.status ?? 'ACTIVE',
     };
 
-    const userId = this.getCurrentUserId();
-    if (userId === null) {
-      this.toastr.error(
-        'Unable to determine the current user. Please sign in again.',
-        'Missing user'
-      );
+    const companyId = this.activeCompanyId;
+    if (!companyId) {
+      this.toastr.warning('Select a company before managing AR codes.', 'Company Required');
       return;
     }
 
@@ -172,7 +194,7 @@ export class ArCodes implements OnInit {
 
       this.saving = true;
       this.arCodeService
-        .updateCode(editingRecord.id, userId, updatePayload)
+        .updateCode(editingRecord.id, companyId, updatePayload)
         .pipe(
           finalize(() => {
             this.saving = false;
@@ -208,7 +230,7 @@ export class ArCodes implements OnInit {
 
     this.saving = true;
     this.arCodeService
-      .createCode(payload, userId)
+      .createCode(payload, companyId)
       .pipe(
         finalize(() => {
           this.saving = false;
@@ -306,12 +328,9 @@ export class ArCodes implements OnInit {
       return;
     }
 
-    const userId = this.getCurrentUserId();
-    if (userId === null) {
-      this.toastr.error(
-        'Unable to determine the current user. Please sign in again.',
-        'Missing user'
-      );
+    const companyId = this.activeCompanyId;
+    if (!companyId) {
+      this.toastr.warning('Select a company before managing AR codes.', 'Company Required');
       return;
     }
 
@@ -327,7 +346,7 @@ export class ArCodes implements OnInit {
       this.editingRecordIndex !== null ? this.records[this.editingRecordIndex]?.id : null;
 
     this.arCodeService
-      .deleteCode(record.id, userId)
+      .deleteCode(record.id, companyId)
       .pipe(
         finalize(() => {
           this.deleting = false;
@@ -371,12 +390,9 @@ export class ArCodes implements OnInit {
       return;
     }
 
-    const userId = this.getCurrentUserId();
-    if (userId === null) {
-      this.toastr.error(
-        'Unable to determine the current user. Please sign in again.',
-        'Missing user'
-      );
+    const companyId = this.activeCompanyId;
+    if (!companyId) {
+      this.toastr.warning('Select a company before managing AR codes.', 'Company Required');
       return;
     }
 
@@ -385,8 +401,8 @@ export class ArCodes implements OnInit {
     this.cdr.detectChanges();
 
     const toggle$ = targetActive
-      ? this.arCodeService.activateCode(record.id, userId)
-      : this.arCodeService.deactivateCode(record.id, userId);
+      ? this.arCodeService.activateCode(record.id, companyId)
+      : this.arCodeService.deactivateCode(record.id, companyId);
 
     toggle$
       .pipe(
@@ -424,20 +440,6 @@ export class ArCodes implements OnInit {
     if (!codeType) return '—';
     const option = this.codeTypeOptions.find((opt) => opt.value === codeType);
     return option ? option.label : codeType;
-  }
-
-  private getCurrentUserId(): number | null {
-    const raw = localStorage.getItem(USER_CONTEXT_STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    try {
-      const parsed = JSON.parse(raw);
-      return typeof parsed?.userId === 'number' ? parsed.userId : null;
-    } catch {
-      return null;
-    }
   }
 
   private mapEntityToRecord(entity: ArCodeEntity): ArCodeRecord {
@@ -479,13 +481,9 @@ export class ArCodes implements OnInit {
   }
 
   private fetchArCodes() {
-    const userId = this.getCurrentUserId();
-    if (userId === null) {
+    if (!this.activeCompanyId) {
+      this.records = [];
       this.loading = false;
-      this.toastr.error(
-        'Unable to determine the current user. Please sign in again.',
-        'Missing user'
-      );
       this.cdr.detectChanges();
       return;
     }
@@ -494,7 +492,7 @@ export class ArCodes implements OnInit {
     this.cdr.detectChanges();
 
     this.arCodeService
-      .getCode(userId)
+      .getCode(this.activeCompanyId)
       .pipe(
         finalize(() => {
           this.loading = false;
@@ -512,5 +510,16 @@ export class ArCodes implements OnInit {
           this.toastr.error('Failed to load AR codes. Please try again.', 'Error');
         },
       });
+  }
+
+  private normalizeCompanyId(value: string | number | null): number | null {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
   }
 }

@@ -180,7 +180,7 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   private fetchInitialData(companyId: number) {
     this.loadCustomersFromService(true, companyId);
-    this.loadArCodesFromService();
+    this.loadArCodesFromService(true, companyId);
     this.loadCreditMemos(companyId, 'DRAFT');
     this.loadCreditMemos(companyId, 'APPROVED');
   }
@@ -238,16 +238,18 @@ export class CreditMemo implements OnInit, OnDestroy {
     });
   }
 
-  private loadArCodesFromService(force = false) {
+  private loadArCodesFromService(force = false, companyIdOverride?: number) {
     if (!force && this.arCodes.length > 0) {
       return;
     }
 
-    const userId = this.userContext.getUserId();
-    if (!userId) {
-      this.arCodes = [];
+    const companyId =
+      typeof companyIdOverride === 'number' ? companyIdOverride : this.getSelectedCompanyId();
+
+    if (companyId === null) {
       if (force) {
-        this.toastr.warning('User information missing. Unable to load AR codes.', 'Warning');
+        this.arCodes = [];
+        this.toastr.warning('Select a company to load AR codes.', 'Company Required');
       }
       return;
     }
@@ -255,7 +257,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     this.arCodesLoading = true;
     this.cdr.detectChanges();
 
-    this.arCodeService.getCode(userId).subscribe({
+    this.arCodeService.getCode(companyId).subscribe({
       next: (res) => {
         const arCodes = res?.data ?? [];
         this.arCodes = arCodes.map((code) => ({

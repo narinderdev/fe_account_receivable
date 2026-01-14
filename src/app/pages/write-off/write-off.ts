@@ -114,7 +114,7 @@ export class WriteOff implements OnInit, OnDestroy {
         this.resetTabStates();
         this.cdr.detectChanges();
         this.loadCustomers(companyId, true);
-        this.loadArCodes();
+        this.loadArCodes(true, companyId);
         this.loadWriteOffs(companyId, 'DRAFT');
         this.loadWriteOffs(companyId, 'APPROVED');
       });
@@ -149,7 +149,7 @@ export class WriteOff implements OnInit, OnDestroy {
       return;
     }
     this.loadCustomers(this.activeCompanyId, true);
-    this.loadArCodes();
+    this.loadArCodes(true);
     this.resetFormState();
     this.submitted = false;
     this.saving = false;
@@ -414,20 +414,24 @@ export class WriteOff implements OnInit, OnDestroy {
     });
   }
 
-  private loadArCodes(force = false) {
+  private loadArCodes(force = false, companyIdOverride?: number) {
     if (!force && this.arCodes.length > 0) {
       return;
     }
 
-    const userId = this.userContext.getUserId();
-    if (!userId) {
-      this.toastr.warning('Unable to load AR codes without user context.', 'Warning');
+    const companyId =
+      typeof companyIdOverride === 'number' ? companyIdOverride : this.activeCompanyId;
+
+    if (!companyId) {
+      if (force) {
+        this.toastr.warning('Select a company to load AR codes.', 'Company Required');
+      }
       return;
     }
 
     this.arCodesLoading = true;
     this.cdr.detectChanges();
-    this.arCodeService.getCode(userId).subscribe({
+    this.arCodeService.getCode(companyId).subscribe({
       next: (res) => {
         const codes = res?.data ?? [];
         this.arCodes = codes.map((code) => ({
