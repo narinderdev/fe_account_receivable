@@ -41,13 +41,19 @@ describe('ReceivePayment', () => {
   describe('form logic', () => {
     it('validates required fields before applying payment', () => {
       const instance = createComponent();
-      instance.amount = null;
+      instance.selectedCustomerId = null;
+      instance.bankDeposit = null;
+      instance.serviceFee = null;
       instance.paymentMethod = '';
-      instance.notes = '';
+      instance.notes = '   ';
       instance.invoices = [];
+
       expect(instance.isFormValid()).toBe(false);
-      expect(instance.showAmountError).toBe(true);
+      expect(instance.showCustomerError).toBe(true);
+      expect(instance.showBankDepositError).toBe(true);
+      expect(instance.showServiceFeeError).toBe(true);
       expect(instance.showPaymentMethodError).toBe(true);
+      expect(instance.showInvoiceError).toBe(true);
       expect(instance.showNotesError).toBe(true);
     });
 

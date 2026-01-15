@@ -58,6 +58,8 @@ describe('Payments', () => {
 function createPayment(overrides: Partial<Payment> = {}): Payment {
   return {
     id: 1,
+    bankDeposit: 0,
+    serviceFee: 0,
     paymentAmount: 100,
     paymentMethod: 'CARD',
     paymentDate: '2024-01-01',

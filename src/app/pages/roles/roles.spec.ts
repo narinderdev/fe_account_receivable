@@ -6,6 +6,7 @@ import { RoleService } from '../../services/role-service';
 import { ToastrService } from 'ngx-toastr';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { UserContextService } from '../../services/user-context.service';
+import { Role } from '../../models/company-users.model';
 
 import { Roles } from './roles';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
@@ -39,23 +40,23 @@ describe('Roles', () => {
       description: [''],
       permissions: [['VIEW_COMPANY']],
     });
-    return instance;
+    return { instance, router };
   };
 
   it('should create', () => {
-    const instance = createComponent();
+    const { instance } = createComponent();
     expect(instance).toBeTruthy();
   });
 
   describe('permission helpers', () => {
     it('marks VIEW_COMPANY as a required permission', () => {
-      const instance = createComponent();
+      const { instance } = createComponent();
       expect(instance.isPermissionRequired('VIEW_COMPANY')).toBe(true);
       expect(instance.isPermissionRequired('CREATE_CUSTOMER')).toBe(false);
     });
 
     it('enforces view dependencies for create/update/delete permissions', () => {
-      const instance = createComponent();
+      const { instance } = createComponent();
       const row = {
         label: 'Customers',
         permissions: {
@@ -79,5 +80,27 @@ describe('Roles', () => {
       instance.onPermissionToggle(row, 'view');
       expect(instance.isPermissionSelected('VIEW_CUSTOMERS')).toBe(false);
     });
+  });
+
+  it('preloads required permissions whenever the modal opens', () => {
+    const { instance } = createComponent();
+    instance['addRoleForm'].setValue({
+      name: 'old',
+      description: 'old',
+      permissions: ['OTHER'],
+    });
+
+    instance.openModal();
+
+    expect(instance['isModalOpen']).toBe(true);
+    expect(instance.isPermissionSelected('VIEW_COMPANY')).toBe(true);
+    expect(instance.getSelectedCount()).toBe(1);
+  });
+
+  it('navigates to the detail view when a role id is available', () => {
+    const { instance, router } = createComponent();
+    instance.viewRole({ id: 42 } as Role);
+
+    expect(router.navigate).toHaveBeenCalledWith(['/admin/roles/details', 42]);
   });
 });

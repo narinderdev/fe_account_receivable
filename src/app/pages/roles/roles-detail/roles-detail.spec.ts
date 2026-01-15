@@ -1,6 +1,6 @@
 import { ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Subject, of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { RoleService } from '../../../services/role-service';
 import { RolesResponse } from '../../../models/company-users.model';
 import { CompanySelectionService } from '../../../services/company-selection.service';
@@ -61,6 +61,28 @@ describe('RolesDetail', () => {
 
     expect(instance.accessibleTabs).toContain('Dashboard');
     expect(instance.accessibleTabs).toContain('Customers');
+  });
+
+  it('clears state when the role details cannot be loaded', () => {
+    const route = {
+      snapshot: { paramMap: { get: () => '9' } },
+    } as unknown as ActivatedRoute;
+    const roleService = createSpyObj<RoleService>('RoleService', ['getRoles']);
+    roleService.getRoles.mockReturnValue(throwError(() => new Error('boom')));
+    const companySelection = {
+      selectedCompanyId$: new Subject<number | null>(),
+    } as unknown as CompanySelectionService;
+    const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
+
+    const instance = new RolesDetail(route, roleService, companySelection, cdr);
+    const internals = instance as unknown as RolesDetailInternals;
+    internals.companyId = 7;
+    internals.roleId = 9;
+    internals.loadRoleDetails();
+
+    expect(instance.role).toBeNull();
+    expect(instance.accessibleTabs).toEqual([]);
+    expect(instance.totalPermissions).toBe(0);
   });
 });
 
