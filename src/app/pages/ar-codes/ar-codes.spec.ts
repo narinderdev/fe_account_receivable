@@ -6,6 +6,7 @@ import { ArCodeService } from '../../services/ar-code-service';
 import { UserContextService } from '../../services/user-context.service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { ArCodeEntity } from '../../models/ar-code.model';
+import { GlCodeService } from '../../services/gl-code-service';
 
 import { ArCodes } from './ar-codes';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
@@ -26,6 +27,7 @@ describe('ArCodes', () => {
       'deleteCode',
       'activateCode',
       'deactivateCode',
+      'arglMapping',
     ]);
     arCodeService.getCode.mockReturnValue(of(apiResponse<ArCodeEntity[]>([])));
     arCodeService.createCode.mockReturnValue(
@@ -39,6 +41,7 @@ describe('ArCodes', () => {
           createdAt: '',
           updatedAt: '',
           active: true,
+          glMappingStatus: 'CONFIGURED',
         })
       )
     );
@@ -53,6 +56,7 @@ describe('ArCodes', () => {
           createdAt: '',
           updatedAt: '',
           active: true,
+          glMappingStatus: 'CONFIGURED',
         })
       )
     );
@@ -68,6 +72,7 @@ describe('ArCodes', () => {
           createdAt: '',
           updatedAt: '',
           active: true,
+          glMappingStatus: 'CONFIGURED',
         })
       )
     );
@@ -82,13 +87,32 @@ describe('ArCodes', () => {
           createdAt: '',
           updatedAt: '',
           active: false,
+          glMappingStatus: 'MISSING',
         })
       )
     );
+    arCodeService.arglMapping.mockReturnValue(
+      of(
+        apiResponse<ArCodeEntity>({
+          id: 1,
+          code: 'TEST',
+          name: 'Test',
+          description: '',
+          codeType: 'GL',
+          createdAt: '',
+          updatedAt: '',
+          active: true,
+          glMappingStatus: 'CONFIGURED',
+        })
+      )
+    );
+    const glCodeService = createSpyObj<GlCodeService>('GlCodeService', ['getGlCode']);
+    glCodeService.getGlCode.mockReturnValue(of(apiResponse([])));
     const toastr = createSpyObj<ToastrService>('ToastrService', ['success', 'error', 'info', 'warning']);
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
-    const userContext = createSpyObj<UserContextService>('UserContextService', ['hasPermission']);
+    const userContext = createSpyObj<UserContextService>('UserContextService', ['hasPermission', 'getUserId']);
     userContext.hasPermission.mockReturnValue(true);
+    userContext.getUserId.mockReturnValue(1);
     const companySelection = {
       selectedCompanyId$: new Subject<number | null>(),
     } as unknown as CompanySelectionService;
@@ -99,7 +123,8 @@ describe('ArCodes', () => {
       toastr,
       cdr,
       userContext,
-      companySelection
+      companySelection,
+      glCodeService
     );
 
     return {
@@ -156,6 +181,7 @@ describe('ArCodes', () => {
       name: 'Account Code',
       description: 'desc',
       codeType: 'MEMO',
+      glMappingStatus: 'CONFIGURED',
       active: false,
     });
 
@@ -165,6 +191,7 @@ describe('ArCodes', () => {
       codeName: 'Account Code',
       codeType: 'MEMO',
       description: 'desc',
+      glMappingStatus: 'CONFIGURED',
       status: 'INACTIVE',
     });
   });
@@ -191,6 +218,7 @@ type ArCodesInternals = {
     codeName: string;
     codeType?: string;
     description: string;
+    glMappingStatus?: string;
     status: string;
   };
 };
