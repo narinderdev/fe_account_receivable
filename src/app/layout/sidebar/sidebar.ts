@@ -55,9 +55,10 @@ export class Sidebar {
     this.canViewCompany = this.userContext.hasPermission('VIEW_COMPANY');
     this.canViewUsers = this.userContext.hasPermission('VIEW_USER');
     this.canViewRoles = this.userContext.hasPermission('VIEW_ROLES');
-    const canViewCodes = this.userContext.hasPermission('VIEW_CODE');
-    this.canViewArCodes = canViewCodes;
-    this.canViewGlCodes = canViewCodes;
+    const canViewArCodes = this.userContext.hasPermission('VIEW_CODE');
+    const canViewGlCodes = this.userContext.hasPermission('VIEW_GL_CODE');
+    this.canViewArCodes = canViewArCodes;
+    this.canViewGlCodes = canViewGlCodes;
     this.showSetupLinks =
       this.userContext.isAdmin() ||
       this.canViewCompany ||

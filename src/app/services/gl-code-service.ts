@@ -58,12 +58,11 @@ export class GlCodeService {
   updateGlCode(
     glCodeId: number,
     companyId: number,
-    userId: number,
     data: UpdateGlCodePayload
   ): Observable<UpdateGlCodeResponse> {
     const headers = this.getAuthHeaders();
     return this.http.put<UpdateGlCodeResponse>(
-      `${this.baseUrl}/api/gl-codes/${glCodeId}/company/${companyId}/user/${userId}`,
+      `${this.baseUrl}/api/gl-codes/company/${companyId}/${glCodeId}`,
       data,
       {
         headers,

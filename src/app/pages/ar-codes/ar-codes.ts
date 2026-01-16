@@ -87,7 +87,10 @@ export class ArCodes implements OnInit, OnDestroy {
   readonly mappingInfoText =
     'GL mapping is required before posting transactions. Draft transactions do not require mapping.';
   private userId: number | null = null;
-  private mappingInitialValues: { debitGlCodeId: number | null; creditGlCodeId: number | null } | null = null;
+  private mappingInitialValues: {
+    debitGlCodeId: number | null;
+    creditGlCodeId: number | null;
+  } | null = null;
 
   readonly statusOptions = [
     { label: 'Active', value: 'ACTIVE' as ArCodeStatus },
@@ -667,15 +670,31 @@ export class ArCodes implements OnInit, OnDestroy {
       return;
     }
 
-    const payload: ArGlMappingPayload = {
-      arCodeId: record.id,
-      debitGlCodeId: selectedDebitId,
-      creditGlCodeId: selectedCreditId,
-    };
-
     this.mappingSaving = true;
-    this.arCodeService
-      .arglMapping(companyId, userId, payload)
+
+    // Check if mapping is already configured
+    const isConfigured = this.hasConfiguredGlMapping(record.glMappingStatus);
+
+    let apiCall$;
+
+    if (isConfigured) {
+      // UPDATE: Only send debitGlCodeId and creditGlCodeId
+      const updatePayload = {
+        debitGlCodeId: selectedDebitId,
+        creditGlCodeId: selectedCreditId,
+      };
+      apiCall$ = this.arCodeService.updateArGlMapping(record.id, companyId, userId, updatePayload);
+    } else {
+      // CREATE: Send arCodeId, debitGlCodeId, and creditGlCodeId
+      const createPayload: ArGlMappingPayload = {
+        arCodeId: record.id,
+        debitGlCodeId: selectedDebitId,
+        creditGlCodeId: selectedCreditId,
+      };
+      apiCall$ = this.arCodeService.arglMapping(companyId, userId, createPayload);
+    }
+
+    apiCall$
       .pipe(
         finalize(() => {
           this.mappingSaving = false;
@@ -684,13 +703,13 @@ export class ArCodes implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          this.toastr.success(response?.message ?? 'GL mapping updated successfully', 'Success');
+          this.toastr.success(response?.message ?? 'GL mapping saved successfully', 'Success');
           this.closeGlMappingModal();
           this.fetchArCodes();
         },
         error: (error) => {
-          console.error('Failed to update GL mapping', error);
-          this.toastr.error('Failed to update GL mapping. Please try again.', 'Error');
+          console.error('Failed to save GL mapping', error);
+          this.toastr.error('Failed to save GL mapping. Please try again.', 'Error');
         },
       });
   }

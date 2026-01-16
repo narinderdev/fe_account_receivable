@@ -144,6 +144,14 @@ export class RolesDetail implements OnInit, OnDestroy {
       },
     },
     {
+      label: 'GL Code',
+      permissions: {
+        view: 'VIEW_GL_CODE',
+        create: 'CREATE_GL_CODE',
+        update: 'UPDATE_GL_CODE',
+      },
+    },
+    {
       label: 'Ar-Code',
       permissions: {
         view: 'VIEW_CODE',

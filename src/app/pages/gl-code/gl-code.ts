@@ -87,9 +87,9 @@ export class GlCode implements OnInit, OnDestroy {
     private userContext: UserContextService,
     private companySelection: CompanySelectionService
   ) {
-    this.canViewGlCodes = this.userContext.hasPermission('VIEW_CODE');
-    this.canCreateGlCode = this.userContext.hasPermission('CREATE_CODE');
-    this.canUpdateGlCode = this.userContext.hasPermission('UPDATE_CODE');
+    this.canViewGlCodes = this.userContext.hasPermission('VIEW_GL_CODE');
+    this.canCreateGlCode = this.userContext.hasPermission('CREATE_GL_CODE');
+    this.canUpdateGlCode = this.userContext.hasPermission('UPDATE_GL_CODE');
     this.showActionsColumn = this.canUpdateGlCode;
     this.userId = this.userContext.getUserId();
 
@@ -227,7 +227,7 @@ export class GlCode implements OnInit, OnDestroy {
 
       this.saving = true;
       this.glCodeService
-        .updateGlCode(editingRecord.id, companyId, userId, updatePayload)
+        .updateGlCode(editingRecord.id, companyId, updatePayload)
         .pipe(
           finalize(() => {
             this.saving = false;
@@ -293,10 +293,7 @@ export class GlCode implements OnInit, OnDestroy {
     return status === 'ACTIVE' ? 'Active' : 'Inactive';
   }
 
-  private buildUpdatePayload(
-    original: GlCodeRecord,
-    updated: GlCodeRecord
-  ): UpdateGlCodePayload {
+  private buildUpdatePayload(original: GlCodeRecord, updated: GlCodeRecord): UpdateGlCodePayload {
     const payload: UpdateGlCodePayload = {};
     if (original.glCode !== updated.glCode) {
       payload.glCode = updated.glCode;
