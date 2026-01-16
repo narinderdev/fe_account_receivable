@@ -7,6 +7,7 @@ export interface ArCodeEntity {
   createdAt: string;
   updatedAt: string;
   active: boolean;
+  glMappingStatus?: string;
 }
 
 export interface CreateArCodePayload {
@@ -15,6 +16,12 @@ export interface CreateArCodePayload {
   description: string;
   codeType?: string;
   active?: boolean;
+}
+
+export interface ArGlMappingPayload {
+  arCodeId: number;
+  debitGlCodeId: number;
+  creditGlCodeId: number;
 }
 
 export interface ArCodeApiResponse<T> {
@@ -30,3 +37,4 @@ export type DeleteArCodeResponse = ArCodeApiResponse<null>;
 export type UpdateArCodePayload = Partial<CreateArCodePayload>;
 export type UpdateArCodeResponse = ArCodeApiResponse<ArCodeEntity>;
 export type ToggleArCodeResponse = UpdateArCodeResponse;
+export type ArGlMappingResponse = ArCodeApiResponse<ArCodeEntity>;

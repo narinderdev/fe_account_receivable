@@ -5,11 +5,13 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
 import { ArCodeService } from '../../services/ar-code-service';
-import { CreateArCodePayload, ArCodeEntity, UpdateArCodePayload } from '../../models/ar-code.model';
+import { CreateArCodePayload, ArCodeEntity, UpdateArCodePayload, ArGlMappingPayload } from '../../models/ar-code.model';
 import { Loader } from '../../shared/loader/loader';
 import { Spinner } from '../../shared/spinner/spinner';
 import { UserContextService } from '../../services/user-context.service';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { GlCodeService } from '../../services/gl-code-service';
+import { GlCodeEntity } from '../../models/gl-code.model';
 
 type ArCodeStatus = 'ACTIVE' | 'INACTIVE';
 
@@ -19,8 +21,14 @@ interface ArCodeRecord {
   codeName: string;
   codeType?: string;
   description: string;
+  glMappingStatus?: string;
   status: ArCodeStatus;
 }
+
+type GlCodeOption = {
+  id: number;
+  label: string;
+};
 
 @Component({
   selector: 'app-ar-codes',
@@ -32,6 +40,7 @@ interface ArCodeRecord {
 export class ArCodes implements OnInit, OnDestroy {
   records: ArCodeRecord[] = [];
   arCodeForm: FormGroup;
+  glMappingForm: FormGroup;
   modalOpen = false;
   submitted = false;
   editingRecordIndex: number | null = null;
@@ -45,10 +54,32 @@ export class ArCodes implements OnInit, OnDestroy {
   canUpdateArCode = false;
   canDeleteArCode = false;
   showActionsColumn = false;
+  hasGlCodes = false;
+  checkingGlCodes = false;
+  readonly glCodeRequirementMessage = 'Create at least one GL code before adding AR codes.';
+  readonly glMappingLabels: Record<
+    string,
+    {
+      label: string;
+      variant: 'configured' | 'missing';
+    }
+  > = {
+    CONFIGURED: { label: 'Configured', variant: 'configured' },
+    COMPLETE: { label: 'Configured', variant: 'configured' },
+    MISSING: { label: 'Missing', variant: 'missing' },
+  };
   private deletingCodeIds = new Set<number>();
   private togglingCodeIds = new Set<number>();
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
+  glCodeOptions: GlCodeOption[] = [];
+  mappingModalOpen = false;
+  mappingSubmitted = false;
+  mappingSaving = false;
+  mappingTarget: ArCodeRecord | null = null;
+  readonly mappingInfoText =
+    'GL mapping is required before posting transactions. Draft transactions do not require mapping.';
+  private userId: number | null = null;
 
   readonly statusOptions = [
     { label: 'Active', value: 'ACTIVE' as ArCodeStatus },
@@ -79,19 +110,26 @@ export class ArCodes implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
     private userContext: UserContextService,
-    private companySelection: CompanySelectionService
+    private companySelection: CompanySelectionService,
+    private glCodeService: GlCodeService
   ) {
     this.canViewArCodes = this.userContext.hasPermission('VIEW_CODE');
     this.canCreateArCode = this.userContext.hasPermission('CREATE_CODE');
     this.canUpdateArCode = this.userContext.hasPermission('UPDATE_CODE');
     this.canDeleteArCode = this.userContext.hasPermission('DELETE_CODE');
     this.showActionsColumn = this.canUpdateArCode || this.canDeleteArCode;
+    this.userId = this.userContext.getUserId();
 
     this.arCodeForm = this.fb.group({
       arCode: ['', [Validators.required, Validators.maxLength(50)]],
       codeName: ['', [Validators.required, Validators.maxLength(100)]],
       codeType: ['', Validators.required],
       description: ['', [Validators.required, Validators.maxLength(200)]],
+    });
+
+    this.glMappingForm = this.fb.group({
+      debitGlCodeId: ['', Validators.required],
+      creditGlCodeId: ['', Validators.required],
     });
   }
 
@@ -114,9 +152,12 @@ export class ArCodes implements OnInit, OnDestroy {
       if (!this.activeCompanyId) {
         this.records = [];
         this.loading = false;
+        this.hasGlCodes = false;
+        this.glCodeOptions = [];
         this.cdr.detectChanges();
         return;
       }
+      this.verifyGlCodeRequirement();
       this.fetchArCodes();
     });
   }
@@ -128,6 +169,10 @@ export class ArCodes implements OnInit, OnDestroy {
 
   openModal() {
     if (!this.canCreateArCode) {
+      return;
+    }
+    if (!this.hasGlCodes) {
+      this.toastr.warning(this.glCodeRequirementMessage, 'GL code required');
       return;
     }
     this.arCodeForm.reset();
@@ -217,6 +262,10 @@ export class ArCodes implements OnInit, OnDestroy {
 
     if (!this.canCreateArCode) {
       this.toastr.error('You do not have permission to create AR codes.', 'Permission denied');
+      return;
+    }
+    if (!this.hasGlCodes) {
+      this.toastr.warning(this.glCodeRequirementMessage, 'GL code required');
       return;
     }
 
@@ -442,6 +491,91 @@ export class ArCodes implements OnInit, OnDestroy {
     return option ? option.label : codeType;
   }
 
+  getGlMappingMeta(status?: string) {
+    if (!status) {
+      return { label: 'Unknown', variant: 'missing' as const };
+    }
+    return this.glMappingLabels[status] ?? { label: status, variant: 'missing' as const };
+  }
+
+  openGlMappingModal(record: ArCodeRecord) {
+    if (!record?.id) {
+      this.toastr.error('Unable to configure GL mapping for this AR code yet.', 'Error');
+      return;
+    }
+    if (!this.hasGlCodes || this.glCodeOptions.length === 0) {
+      this.toastr.warning('Create GL codes before configuring mappings.', 'GL code required');
+      return;
+    }
+    this.mappingTarget = record;
+    this.mappingSubmitted = false;
+    this.mappingSaving = false;
+    this.glMappingForm.reset();
+    this.mappingModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeGlMappingModal() {
+    this.mappingModalOpen = false;
+    this.mappingSubmitted = false;
+    this.mappingSaving = false;
+    this.mappingTarget = null;
+    this.glMappingForm.reset();
+    this.cdr.detectChanges();
+  }
+
+  saveGlMapping() {
+    this.mappingSubmitted = true;
+    if (this.glMappingForm.invalid || this.mappingSaving) {
+      return;
+    }
+
+    const record = this.mappingTarget;
+    if (!record?.id) {
+      this.toastr.error('Select an AR code before saving GL mapping.', 'Error');
+      return;
+    }
+
+    const companyId = this.activeCompanyId;
+    if (!companyId) {
+      this.toastr.warning('Select a company before configuring GL mapping.', 'Company required');
+      return;
+    }
+
+    const userId = this.userId;
+    if (!userId) {
+      this.toastr.error('Unable to determine active user. Please sign in again.', 'User required');
+      return;
+    }
+
+    const payload: ArGlMappingPayload = {
+      arCodeId: record.id,
+      debitGlCodeId: Number(this.glMappingForm.value.debitGlCodeId),
+      creditGlCodeId: Number(this.glMappingForm.value.creditGlCodeId),
+    };
+
+    this.mappingSaving = true;
+    this.arCodeService
+      .arglMapping(companyId, userId, payload)
+      .pipe(
+        finalize(() => {
+          this.mappingSaving = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.toastr.success(response?.message ?? 'GL mapping updated successfully', 'Success');
+          this.closeGlMappingModal();
+          this.fetchArCodes();
+        },
+        error: (error) => {
+          console.error('Failed to update GL mapping', error);
+          this.toastr.error('Failed to update GL mapping. Please try again.', 'Error');
+        },
+      });
+  }
+
   private mapEntityToRecord(entity: ArCodeEntity): ArCodeRecord {
     return {
       id: entity.id,
@@ -449,6 +583,7 @@ export class ArCodes implements OnInit, OnDestroy {
       codeName: entity.name,
       codeType: (entity as any).codeType,
       description: entity.description,
+      glMappingStatus: (entity as any).glMappingStatus,
       status: entity.active ? 'ACTIVE' : 'INACTIVE',
     };
   }
@@ -521,5 +656,54 @@ export class ArCodes implements OnInit, OnDestroy {
       return Number.isFinite(parsed) ? parsed : null;
     }
     return null;
+  }
+
+  private verifyGlCodeRequirement() {
+    if (!this.canCreateArCode) {
+      this.hasGlCodes = true;
+      this.checkingGlCodes = false;
+      this.cdr.detectChanges();
+      return;
+    }
+    const companyId = this.activeCompanyId;
+    if (!companyId) {
+      this.hasGlCodes = false;
+      this.checkingGlCodes = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.checkingGlCodes = true;
+    this.cdr.detectChanges();
+
+    this.glCodeService
+      .getGlCode(companyId)
+      .pipe(
+        finalize(() => {
+          this.checkingGlCodes = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          const glCodes = Array.isArray(response?.data) ? response.data : [];
+          this.hasGlCodes = glCodes.length > 0;
+          this.glCodeOptions = glCodes.map((code) => this.toGlCodeOption(code));
+        },
+        error: (error) => {
+          console.error('Failed to verify GL codes', error);
+          this.hasGlCodes = false;
+          this.glCodeOptions = [];
+          this.toastr.error('Failed to verify GL codes. Please try again.', 'Error');
+        },
+      });
+  }
+
+  private toGlCodeOption(entity: GlCodeEntity): GlCodeOption {
+    const labelParts = [entity.glCode, entity.description].filter(Boolean);
+    return {
+      id: entity.id,
+      label: labelParts.join(' - '),
+    };
   }
 }

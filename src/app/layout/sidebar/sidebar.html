@@ -133,6 +133,13 @@
           <a *ngIf="canViewRoles" routerLink="roles" routerLinkActive="active" class="sub-nav-item"
             >Roles</a
           >
+           <a
+            *ngIf="canViewGlCodes"
+            routerLink="gl-code"
+            routerLinkActive="active"
+            class="sub-nav-item"
+            >GL Codes</a
+          >
           <a
             *ngIf="canViewArCodes"
             routerLink="ar-code"
@@ -140,6 +147,7 @@
             class="sub-nav-item"
             >AR Codes</a
           >
+         
         </div>
       </nav>
     </div>
@@ -318,12 +326,20 @@
             >Roles</a
           >
           <a
+            *ngIf="canViewGlCodes"
+            routerLink="gl-code"
+            routerLinkActive="active"
+            (click)="closeMobileMenu()"
+            >GL Codes</a
+          >
+          <a
             *ngIf="canViewArCodes"
             routerLink="ar-code"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
             >AR Codes</a
           >
+          
         </div>
       </nav>
 

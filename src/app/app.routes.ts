@@ -38,6 +38,7 @@ import { CreditMemo } from './pages/credit-memo/credit-memo';
 import { WriteOff } from './pages/write-off/write-off';
 import { InvoicesReports } from './pages/invoices-reports/invoices-reports';
 import { PaymentsReports } from './pages/payments-reports/payments-reports';
+import { GlCode } from './pages/gl-code/gl-code';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -113,6 +114,7 @@ export const routes: Routes = [
       { path: 'collections/disputes/:disputeId', component: DisputeDetails },
 
       { path: 'ar-code', component: ArCodes },
+      { path: 'gl-code', component: GlCode },
       { path: 'credit-memo', component: CreditMemo },
       { path: 'write-off', component: WriteOff },
     ],

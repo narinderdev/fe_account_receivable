@@ -10,6 +10,8 @@ import {
   UpdateArCodePayload,
   UpdateArCodeResponse,
   ToggleArCodeResponse,
+  ArGlMappingPayload,
+  ArGlMappingResponse,
 } from '../models/ar-code.model';
 
 @Injectable({
@@ -86,6 +88,19 @@ export class ArCodeService {
     return this.http.patch<ToggleArCodeResponse>(
       `${this.baseUrl}/codes/ar-codes/${codeId}/inactive/${companyId}`,
       {},
+      { headers }
+    );
+  }
+
+  arglMapping(
+    companyId: number,
+    userId: number,
+    data: ArGlMappingPayload
+  ): Observable<ArGlMappingResponse> {
+    const headers = this.getAuthHeaders();
+    return this.http.post<ArGlMappingResponse>(
+      `${this.baseUrl}/api/ar-gl-mappings/companies/${companyId}/user/${userId}`,
+      data,
       { headers }
     );
   }

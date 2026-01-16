@@ -7,7 +7,11 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:account_receivable": "node dist/account_receivable/server/server.mjs"
+    "serve:ssr:account_receivable": "node dist/account_receivable/server/server.mjs",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:demo": "set SLOWMO=400&& set HEADLESS=false&& playwright test --project=chromium",
+    "e2e:report": "playwright show-report"
   },
   "prettier": {
     "printWidth": 100,
@@ -53,6 +57,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "@playwright/test": "^1.57.0"
   }
 }

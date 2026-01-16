@@ -1,6 +1,21 @@
 <div class="ar-codes-container">
   <div class="header-card">
-    <button class="btn-primary" (click)="openModal()" *ngIf="canCreateArCode">New AR Code</button>
+    <button
+      class="btn-primary"
+      (click)="openModal()"
+      *ngIf="canCreateArCode"
+      [disabled]="checkingGlCodes || !hasGlCodes"
+      [attr.title]="!hasGlCodes ? glCodeRequirementMessage : null"
+    >
+      New AR Code
+    </button>
+  </div>
+
+  <div
+    class="info-banner"
+    *ngIf="canCreateArCode && !checkingGlCodes && !hasGlCodes"
+  >
+    {{ glCodeRequirementMessage }}
   </div>
   <div class="card" *ngIf="canViewArCodes; else noPermission">
     <div *ngIf="loading" class="loader-block">
@@ -20,6 +35,7 @@
               <th>Code Name</th>
               <th>Code Type</th>
               <th>Description</th>
+              <th>GL Mapping</th>
               <th *ngIf="canUpdateArCode">Status</th>
               <th *ngIf="showActionsColumn">Actions</th>
             </tr>
@@ -30,6 +46,29 @@
               <td>{{ record.codeName }}</td>
               <td>{{ getCodeTypeLabel(record.codeType) }}</td>
               <td>{{ record.description }}</td>
+              <td>
+                <ng-container *ngIf="getGlMappingMeta(record.glMappingStatus) as meta">
+                  <button
+                    type="button"
+                    *ngIf="meta.variant === 'missing'; else configuredMapping"
+                    class="mapping-badge mapping-missing mapping-clickable"
+                    (click)="openGlMappingModal(record)"
+                  >
+                    {{ meta.label }}
+                  </button>
+                  <ng-template #configuredMapping>
+                    <span
+                      class="mapping-badge"
+                      [ngClass]="{
+                        'mapping-configured': meta.variant === 'configured',
+                        'mapping-missing': meta.variant === 'missing'
+                      }"
+                    >
+                      {{ meta.label }}
+                    </span>
+                  </ng-template>
+                </ng-container>
+              </td>
               <td *ngIf="canUpdateArCode">
                 <div class="status-toggle">
                   <label class="switch">
@@ -152,6 +191,66 @@
             <app-spinner *ngIf="saving"></app-spinner>
             <span *ngIf="!saving">Save AR Code</span>
             <span *ngIf="saving">Saving...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="mappingModalOpen">
+    <div class="gl-mapping-modal">
+      <div class="modal-header">
+        <h2>GL Mapping</h2>
+        <button class="btn-close" (click)="closeGlMappingModal()" [disabled]="mappingSaving">
+          <span>&times;</span>
+        </button>
+      </div>
+
+      <form [formGroup]="glMappingForm" (ngSubmit)="saveGlMapping()">
+        <div class="modal-body mapping-body">
+          <div class="form-field">
+            <label>Debit GL Code <span class="color">*</span></label>
+            <select formControlName="debitGlCodeId">
+              <option value="">Select debit GL code</option>
+              <option *ngFor="let option of glCodeOptions" [value]="option.id">
+                {{ option.label }}
+              </option>
+            </select>
+            <p class="error" *ngIf="mappingSubmitted && glMappingForm.controls['debitGlCodeId'].invalid">
+              Debit GL code is required.
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>Credit GL Code <span class="color">*</span></label>
+            <select formControlName="creditGlCodeId">
+              <option value="">Select credit GL code</option>
+              <option *ngFor="let option of glCodeOptions" [value]="option.id">
+                {{ option.label }}
+              </option>
+            </select>
+            <p
+              class="error"
+              *ngIf="mappingSubmitted && glMappingForm.controls['creditGlCodeId'].invalid"
+            >
+              Credit GL code is required.
+            </p>
+          </div>
+
+          <div class="mapping-info">
+            <span class="warning-icon">!</span>
+            {{ mappingInfoText }}
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeGlMappingModal()" [disabled]="mappingSaving">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="mappingSaving">
+            <app-spinner *ngIf="mappingSaving"></app-spinner>
+            <span *ngIf="!mappingSaving">Save</span>
+            <span *ngIf="mappingSaving">Saving...</span>
           </button>
         </div>
       </form>

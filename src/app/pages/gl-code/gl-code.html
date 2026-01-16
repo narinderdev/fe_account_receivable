@@ -1,0 +1,138 @@
+<div class="gl-codes-container">
+  <div class="header-card">
+    <button class="btn-primary" (click)="openModal()" *ngIf="canCreateGlCode">New GL Code</button>
+  </div>
+
+  <!-- <div class="info-banner">
+    {{ statementText }}
+  </div> -->
+
+  <div class="card" *ngIf="canViewGlCodes; else noPermission">
+    <div *ngIf="loading" class="loader-block">
+      <app-loader [visible]="loading"></app-loader>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div *ngIf="records.length === 0" class="empty-text">
+        No GL codes have been created yet.
+      </div>
+
+      <div class="table-scroll" *ngIf="records.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>GL Code</th>
+              <th>Description</th>
+              <th>Account Type</th>
+              <th>Status</th>
+              <th *ngIf="showActionsColumn">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of records; let i = index">
+              <td>{{ record.glCode }}</td>
+              <td>{{ record.description }}</td>
+              <td>{{ getAccountTypeLabel(record.accountType) }}</td>
+              <td>
+                <span
+                  class="status-badge"
+                  [ngClass]="{ 'status-active': record.status === 'ACTIVE', 'status-inactive': record.status !== 'ACTIVE' }"
+                >
+                  {{ getStatusLabel(record.status) }}
+                </span>
+              </td>
+              <td class="actions" *ngIf="showActionsColumn">
+                <img
+                  src="/editIcn.svg"
+                  alt="Edit GL code"
+                  class="action-icon"
+                  (click)="editGlCode(i); $event.stopPropagation()"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </div>
+
+  <ng-template #noPermission>
+    <div class="card empty-text">
+      You do not have permission to view GL codes.
+    </div>
+  </ng-template>
+
+  <div class="modal-overlay" *ngIf="modalOpen">
+    <div class="gl-code-modal">
+      <div class="modal-header">
+        <h2>{{ editingRecordIndex !== null ? 'Edit GL Code' : 'New GL Code' }}</h2>
+        <button class="btn-close" (click)="closeModal()" [disabled]="saving" aria-label="Close">
+          <span>&times;</span>
+        </button>
+      </div>
+
+      <form [formGroup]="glCodeForm" (ngSubmit)="saveGlCode()">
+        <div class="modal-body">
+          <p class="statement-inline">
+            {{ statementText }}
+          </p>
+
+          <div class="form-field">
+            <label>GL Code <span class="color">*</span></label>
+            <input type="text" formControlName="glCode" placeholder="Enter GL code" />
+            <p class="error" *ngIf="submitted && glCodeForm.controls['glCode'].hasError('required')">
+              GL code is required.
+            </p>
+            <p class="error" *ngIf="submitted && glCodeForm.controls['glCode'].hasError('maxlength')">
+              GL code cannot exceed 50 characters.
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>Description <span class="color">*</span></label>
+            <textarea rows="4" formControlName="description" placeholder="Describe this GL code"></textarea>
+            <p
+              class="error"
+              *ngIf="submitted && glCodeForm.controls['description'].hasError('required')"
+            >
+              Description is required.
+            </p>
+            <p
+              class="error"
+              *ngIf="submitted && glCodeForm.controls['description'].hasError('maxWords')"
+            >
+              Description cannot exceed 100 words.
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>Account Type <span class="color">*</span></label>
+            <select formControlName="accountType">
+              <option value="">Select account type</option>
+              <option *ngFor="let option of accountTypeOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <p
+              class="error"
+              *ngIf="submitted && glCodeForm.controls['accountType'].hasError('required')"
+            >
+              Account type is required.
+            </p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="saving">
+            <app-spinner *ngIf="saving"></app-spinner>
+            <span *ngIf="!saving">Save GL Code</span>
+            <span *ngIf="saving">Saving...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
