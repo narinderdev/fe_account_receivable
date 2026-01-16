@@ -168,16 +168,13 @@ export class Users implements OnInit, OnDestroy {
 
     this.companyService.inviteUser(this.companyId, payload).subscribe({
       next: (res) => {
-        const newUser = res.data;
-
-        this.allUsers = [...this.allUsers, newUser];
-        this.users = this.applyPagination(this.allUsers, this.pagination.currentPage);
         this.isSavingInvite = false;
         this.submitted = false;
         this.inviteForm.reset();
         this.isModalOpen = false;
 
         this.toastr.success('User invited successfully.');
+        this.loadUsers();
 
         this.cdr.detectChanges();
       },

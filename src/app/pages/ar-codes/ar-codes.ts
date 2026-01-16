@@ -5,7 +5,13 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
 import { ArCodeService } from '../../services/ar-code-service';
-import { CreateArCodePayload, ArCodeEntity, UpdateArCodePayload, ArGlMappingPayload } from '../../models/ar-code.model';
+import {
+  CreateArCodePayload,
+  ArCodeEntity,
+  UpdateArCodePayload,
+  ArGlMappingPayload,
+  ArGlMappingEntity,
+} from '../../models/ar-code.model';
 import { Loader } from '../../shared/loader/loader';
 import { Spinner } from '../../shared/spinner/spinner';
 import { UserContextService } from '../../services/user-context.service';
@@ -76,10 +82,12 @@ export class ArCodes implements OnInit, OnDestroy {
   mappingModalOpen = false;
   mappingSubmitted = false;
   mappingSaving = false;
+  mappingPrefillLoading = false;
   mappingTarget: ArCodeRecord | null = null;
   readonly mappingInfoText =
     'GL mapping is required before posting transactions. Draft transactions do not require mapping.';
   private userId: number | null = null;
+  private mappingInitialValues: { debitGlCodeId: number | null; creditGlCodeId: number | null } | null = null;
 
   readonly statusOptions = [
     { label: 'Active', value: 'ACTIVE' as ArCodeStatus },
@@ -472,6 +480,7 @@ export class ArCodes implements OnInit, OnDestroy {
             response?.message ??
             (targetActive ? 'AR code activated successfully' : 'AR code inactivated successfully');
           this.toastr.success(message, 'Success');
+          this.fetchArCodes();
         },
         error: (error) => {
           console.error('Failed to toggle AR code status', error);
@@ -498,6 +507,92 @@ export class ArCodes implements OnInit, OnDestroy {
     return this.glMappingLabels[status] ?? { label: status, variant: 'missing' as const };
   }
 
+  private hasConfiguredGlMapping(status?: string | null): boolean {
+    if (!status) {
+      return false;
+    }
+    const normalized = status.toUpperCase();
+    return normalized === 'CONFIGURED' || normalized === 'COMPLETE';
+  }
+
+  private loadExistingGlMapping(arCodeId: number) {
+    this.mappingPrefillLoading = true;
+    this.cdr.detectChanges();
+
+    this.arCodeService
+      .getArGlMapping(arCodeId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.mappingPrefillLoading = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          const mapping = this.resolveGlMappingRecord(response?.data, arCodeId);
+          if (mapping) {
+            const debitId = this.normalizeGlCodeId(mapping.debitGlCode?.id);
+            const creditId = this.normalizeGlCodeId(mapping.creditGlCode?.id);
+            this.mappingInitialValues = {
+              debitGlCodeId: debitId,
+              creditGlCodeId: creditId,
+            };
+            this.glMappingForm.patchValue({
+              debitGlCodeId: debitId ?? '',
+              creditGlCodeId: creditId ?? '',
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Failed to load AR → GL mapping', error);
+          this.toastr.error('Failed to load GL mapping. Please try again.', 'Error');
+        },
+      });
+  }
+
+  private resolveGlMappingRecord(
+    data: ArGlMappingEntity | ArGlMappingEntity[] | undefined,
+    arCodeId: number
+  ): ArGlMappingEntity | null {
+    const records = this.normalizeGlMappingData(data);
+    if (records.length === 0) {
+      return null;
+    }
+    return (
+      records.find((record) => record?.arCode?.id === arCodeId && record?.active) ??
+      records.find((record) => record?.arCode?.id === arCodeId) ??
+      records[0]
+    );
+  }
+
+  private normalizeGlMappingData(
+    data: ArGlMappingEntity | ArGlMappingEntity[] | undefined | null
+  ): ArGlMappingEntity[] {
+    if (!data) {
+      return [];
+    }
+    return Array.isArray(data) ? data : [data];
+  }
+
+  private normalizeGlCodeId(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private hasMappingChanges(selectedDebit: number | null, selectedCredit: number | null): boolean {
+    if (!this.mappingInitialValues) {
+      return true;
+    }
+    return (
+      this.mappingInitialValues.debitGlCodeId !== selectedDebit ||
+      this.mappingInitialValues.creditGlCodeId !== selectedCredit
+    );
+  }
+
   openGlMappingModal(record: ArCodeRecord) {
     if (!record?.id) {
       this.toastr.error('Unable to configure GL mapping for this AR code yet.', 'Error');
@@ -510,9 +605,18 @@ export class ArCodes implements OnInit, OnDestroy {
     this.mappingTarget = record;
     this.mappingSubmitted = false;
     this.mappingSaving = false;
-    this.glMappingForm.reset();
+    this.mappingPrefillLoading = false;
+    this.mappingInitialValues = { debitGlCodeId: null, creditGlCodeId: null };
+    this.glMappingForm.reset({
+      debitGlCodeId: '',
+      creditGlCodeId: '',
+    });
     this.mappingModalOpen = true;
     this.cdr.detectChanges();
+
+    if (this.hasConfiguredGlMapping(record.glMappingStatus)) {
+      this.loadExistingGlMapping(record.id);
+    }
   }
 
   closeGlMappingModal() {
@@ -520,6 +624,8 @@ export class ArCodes implements OnInit, OnDestroy {
     this.mappingSubmitted = false;
     this.mappingSaving = false;
     this.mappingTarget = null;
+    this.mappingPrefillLoading = false;
+    this.mappingInitialValues = null;
     this.glMappingForm.reset();
     this.cdr.detectChanges();
   }
@@ -548,10 +654,23 @@ export class ArCodes implements OnInit, OnDestroy {
       return;
     }
 
+    const selectedDebitId = this.normalizeGlCodeId(this.glMappingForm.value.debitGlCodeId);
+    const selectedCreditId = this.normalizeGlCodeId(this.glMappingForm.value.creditGlCodeId);
+
+    if (selectedDebitId === null || selectedCreditId === null) {
+      return;
+    }
+
+    if (!this.hasMappingChanges(selectedDebitId, selectedCreditId)) {
+      this.toastr.info('No changes detected for GL mapping.', 'No changes');
+      this.closeGlMappingModal();
+      return;
+    }
+
     const payload: ArGlMappingPayload = {
       arCodeId: record.id,
-      debitGlCodeId: Number(this.glMappingForm.value.debitGlCodeId),
-      creditGlCodeId: Number(this.glMappingForm.value.creditGlCodeId),
+      debitGlCodeId: selectedDebitId,
+      creditGlCodeId: selectedCreditId,
     };
 
     this.mappingSaving = true;

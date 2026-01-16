@@ -46,9 +46,13 @@ export class ArCodeService {
 
   createCode(data: CreateArCodePayload, companyId: number): Observable<CreateArCodeResponse> {
     const headers = this.getAuthHeaders();
-    return this.http.post<CreateArCodeResponse>(`${this.baseUrl}/codes/ar-codes/${companyId}`, data, {
-      headers,
-    });
+    return this.http.post<CreateArCodeResponse>(
+      `${this.baseUrl}/codes/ar-codes/${companyId}`,
+      data,
+      {
+        headers,
+      }
+    );
   }
 
   updateCode(
@@ -101,6 +105,15 @@ export class ArCodeService {
     return this.http.post<ArGlMappingResponse>(
       `${this.baseUrl}/api/ar-gl-mappings/companies/${companyId}/user/${userId}`,
       data,
+      { headers }
+    );
+  }
+
+  getArGlMapping(arCodeId: number): Observable<ArGlMappingResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.get<ArGlMappingResponse>(
+      `${this.baseUrl}/api/ar-gl-mappings/ar-code/${arCodeId}`,
+
       { headers }
     );
   }

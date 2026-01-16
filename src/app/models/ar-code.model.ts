@@ -24,6 +24,17 @@ export interface ArGlMappingPayload {
   creditGlCodeId: number;
 }
 
+export interface ArGlMappingEntity {
+  id: number;
+  arCode?: { id: number } | null;
+  debitGlCode?: { id: number } | null;
+  creditGlCode?: { id: number } | null;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+  createdAt?: string | null;
+  active?: boolean | null;
+}
+
 export interface ArCodeApiResponse<T> {
   statusCode: number;
   status: string;
@@ -37,4 +48,4 @@ export type DeleteArCodeResponse = ArCodeApiResponse<null>;
 export type UpdateArCodePayload = Partial<CreateArCodePayload>;
 export type UpdateArCodeResponse = ArCodeApiResponse<ArCodeEntity>;
 export type ToggleArCodeResponse = UpdateArCodeResponse;
-export type ArGlMappingResponse = ArCodeApiResponse<ArCodeEntity>;
+export type ArGlMappingResponse = ArCodeApiResponse<ArGlMappingEntity | ArGlMappingEntity[]>;
