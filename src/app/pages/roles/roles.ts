@@ -160,7 +160,15 @@ export class Roles implements OnInit, OnDestroy {
       },
     },
     {
-      label: 'Ar-Code',
+      label: 'GL Code',
+      permissions: {
+        view: 'VIEW_GL_CODE',
+        create: 'CREATE_GL_CODE',
+        update: 'UPDATE_GL_CODE',
+      },
+    },
+    {
+      label: 'AR Code',
       permissions: {
         view: 'VIEW_CODE',
         create: 'CREATE_CODE',

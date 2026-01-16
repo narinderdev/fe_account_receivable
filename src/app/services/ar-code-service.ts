@@ -117,4 +117,13 @@ export class ArCodeService {
       { headers }
     );
   }
+
+  updateArGlMapping(arCodeId: number, companyId: number, userId:number, data:any): Observable<any> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.put<any>(
+      `${this.baseUrl}/api/ar-gl-mappings/companies/${companyId}/user/${userId}/ar-code/${arCodeId}`,
+      data,
+      { headers }
+    );
+  }
 }

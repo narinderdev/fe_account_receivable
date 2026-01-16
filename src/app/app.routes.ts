@@ -39,6 +39,8 @@ import { WriteOff } from './pages/write-off/write-off';
 import { InvoicesReports } from './pages/invoices-reports/invoices-reports';
 import { PaymentsReports } from './pages/payments-reports/payments-reports';
 import { GlCode } from './pages/gl-code/gl-code';
+import { InvoiceReport } from './pages/invoice-report/invoice-report';
+import { PaymentReport } from './pages/payment-report/payment-report';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -108,8 +110,8 @@ export const routes: Routes = [
       { path: 'roles/details/:roleId', component: RolesDetail },
 
       { path: 'ar-reports', component: Aging },
-      { path: 'invoices-reports', component: InvoicesReports },
-      { path: 'payment-reports', component: PaymentsReports },
+      { path: 'invoices-reports', component: InvoiceReport },
+      { path: 'payment-reports', component: PaymentReport },
       { path: 'collections', component: Collections },
       { path: 'collections/disputes/:disputeId', component: DisputeDetails },
 
