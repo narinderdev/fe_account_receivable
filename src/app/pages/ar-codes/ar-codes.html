@@ -57,15 +57,17 @@
                     {{ meta.label }}
                   </button>
                   <ng-template #configuredMapping>
-                    <span
-                      class="mapping-badge"
+                    <button
+                      type="button"
+                      class="mapping-badge mapping-clickable"
                       [ngClass]="{
                         'mapping-configured': meta.variant === 'configured',
                         'mapping-missing': meta.variant === 'missing'
                       }"
+                      (click)="openGlMappingModal(record)"
                     >
                       {{ meta.label }}
-                    </span>
+                    </button>
                   </ng-template>
                 </ng-container>
               </td>
@@ -208,9 +210,13 @@
 
       <form [formGroup]="glMappingForm" (ngSubmit)="saveGlMapping()">
         <div class="modal-body mapping-body">
+          <div class="mapping-prefill" *ngIf="mappingPrefillLoading">
+            <app-spinner></app-spinner>
+            <span>Loading existing mapping...</span>
+          </div>
           <div class="form-field">
             <label>Debit GL Code <span class="color">*</span></label>
-            <select formControlName="debitGlCodeId">
+            <select formControlName="debitGlCodeId" [disabled]="mappingSaving || mappingPrefillLoading">
               <option value="">Select debit GL code</option>
               <option *ngFor="let option of glCodeOptions" [value]="option.id">
                 {{ option.label }}
@@ -223,7 +229,10 @@
 
           <div class="form-field">
             <label>Credit GL Code <span class="color">*</span></label>
-            <select formControlName="creditGlCodeId">
+            <select
+              formControlName="creditGlCodeId"
+              [disabled]="mappingSaving || mappingPrefillLoading"
+            >
               <option value="">Select credit GL code</option>
               <option *ngFor="let option of glCodeOptions" [value]="option.id">
                 {{ option.label }}
