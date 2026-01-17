@@ -53,6 +53,10 @@ interface CreditMemoTabState {
   loading: boolean;
   error: string | null;
   initialized: boolean;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
 }
 
 @Component({
@@ -97,9 +101,11 @@ export class CreditMemo implements OnInit, OnDestroy {
   invoiceMessageIsError = false;
   customersLoading = false;
   arCodesLoading = false;
+  Math = Math;
   private deletingMemoIds = new Set<number>();
   private destroy$ = new Subject<void>();
   private lastCompanyId: number | null = null;
+  private readonly defaultPageSize = 10;
   activeTab: CreditMemoTab = 'DRAFT';
   tabStates: Record<CreditMemoTab, CreditMemoTabState> = this.createInitialTabStates();
 
@@ -277,18 +283,31 @@ export class CreditMemo implements OnInit, OnDestroy {
     });
   }
 
-  private loadCreditMemos(companyId: number, status: CreditMemoTab) {
+  private loadCreditMemos(companyId: number, status: CreditMemoTab, page?: number) {
+    const currentState = this.tabStates[status];
+    const targetPage = typeof page === 'number' ? page : currentState.currentPage;
+    const pageSize = currentState.pageSize || this.defaultPageSize;
+
     this.setTabState(status, { loading: true, error: null });
     this.cdr.detectChanges();
 
-    this.creditMemoService.getCompanyCreditMemos(companyId, status, 0, 10).subscribe({
+    this.creditMemoService.getCompanyCreditMemos(companyId, status, targetPage, pageSize).subscribe({
       next: (response) => {
-        const content = response?.data?.content ?? [];
+        const pageData = response?.data;
+        const content = pageData?.content ?? [];
+        const totalPages = pageData?.totalPages ?? 0;
+        const totalItems = pageData?.totalElements ?? content.length;
+        const currentPage = pageData?.number ?? targetPage;
+        const size = pageData?.size ?? pageSize;
         this.setTabState(status, {
           records: content.map((memo) => this.transformCreditMemo(memo)),
           loading: false,
           error: null,
           initialized: true,
+          currentPage,
+          totalPages,
+          totalItems,
+          pageSize: size,
         });
         this.cdr.detectChanges();
       },
@@ -299,6 +318,10 @@ export class CreditMemo implements OnInit, OnDestroy {
           loading: false,
           error: message,
           initialized: true,
+          totalPages: 0,
+          totalItems: 0,
+          currentPage: 0,
+          pageSize,
         });
         this.toastr.error(message, 'Error');
         this.cdr.detectChanges();
@@ -412,6 +435,67 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   isInvoiceSelected(invoiceId: number): boolean {
     return this.selectedInvoiceIds.includes(invoiceId);
+  }
+
+  /* ---------------- PAGINATION ---------------- */
+
+  getPageNumbers(tab: CreditMemoTab = this.activeTab): number[] {
+    const pages: number[] = [];
+    const state = this.tabStates[tab];
+    const total = state.totalPages;
+    if (total <= 0) {
+      return pages;
+    }
+
+    const current = state.currentPage + 1;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current <= 3) {
+        pages.push(2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(-1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(-1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
+  }
+
+  goToPage(page: number) {
+    if (this.lastCompanyId === null) {
+      return;
+    }
+    const state = this.activeTabState;
+    if (page < 0 || page >= state.totalPages || page === state.currentPage) {
+      return;
+    }
+    this.loadCreditMemos(this.lastCompanyId, this.activeTab, page);
+  }
+
+  nextPage() {
+    if (this.lastCompanyId === null) {
+      return;
+    }
+    const state = this.activeTabState;
+    if (state.currentPage < state.totalPages - 1) {
+      this.loadCreditMemos(this.lastCompanyId, this.activeTab, state.currentPage + 1);
+    }
+  }
+
+  prevPage() {
+    if (this.lastCompanyId === null) {
+      return;
+    }
+    const state = this.activeTabState;
+    if (state.currentPage > 0) {
+      this.loadCreditMemos(this.lastCompanyId, this.activeTab, state.currentPage - 1);
+    }
   }
 
   openModal() {
@@ -919,10 +1003,23 @@ export class CreditMemo implements OnInit, OnDestroy {
     return trimmed ? trimmed.charAt(0).toUpperCase() : 'U';
   }
 
+  private buildInitialTabState(errorMessage: string | null): CreditMemoTabState {
+    return {
+      records: [],
+      loading: false,
+      error: errorMessage,
+      initialized: false,
+      currentPage: 0,
+      totalPages: 0,
+      totalItems: 0,
+      pageSize: this.defaultPageSize,
+    };
+  }
+
   private createInitialTabStates(errorMessage: string | null = null): Record<CreditMemoTab, CreditMemoTabState> {
     return {
-      DRAFT: { records: [], loading: false, error: errorMessage, initialized: false },
-      APPROVED: { records: [], loading: false, error: errorMessage, initialized: false },
+      DRAFT: this.buildInitialTabState(errorMessage),
+      APPROVED: this.buildInitialTabState(errorMessage),
     };
   }
 

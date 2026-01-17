@@ -1,9 +1,6 @@
 <div class="invoice-container">
-  <!-- Search -->
+  <!-- Search & Filters -->
   <div class="search-card">
-    <div class="search-card-header">
-      <label class="search-card-label">Customer Name</label>
-    </div>
     <div class="search-card-body">
       <div class="search-input">
         <span class="search-icon">
@@ -14,6 +11,26 @@
           [(ngModel)]="searchName"
           placeholder="Enter customer name"
           (input)="onSearchChange()"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label>From Date</label>
+        <input
+          type="date"
+          class="filter-input"
+          [(ngModel)]="fromDate"
+          (ngModelChange)="handleFromDateChange($event)"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label>To Date</label>
+        <input
+          type="date"
+          class="filter-input"
+          [(ngModel)]="toDate"
+          (ngModelChange)="handleToDateChange($event)"
         />
       </div>
 
@@ -77,9 +94,9 @@
     <!-- Pagination - Below Table -->
     <div class="pagination-wrapper" *ngIf="totalPages > 1">
       <div class="pagination-info">
-        Showing {{ currentPage * pageSize + 1 }} to
-        {{ Math.min((currentPage + 1) * pageSize, allInvoices.length) }} of
-        {{ allInvoices.length }} results
+        Showing {{ totalItems === 0 ? 0 : currentPage * pageSize + 1 }} to
+        {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of
+        {{ totalItems }} results
       </div>
 
       <div class="pagination-controls">

@@ -10,6 +10,7 @@ import { Invoice, InvoicePage } from '../../models/invoice.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { InvoiceService } from '../../services/invoice-service';
 import { Loader } from '../../shared/loader/loader';
+import { InvoiceReportService } from 'src/app/services/invoice-report-service';
 
 interface InvoiceStatusCount {
   status: string;
@@ -30,7 +31,6 @@ interface OverdueBreakdown {
   styleUrl: './invoice-report.css',
 })
 export class InvoiceReport implements OnInit, OnDestroy {
-  loading = false;
   fromDate: string | null = null;
   toDate: string | null = null;
   allInvoices: Invoice[] = [];
@@ -38,6 +38,9 @@ export class InvoiceReport implements OnInit, OnDestroy {
   totalInvoices = 0;
   overdueBreakdown: OverdueBreakdown[] = [];
   selectedDateRange: string = 'LAST_1_MONTH';
+  selectedMonths: number = 6; // Default to 6 months for pie chart filter
+  pieChartLoading = false;
+  barChartLoading = false;
 
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
@@ -49,6 +52,13 @@ export class InvoiceReport implements OnInit, OnDestroy {
     { label: 'Last 6 Months', value: 'LAST_6_MONTHS' },
     { label: 'Last 12 Months', value: 'LAST_12_MONTHS' },
     { label: 'Custom Date', value: 'CUSTOM' },
+  ];
+
+  readonly monthsOptions = [
+    { label: '1 Month', value: 1 },
+    { label: '3 Months', value: 3 },
+    { label: '6 Months', value: 6 },
+    { label: '12 Months', value: 12 },
   ];
 
   // Pie Chart Configuration
@@ -130,6 +140,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
 
   constructor(
     private invoiceService: InvoiceService,
+    private invoiceReportService: InvoiceReportService,
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService
   ) {}
@@ -152,6 +163,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
 
         if (this.activeCompanyId) {
           this.loadInvoiceData(this.activeCompanyId);
+          this.loadStatusBreakdown(this.activeCompanyId, this.selectedMonths);
         } else {
           this.resetState();
           this.cdr.detectChanges();
@@ -161,12 +173,15 @@ export class InvoiceReport implements OnInit, OnDestroy {
 
   private resetState() {
     this.allInvoices = [];
-    this.loading = false;
     this.fromDate = null;
     this.toDate = null;
     this.selectedDateRange = 'LAST_1_MONTH';
+    this.selectedMonths = 6;
+    this.pieChartLoading = false;
+    this.barChartLoading = false;
     // Keep static data visible even when no company is selected
     this.initializeStaticData();
+    this.cdr.detectChanges();
   }
 
   private initializeStaticData() {
@@ -197,40 +212,103 @@ export class InvoiceReport implements OnInit, OnDestroy {
   }
 
   loadInvoiceData(companyId: number) {
-    this.loading = true;
+    this.barChartLoading = true;
     this.cdr.detectChanges();
 
-    const filters = {
-      fromDate: this.fromDate || undefined,
-      toDate: this.toDate || undefined,
-      page: 0,
-      size: 10,
-    };
+    this.invoiceReportService.getInvoiceAging(companyId).subscribe({
+      next: (response) => {
+        // Assuming response is in the structure provided
+        const agingData = response.data;
 
-    this.invoiceService.getFilteredInvoices(companyId, filters).subscribe({
-      next: (response: InvoicePage) => {
-        const pageData = response?.data;
-        this.allInvoices = pageData?.content ?? [];
-        this.totalInvoices = pageData?.totalElements ?? this.allInvoices.length;
+        // Prepare bar chart data
+        this.barChartData.labels = ['Current', '0-30 Days', '31-60 Days', '61-90 Days', '90+ Days'];
+        this.barChartData.datasets[0].data = [
+          agingData.current,
+          agingData.days0to30,
+          agingData.days31to60,
+          agingData.days61to90,
+          agingData.days90Plus,
+        ];
 
-        // If no invoices found, use static data for demo
-        if (this.allInvoices.length === 0) {
-          this.initializeStaticData();
-        } else {
-          this.calculateStatusBreakdown();
-          this.calculateOverdueBreakdown();
-        }
-
-        this.loading = false;
+        this.barChartLoading = false;
         this.cdr.detectChanges();
       },
       error: () => {
-        this.loading = false;
-        // Show static data on error
-        this.initializeStaticData();
+        this.barChartLoading = false;
+        this.cdr.detectChanges();
+      },
+      complete: () => {
+        this.barChartLoading = false;
         this.cdr.detectChanges();
       },
     });
+  }
+
+  loadStatusBreakdown(companyId: number, months: number) {
+    this.pieChartLoading = true;
+    this.cdr.detectChanges();
+
+    this.invoiceReportService.getInvoiceStatus(companyId, months).subscribe({
+      next: (response) => {
+        if (response.statusCode === 200 && response.data) {
+          const data = response.data;
+
+          // Map API response to status counts
+          this.totalInvoices = data.total || 0;
+          this.statusCounts = [
+            {
+              status: 'OPEN',
+              count: data.open || 0,
+              percentage:
+                this.totalInvoices > 0 ? ((data.open || 0) / this.totalInvoices) * 100 : 0,
+            },
+            {
+              status: 'PARTIAL',
+              count: data.partial || 0,
+              percentage:
+                this.totalInvoices > 0 ? ((data.partial || 0) / this.totalInvoices) * 100 : 0,
+            },
+            {
+              status: 'PAID',
+              count: data.paid || 0,
+              percentage:
+                this.totalInvoices > 0 ? ((data.paid || 0) / this.totalInvoices) * 100 : 0,
+            },
+            {
+              status: 'WRITTEN_OFF',
+              count: data.writtenOff || 0,
+              percentage:
+                this.totalInvoices > 0 ? ((data.writtenOff || 0) / this.totalInvoices) * 100 : 0,
+            },
+          ];
+
+          // Filter out statuses with 0 count
+          this.statusCounts = this.statusCounts.filter((s) => s.count > 0);
+
+          // Update pie chart
+          this.pieChartData.labels = this.statusCounts.map((s) => s.status);
+          this.pieChartData.datasets[0].data = this.statusCounts.map((s) => s.count);
+
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('Error loading status breakdown:', error);
+        this.pieChartLoading = false;
+        this.cdr.detectChanges();
+      },
+      complete: () => {
+        this.pieChartLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  handleMonthsChange(months: number) {
+    this.selectedMonths = months;
+    if (this.activeCompanyId) {
+      this.loadStatusBreakdown(this.activeCompanyId, months);
+    }
   }
 
   private calculateStatusBreakdown() {
@@ -296,6 +374,13 @@ export class InvoiceReport implements OnInit, OnDestroy {
     this.barChartData.datasets[0].data = this.overdueBreakdown.map((item) => item.count);
   }
 
+  formatDate(date: string | null | undefined) {
+    if (!date) {
+      return '';
+    }
+    return new Date(date).toLocaleDateString('en-US');
+  }
+
   handleFromDateChange(value: string) {
     this.fromDate = value || null;
     this.reloadWithFilters();
@@ -310,11 +395,9 @@ export class InvoiceReport implements OnInit, OnDestroy {
     this.selectedDateRange = value;
 
     if (value === 'CUSTOM') {
-      // Keep current fromDate and toDate values
       return;
     }
 
-    // Calculate date range based on selection
     const today = new Date();
     const toDate = this.formatDateForInput(today);
     let fromDate: string;
@@ -373,13 +456,6 @@ export class InvoiceReport implements OnInit, OnDestroy {
     this.loadInvoiceData(this.activeCompanyId);
   }
 
-  formatDate(date: string | null | undefined) {
-    if (!date) {
-      return '';
-    }
-    return new Date(date).toLocaleDateString('en-US');
-  }
-
   getCurrentDate(): string {
     return new Date().toLocaleDateString('en-US', {
       year: 'numeric',
@@ -398,6 +474,13 @@ export class InvoiceReport implements OnInit, OnDestroy {
       WRITTEN_OFF: '#EF4444',
     };
     return colors[status] || '#6B7280';
+  }
+
+  hasNoAgingData(): boolean {
+    if (!this.overdueBreakdown || this.overdueBreakdown.length === 0) {
+      return true;
+    }
+    return this.overdueBreakdown.every((item) => item.count === 0);
   }
 
   async generatePdf() {

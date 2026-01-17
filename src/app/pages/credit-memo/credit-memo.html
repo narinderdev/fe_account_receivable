@@ -166,6 +166,58 @@
           </tbody>
         </table>
       </div>
+      <div
+        class="pagination-wrapper"
+        *ngIf="activeTabState.totalPages > 1 && activeTabState.totalItems > 0"
+      >
+        <div class="pagination-info">
+          Showing
+          {{
+            activeTabState.totalItems === 0
+              ? 0
+              : activeTabState.currentPage * activeTabState.pageSize + 1
+          }}
+          to
+          {{
+            activeTabState.totalItems === 0
+              ? 0
+              : Math.min(
+                  (activeTabState.currentPage + 1) * activeTabState.pageSize,
+                  activeTabState.totalItems
+                )
+          }}
+          of {{ activeTabState.totalItems }} credit memos
+        </div>
+
+        <div class="pagination-controls">
+          <button
+            class="page-nav-btn"
+            (click)="prevPage()"
+            [disabled]="activeTabState.currentPage === 0"
+          >
+            <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+          </button>
+
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number-btn"
+            [class.active]="page === activeTabState.currentPage + 1"
+            [class.ellipsis]="page === -1"
+            (click)="page !== -1 && goToPage(page - 1)"
+            [disabled]="page === -1"
+          >
+            {{ page === -1 ? '...' : page }}
+          </button>
+
+          <button
+            class="page-nav-btn"
+            (click)="nextPage()"
+            [disabled]="activeTabState.currentPage === activeTabState.totalPages - 1"
+          >
+            <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+          </button>
+        </div>
+      </div>
     </ng-container>
   </div>
 

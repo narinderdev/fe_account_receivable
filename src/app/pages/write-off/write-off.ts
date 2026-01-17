@@ -41,6 +41,10 @@ interface WriteOffTabState {
   loading: boolean;
   error: string | null;
   initialized: boolean;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
 }
 
 @Component({
@@ -68,10 +72,12 @@ export class WriteOff implements OnInit, OnDestroy {
   arCodesLoading = false;
   approvingWriteOffId: number | null = null;
   writeOffToApprove: WriteOffRecord | null = null;
+  Math = Math;
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   selectedInvoiceId: number | null = null;
   activeTab: WriteOffTab = 'DRAFT';
+  private readonly defaultPageSize = 10;
   tabStates: Record<WriteOffTab, WriteOffTabState> = this.createInitialTabStates();
 
   constructor(
@@ -307,12 +313,25 @@ export class WriteOff implements OnInit, OnDestroy {
     });
   }
 
+  private buildInitialTabState(errorMessage: string | null): WriteOffTabState {
+    return {
+      records: [],
+      loading: false,
+      error: errorMessage,
+      initialized: false,
+      currentPage: 0,
+      totalPages: 0,
+      totalItems: 0,
+      pageSize: this.defaultPageSize,
+    };
+  }
+
   private createInitialTabStates(
     errorMessage: string | null = null
   ): Record<WriteOffTab, WriteOffTabState> {
     return {
-      DRAFT: { records: [], loading: false, error: errorMessage, initialized: false },
-      APPROVED: { records: [], loading: false, error: errorMessage, initialized: false },
+      DRAFT: this.buildInitialTabState(errorMessage),
+      APPROVED: this.buildInitialTabState(errorMessage),
     };
   }
 
@@ -360,18 +379,30 @@ export class WriteOff implements OnInit, OnDestroy {
     });
   }
 
-  private loadWriteOffs(companyId: number, status: WriteOffTab) {
+  private loadWriteOffs(companyId: number, status: WriteOffTab, page?: number) {
+    const currentState = this.tabStates[status];
+    const targetPage = typeof page === 'number' ? page : currentState.currentPage;
+    const pageSize = currentState.pageSize || this.defaultPageSize;
     this.setTabState(status, { loading: true, error: null });
     this.cdr.detectChanges();
 
-    this.writeOffService.getCompanyWriteOff(companyId, status).subscribe({
+    this.writeOffService.getCompanyWriteOff(companyId, status, targetPage, pageSize).subscribe({
       next: (response) => {
-        const content = response?.data?.content ?? [];
+        const pageData = response?.data;
+        const content = pageData?.content ?? [];
+        const totalPages = pageData?.totalPages ?? 0;
+        const totalItems = pageData?.totalElements ?? content.length;
+        const currentPage = pageData?.number ?? targetPage;
+        const size = pageData?.size ?? pageSize;
         this.setTabState(status, {
           records: content.map((item) => this.transformWriteOff(item)),
           loading: false,
           error: null,
           initialized: true,
+          currentPage,
+          totalPages,
+          totalItems,
+          pageSize: size,
         });
         this.cdr.detectChanges();
       },
@@ -382,6 +413,10 @@ export class WriteOff implements OnInit, OnDestroy {
           loading: false,
           error: message,
           initialized: true,
+          currentPage: 0,
+          totalPages: 0,
+          totalItems: 0,
+          pageSize,
         });
         this.toastr.error(message, 'Error');
         this.cdr.detectChanges();
@@ -521,6 +556,68 @@ export class WriteOff implements OnInit, OnDestroy {
     }
     const invoice = this.customerInvoices.find((inv) => inv.id === this.selectedInvoiceId);
     return invoice?.invoiceNumber || String(this.selectedInvoiceId);
+  }
+
+  /* ---------------- PAGINATION ---------------- */
+
+  getPageNumbers(tab: WriteOffTab = this.activeTab): number[] {
+    const state = this.tabStates[tab];
+    const total = state.totalPages;
+    const pages: number[] = [];
+
+    if (total <= 0) {
+      return pages;
+    }
+
+    const current = state.currentPage + 1;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current <= 3) {
+        pages.push(2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(-1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(-1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
+  }
+
+  goToPage(page: number) {
+    if (!this.activeCompanyId) {
+      return;
+    }
+    const state = this.activeTabState;
+    if (page < 0 || page >= state.totalPages || page === state.currentPage) {
+      return;
+    }
+    this.loadWriteOffs(this.activeCompanyId, this.activeTab, page);
+  }
+
+  nextPage() {
+    if (!this.activeCompanyId) {
+      return;
+    }
+    const state = this.activeTabState;
+    if (state.currentPage < state.totalPages - 1) {
+      this.loadWriteOffs(this.activeCompanyId, this.activeTab, state.currentPage + 1);
+    }
+  }
+
+  prevPage() {
+    if (!this.activeCompanyId) {
+      return;
+    }
+    const state = this.activeTabState;
+    if (state.currentPage > 0) {
+      this.loadWriteOffs(this.activeCompanyId, this.activeTab, state.currentPage - 1);
+    }
   }
 
   getInitialColor(index: number): { background: string; color: string } {

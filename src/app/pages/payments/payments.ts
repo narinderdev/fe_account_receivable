@@ -6,47 +6,22 @@ import { Loader } from '../../shared/loader/loader';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
-
-interface InvoiceCustomer {
-  customerName: string;
-}
-
-interface Invoice {
-  id: number;
-  invoiceNumber: string;
-  invoiceDate: string;
-  dueDate: string;
-  balanceDue: number;
-  status?: string;
-  customer: InvoiceCustomer;
-}
-
-interface Application {
-  id: number;
-  invoice: Invoice;
-  appliedAmount: number;
-}
-
-interface Payment {
-  id: number;
-  bankDeposit?: number;
-  serviceFee?: number;
-  paymentAmount: number;
-  paymentMethod: string;
-  paymentDate: string;
-  notes: string;
-  applications: Application[];
-}
+import { FormsModule } from '@angular/forms';
+import { Payment } from '../../models/payment.model';
 
 @Component({
   selector: 'app-payments',
   standalone: true,
-  imports: [CurrencyPipe, CommonModule, RouterLink, Loader],
+  imports: [CurrencyPipe, CommonModule, RouterLink, Loader, FormsModule],
   templateUrl: './payments.html',
   styleUrls: ['./payments.css'],
 })
 export class Payments implements OnInit, OnDestroy {
   payments: Payment[] = [];
+  allPayments: Payment[] = [];
+  searchName: string = '';
+  fromDate: string | null = null;
+  toDate: string | null = null;
   loading = false;
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
@@ -68,45 +43,54 @@ export class Payments implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.companySelection.selectedCompanyId$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((id) => {
-        const parsed = id ? Number(id) : NaN;
-        const nextId = Number.isFinite(parsed) ? parsed : null;
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      const parsed = id ? Number(id) : NaN;
+      const nextId = Number.isFinite(parsed) ? parsed : null;
 
-        if (this.activeCompanyId === nextId) {
-          return;
-        }
+      if (this.activeCompanyId === nextId) {
+        return;
+      }
 
-        this.activeCompanyId = nextId;
+      this.activeCompanyId = nextId;
 
-        if (this.activeCompanyId) {
-          this.loadPayments(this.activeCompanyId, 0);
-        } else {
-          this.payments = [];
-          this.totalPages = 0;
-          this.currentPage = 0;
-          this.totalItems = 0;
-          this.loading = false;
-          this.cdr.detectChanges();
-        }
-      });
+      if (this.activeCompanyId) {
+        this.loadPayments(this.activeCompanyId, 0);
+      } else {
+        this.payments = [];
+        this.allPayments = [];
+        this.totalPages = 0;
+        this.currentPage = 0;
+        this.totalItems = 0;
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   loadPayments(companyId: number, page: number = 0): void {
     this.loading = true;
     this.cdr.detectChanges();
 
-    this.paymentService.getPayments(companyId, page, this.pageSize).subscribe({
+    const filters = {
+      fromDate: this.fromDate || undefined,
+      toDate: this.toDate || undefined,
+      page,
+      size: this.pageSize,
+    };
+
+    this.paymentService.getFilteredPayments(companyId, filters).subscribe({
       next: (response) => {
         const pageData = response?.data;
+
         this.payments = pageData?.content || [];
+        this.allPayments = [...this.payments];
         this.totalPages = pageData?.totalPages || 0;
         this.currentPage = pageData?.number || 0;
         this.totalItems = pageData?.totalElements || 0;
         localStorage.setItem('paymentsData', JSON.stringify(this.payments));
 
         this.loading = false;
+        this.applySearchFilter();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -117,19 +101,62 @@ export class Payments implements OnInit, OnDestroy {
     });
   }
 
+  onSearchChange(): void {
+    this.applySearchFilter();
+  }
+
+  handleFromDateChange(value: string) {
+    this.fromDate = value || null;
+    this.reloadWithFilters();
+  }
+
+  handleToDateChange(value: string) {
+    this.toDate = value || null;
+    this.reloadWithFilters();
+  }
+
+  private reloadWithFilters() {
+    if (!this.activeCompanyId) {
+      return;
+    }
+    this.currentPage = 0;
+    this.loadPayments(this.activeCompanyId, 0);
+  }
+
+  private applySearchFilter() {
+    const term = this.searchName.trim().toLowerCase();
+
+    if (term.length < 3) {
+      this.payments = [...this.allPayments];
+      return;
+    }
+
+    this.payments = this.allPayments.filter((payment) => {
+      const customerName = this.getCustomerName(payment).toLowerCase();
+      return customerName.includes(term);
+    });
+  }
+
   /** Sum of applied amounts */
   getAppliedAmount(payment: Payment): number {
     return (
       payment.applications?.reduce(
-        (total: number, app: Application) => total + app.appliedAmount,
+        (total: number, app: any) => total + (app.appliedAmount || 0),
         0
       ) || 0
     );
   }
 
-  /** Get customer name from first application */
+  /** Get customer name from payment */
   getCustomerName(payment: Payment): string {
-    return payment?.applications?.[0]?.invoice?.customer?.customerName || '--';
+    // Try to get customer from the nested path in applications
+    const customerName = payment?.applications?.[0]?.invoice?.customer?.customerName;
+    if (customerName) {
+      return customerName;
+    }
+
+    // Fallback to direct customer property if it exists
+    return payment?.customer?.customerName || '--';
   }
 
   getInvoiceStatus(payment: Payment): string {
@@ -205,12 +232,7 @@ export class Payments implements OnInit, OnDestroy {
   }
 
   goToPage(page: number) {
-    if (
-      this.activeCompanyId &&
-      page >= 0 &&
-      page < this.totalPages &&
-      page !== this.currentPage
-    ) {
+    if (this.activeCompanyId && page >= 0 && page < this.totalPages && page !== this.currentPage) {
       this.loadPayments(this.activeCompanyId, page);
     }
   }
