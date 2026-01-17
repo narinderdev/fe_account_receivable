@@ -34,11 +34,28 @@ export class InvoiceService {
     });
   }
 
-  getInvoices(companyId: number, page = 0, size = 10): Observable<InvoicePage> {
+  getInvoices(
+    companyId: number, 
+    page = 0, 
+    size = 10,
+    dateFrom?: string,
+    dateTo?: string
+  ): Observable<InvoicePage> {
     const headers = this.getAuthHeadersWithNgrok();
 
+    let queryParams: string[] = [];
+    queryParams.push(`page=${page}`);
+    queryParams.push(`size=${size}`);
+    
+    if (dateFrom) {
+      queryParams.push(`dateFrom=${dateFrom}`);
+    }
+    if (dateTo) {
+      queryParams.push(`dateTo=${dateTo}`);
+    }
+
     return this.http.get<InvoicePage>(
-      `${this.baseUrl}/invoice/unpaid/company/${companyId}?page=${page}&size=${size}`,
+      `${this.baseUrl}/invoice/unpaid/company/${companyId}?${queryParams.join('&')}`,
       { headers }
     );
   }
@@ -76,36 +93,35 @@ export class InvoiceService {
   }
 
   getFilteredInvoices(
-  companyId: number,
-  params: {
-    statuses?: string[];
-    fromDate?: string;
-    toDate?: string;
-    page?: number;
-    size?: number;
+    companyId: number,
+    params: {
+      statuses?: string[];
+      fromDate?: string;
+      toDate?: string;
+      page?: number;
+      size?: number;
+    }
+  ): Observable<InvoicePage> {
+    const headers = this.getAuthHeadersWithNgrok();
+
+    let queryParams: string[] = [];
+
+    if (params.statuses?.length) {
+      queryParams.push(`statuses=${params.statuses.join(',')}`);
+    }
+    if (params.fromDate) {
+      queryParams.push(`fromDate=${params.fromDate}`);
+    }
+    if (params.toDate) {
+      queryParams.push(`toDate=${params.toDate}`);
+    }
+
+    queryParams.push(`page=${params.page ?? 0}`);
+    queryParams.push(`size=${params.size ?? 10}`);
+
+    return this.http.get<InvoicePage>(
+      `${this.baseUrl}/invoice/company/${companyId}?${queryParams.join('&')}`,
+      { headers }
+    );
   }
-): Observable<InvoicePage> {
-  const headers = this.getAuthHeadersWithNgrok();
-
-  let queryParams: string[] = [];
-
-  if (params.statuses?.length) {
-    queryParams.push(`statuses=${params.statuses.join(',')}`);
-  }
-  if (params.fromDate) {
-    queryParams.push(`fromDate=${params.fromDate}`);
-  }
-  if (params.toDate) {
-    queryParams.push(`toDate=${params.toDate}`);
-  }
-
-  queryParams.push(`page=${params.page ?? 0}`);
-  queryParams.push(`size=${params.size ?? 10}`);
-
-  return this.http.get<InvoicePage>(
-    `${this.baseUrl}/invoice/company/${companyId}?${queryParams.join('&')}`,
-    { headers }
-  );
-}
-
 }

@@ -18,6 +18,7 @@
   align-items: center;
   margin-left: auto;
   white-space: nowrap;
+  height: 46px;
 }
 
 .btn-new:hover {
@@ -53,12 +54,35 @@
 }
 
 .search-card-body {
-  padding: 0 20px 20px;
+  padding: 20px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 190px;
+}
+
+.filter-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0;
+}
+
+.filter-input {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  background: #fff;
+  min-height: 46px;
 }
 
 .search-input {
@@ -324,6 +348,10 @@
 
   .search-input {
     min-width: 0;
+  }
+
+  .filter-field {
+    width: 100%;
   }
 }
 

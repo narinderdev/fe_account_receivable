@@ -26,6 +26,9 @@ export class Invoices implements OnInit, OnDestroy {
   currentPage = 0;
   pageSize = 10;
   totalPages = 0;
+  totalItems = 0;
+  fromDate: string | null = null;
+  toDate: string | null = null;
   Math = Math;
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
@@ -42,54 +45,63 @@ export class Invoices implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.companySelection.selectedCompanyId$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((id) => {
-        const parsed = id ? Number(id) : NaN;
-        const nextId = Number.isFinite(parsed) ? parsed : null;
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      const parsed = id ? Number(id) : NaN;
+      const nextId = Number.isFinite(parsed) ? parsed : null;
 
-        if (this.activeCompanyId === nextId) {
-          return;
-        }
+      if (this.activeCompanyId === nextId) {
+        return;
+      }
 
-        this.activeCompanyId = nextId;
+      this.activeCompanyId = nextId;
 
-        if (this.activeCompanyId) {
-          this.loadInvoices(this.activeCompanyId, this.currentPage);
-        } else {
-          this.invoices = [];
-          this.allInvoices = [];
-          this.totalPages = 0;
-          this.currentPage = 0;
-          this.loading = false;
-          this.cdr.detectChanges();
-        }
-      });
+      if (this.activeCompanyId) {
+        this.loadInvoices(this.activeCompanyId, this.currentPage);
+      } else {
+        this.invoices = [];
+        this.allInvoices = [];
+        this.totalPages = 0;
+        this.totalItems = 0;
+        this.currentPage = 0;
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   loadInvoices(companyId: number, page: number): void {
     this.loading = true;
     this.cdr.detectChanges();
 
-    this.invoiceService.getInvoices(companyId, page, this.pageSize).subscribe({
-      next: (res: InvoicePage) => {
-        const pageData = res?.data;
+    this.invoiceService
+      .getInvoices(
+        companyId,
+        page,
+        this.pageSize,
+        this.fromDate || undefined,
+        this.toDate || undefined
+      )
+      .subscribe({
+        next: (res: InvoicePage) => {
+          const pageData = res?.data;
 
-        this.invoices = pageData?.content || [];
-        this.allInvoices = [...this.invoices];
+          this.invoices = pageData?.content || [];
+          this.allInvoices = [...this.invoices];
 
-        this.totalPages = pageData?.totalPages || 0;
-        this.currentPage = pageData?.number || 0;
+          this.totalPages = pageData?.totalPages || 0;
+          this.currentPage = pageData?.number || 0;
+          this.totalItems = pageData?.totalElements || this.allInvoices.length;
 
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Invoice load error:', err);
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-    });
+          this.loading = false;
+          this.applySearchFilter();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Invoice load error:', err);
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   getInitialColor(index: number): { background: string; color: string } {
@@ -107,6 +119,10 @@ export class Invoices implements OnInit, OnDestroy {
   }
 
   onSearchChange(): void {
+    this.applySearchFilter();
+  }
+
+  private applySearchFilter() {
     const term = this.searchName.trim().toLowerCase();
 
     if (term.length < 3) {
@@ -117,6 +133,24 @@ export class Invoices implements OnInit, OnDestroy {
     this.invoices = this.allInvoices.filter((inv) =>
       inv.customer.customerName.toLowerCase().includes(term)
     );
+  }
+
+  handleFromDateChange(value: string) {
+    this.fromDate = value || null;
+    this.reloadWithFilters();
+  }
+
+  handleToDateChange(value: string) {
+    this.toDate = value || null;
+    this.reloadWithFilters();
+  }
+
+  private reloadWithFilters() {
+    if (!this.activeCompanyId) {
+      return;
+    }
+    this.currentPage = 0;
+    this.loadInvoices(this.activeCompanyId, 0);
   }
 
   /**
@@ -153,12 +187,7 @@ export class Invoices implements OnInit, OnDestroy {
   }
 
   goToPage(page: number): void {
-    if (
-      this.activeCompanyId &&
-      page >= 0 &&
-      page < this.totalPages &&
-      page !== this.currentPage
-    ) {
+    if (this.activeCompanyId && page >= 0 && page < this.totalPages && page !== this.currentPage) {
       this.loadInvoices(this.activeCompanyId, page);
     }
   }

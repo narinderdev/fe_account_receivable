@@ -124,6 +124,70 @@
   font-weight: 500;
 }
 
+.pagination-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.page-nav-btn,
+.page-number-btn {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  min-width: 36px;
+  height: 36px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-nav-btn:hover:not(:disabled),
+.page-number-btn:hover:not(.active):not(.ellipsis) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.page-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-number-btn.active {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
+}
+
+.page-number-btn.ellipsis {
+  border: none;
+  cursor: default;
+  color: #9ca3af;
+}
+
+.pagination-icon {
+  width: 16px;
+  height: 16px;
+}
+
 /* Status Badges */
 .status-badge {
   padding: 4px 10px;

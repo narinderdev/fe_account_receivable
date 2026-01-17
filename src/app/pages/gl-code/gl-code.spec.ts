@@ -11,28 +11,28 @@ describe('GlCode', () => {
   let fixture: ComponentFixture<GlCode>;
 
   const glCodeServiceMock = {
-    getGlCode: jasmine.createSpy('getGlCode').and.returnValue(of({ data: [] })),
-    createGlCode: jasmine.createSpy('createGlCode').and.returnValue(of({ message: '' })),
-    updateGlCode: jasmine.createSpy('updateGlCode').and.returnValue(of({ message: '' })),
+    getGlCode: () => of({ data: [] }),
+    createGlCode: () => of({ message: '' }),
+    updateGlCode: () => of({ message: '' }),
   };
 
   const toastrMock = {
-    success: jasmine.createSpy('success'),
-    error: jasmine.createSpy('error'),
-    info: jasmine.createSpy('info'),
-    warning: jasmine.createSpy('warning'),
+    success: () => {},
+    error: () => {},
+    info: () => {},
+    warning: () => {},
   };
 
   const companySelectionMock = {
     selectedCompanyId$: of(null),
-    getSelectedCompanyId: jasmine.createSpy('getSelectedCompanyId').and.returnValue(null),
-    setSelectedCompanyId: jasmine.createSpy('setSelectedCompanyId'),
+    getSelectedCompanyId: () => null,
+    setSelectedCompanyId: () => {},
   };
 
   const userContextMock = {
-    hasPermission: jasmine.createSpy('hasPermission').and.returnValue(true),
-    getUserId: jasmine.createSpy('getUserId').and.returnValue(1),
-    isAdmin: jasmine.createSpy('isAdmin').and.returnValue(true),
+    hasPermission: () => true,
+    getUserId: () => 1,
+    isAdmin: () => true,
   };
 
   beforeEach(async () => {

@@ -6,7 +6,7 @@
       </div>
 
       <div class="filter-right">
-        <div class="filter-field">
+        <!-- <div class="filter-field">
           <label>Date Range</label>
           <select
             class="filter-select"
@@ -17,7 +17,7 @@
               {{ option.label }}
             </option>
           </select>
-        </div>
+        </div> -->
 
         <div class="filter-field" *ngIf="isCustomDateRange()">
           <label>From Date</label>
@@ -44,11 +44,7 @@
     </div>
   </div>
 
-  <div *ngIf="loading" class="loader-wrapper">
-    <app-loader [visible]="loading"></app-loader>
-  </div>
-
-  <div class="charts-container" *ngIf="!loading" id="invoiceReportCharts">
+  <div class="charts-container" id="invoiceReportCharts">
     <!-- Filter Summary for PDF -->
     <div class="pdf-filter-summary">
       <h3 class="pdf-title">Invoice Reports - Visual Analytics</h3>
@@ -68,6 +64,10 @@
             <span class="pdf-filter-value">{{ formatDate(toDate) }}</span>
           </div>
           <div class="pdf-filter-item">
+            <span class="pdf-filter-key">Status Period:</span>
+            <span class="pdf-filter-value">{{ selectedMonths }} Month(s)</span>
+          </div>
+          <div class="pdf-filter-item">
             <span class="pdf-filter-key">Total Invoices:</span>
             <span class="pdf-filter-value">{{ totalInvoices }}</span>
           </div>
@@ -84,36 +84,68 @@
       <div class="chart-card">
         <div class="chart-header">
           <h3 class="chart-title">Invoice Status Breakdown</h3>
+          <div class="chart-filter">
+            <select
+              class="chart-filter-select"
+              [(ngModel)]="selectedMonths"
+              (ngModelChange)="handleMonthsChange($event)"
+            >
+              <option *ngFor="let option of monthsOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
         </div>
         <div class="chart-body">
-          <div class="pie-chart-wrapper">
-            <div class="pie-chart-canvas">
-              <canvas
-                baseChart
-                [data]="pieChartData"
-                [type]="'doughnut'"
-                [options]="pieChartOptions"
-              ></canvas>
-              <div class="pie-chart-center">
-                <div class="center-count">{{ totalInvoices }}</div>
-                <div class="center-label">Invoices</div>
+          <div class="chart-loader" *ngIf="pieChartLoading">
+            <app-loader [visible]="pieChartLoading"></app-loader>
+          </div>
+          <ng-container *ngIf="!pieChartLoading">
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="totalInvoices === 0">
+              <div class="empty-state-icon">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="32" cy="32" r="30" stroke="#E5E7EB" stroke-width="2" fill="#F9FAFB"/>
+                  <path d="M22 28h20M22 36h20M22 32h20" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+                  <rect x="20" y="20" width="24" height="24" rx="2" stroke="#9CA3AF" stroke-width="2" fill="none"/>
+                </svg>
+              </div>
+              <div class="empty-state-title">No Invoice Data</div>
+              <div class="empty-state-text">
+                No invoices found for the selected period. Try adjusting the time range filter.
               </div>
             </div>
-            <div class="pie-chart-legend">
-              <div class="legend-item" *ngFor="let status of statusCounts">
-                <div
-                  class="legend-indicator"
-                  [style.background-color]="getStatusColor(status.status)"
-                ></div>
-                <div class="legend-text">
-                  <span class="legend-status">{{ status.status }}</span>
-                  <span class="legend-count"
-                    >{{ status.count }} ({{ status.percentage.toFixed(1) }}%)</span
-                  >
+
+            <!-- Chart Display -->
+            <div class="pie-chart-wrapper" *ngIf="totalInvoices > 0">
+              <div class="pie-chart-canvas">
+                <canvas
+                  baseChart
+                  [data]="pieChartData"
+                  [type]="'doughnut'"
+                  [options]="pieChartOptions"
+                ></canvas>
+                <div class="pie-chart-center">
+                  <div class="center-count">{{ totalInvoices }}</div>
+                  <div class="center-label">Invoices</div>
+                </div>
+              </div>
+              <div class="pie-chart-legend">
+                <div class="legend-item" *ngFor="let status of statusCounts">
+                  <div
+                    class="legend-indicator"
+                    [style.background-color]="getStatusColor(status.status)"
+                  ></div>
+                  <div class="legend-text">
+                    <span class="legend-status">{{ status.status }}</span>
+                    <span class="legend-count"
+                      >{{ status.count }} ({{ status.percentage.toFixed(1) }}%)</span
+                    >
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </ng-container>
         </div>
       </div>
 
@@ -123,14 +155,35 @@
           <h3 class="chart-title">Overdue vs Not Due Invoices</h3>
         </div>
         <div class="chart-body">
-          <div class="bar-chart-wrapper">
-            <canvas
-              baseChart
-              [data]="barChartData"
-              [type]="'bar'"
-              [options]="barChartOptions"
-            ></canvas>
+          <div class="chart-loader" *ngIf="barChartLoading">
+            <app-loader [visible]="barChartLoading"></app-loader>
           </div>
+          <ng-container *ngIf="!barChartLoading">
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="hasNoAgingData()">
+              <div class="empty-state-icon">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="16" y="38" width="6" height="14" rx="2" fill="#E5E7EB"/>
+                  <rect x="29" y="28" width="6" height="24" rx="2" fill="#E5E7EB"/>
+                  <rect x="42" y="32" width="6" height="20" rx="2" fill="#E5E7EB"/>
+                </svg>
+              </div>
+              <div class="empty-state-title">No Aging Data</div>
+              <div class="empty-state-text">
+                No invoice aging data available for the selected period. Try adjusting the filters.
+              </div>
+            </div>
+
+            <!-- Chart Display -->
+            <div class="bar-chart-wrapper" *ngIf="!hasNoAgingData()">
+              <canvas
+                baseChart
+                [data]="barChartData"
+                [type]="'bar'"
+                [options]="barChartOptions"
+              ></canvas>
+            </div>
+          </ng-container>
         </div>
       </div>
     </div>

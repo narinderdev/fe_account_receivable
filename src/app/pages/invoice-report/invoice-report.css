@@ -197,6 +197,10 @@
   padding: 16px 20px;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
 }
 
 .chart-title {
@@ -206,11 +210,79 @@
   margin: 0;
 }
 
+.chart-filter {
+  display: flex;
+  align-items: center;
+}
+
+.chart-filter-select {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  background: #fff;
+  cursor: pointer;
+  color: #374151;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 120px;
+}
+
+.chart-filter-select:hover {
+  border-color: #cbd5e1;
+}
+
+.chart-filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
 .chart-body {
   padding: 24px;
   min-height: 340px;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.chart-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 2;
+}
+
+/* Empty State Styles */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  flex: 1;
+}
+
+.empty-state-icon {
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.empty-state-text {
+  font-size: 14px;
+  color: #6b7280;
+  max-width: 300px;
+  line-height: 1.5;
 }
 
 /* Pie Chart Styles */
@@ -385,6 +457,19 @@
 
   .charts-container {
     padding: 16px;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chart-filter {
+    width: 100%;
+  }
+
+  .chart-filter-select {
+    width: 100%;
   }
 
   .chart-body {
