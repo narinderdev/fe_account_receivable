@@ -32,3 +32,22 @@ export interface DashboardGraphResponse {
   message: string;
   data: GraphData;
 }
+
+// Invoice data models
+export interface InvoiceMonthPoint {
+  yearMonth: string;
+  invoiceCount: number;
+  totalAmount: number;
+}
+
+export interface InvoiceGraphData {
+  companyId: number;
+  points: InvoiceMonthPoint[];
+}
+
+export interface DashboardInvoiceResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: InvoiceGraphData;
+}

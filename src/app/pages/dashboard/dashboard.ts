@@ -8,20 +8,23 @@ import {
   OnInit,
   ChangeDetectorRef,
   OnDestroy,
+  NgZone,
 } from '@angular/core';
 
-import { CurrencyPipe, NgIf, isPlatformBrowser } from '@angular/common';
+import { CurrencyPipe, NgIf, NgFor, isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import Chart from 'chart.js/auto';
 import { ScriptableContext, TooltipItem } from 'chart.js';
 import { DashboardService } from '../../services/dashboard-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
-import { DashboardSummaryData, DashboardGraphResponse } from '../../models/dashboard.model';
+import { DashboardSummaryData, DashboardInvoiceResponse } from '../../models/dashboard.model';
+import { Loader } from 'src/app/shared/loader/loader';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NgIf, CurrencyPipe],
+  imports: [NgIf, NgFor, CurrencyPipe, FormsModule, Loader],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css'],
 })
@@ -46,17 +49,30 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   graphLabels: string[] = [];
   graphData: number[] = [];
   loadingGraph = false;
+  loadingSummary = false;
+
+  // Year selector
+  selectedYear: number = new Date().getFullYear();
+  availableYears: number[] = [];
 
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
+  private graphReqSeq = 0;
+
+  // Computed property to show loader
+  get isLoading(): boolean {
+    return this.loadingSummary || this.loadingGraph;
+  }
 
   constructor(
     @Inject(PLATFORM_ID) platformId: object,
     private dashboardService: DashboardService,
     private cdr: ChangeDetectorRef,
-    private companySelection: CompanySelectionService
+    private companySelection: CompanySelectionService,
+    private ngZone: NgZone,
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
+    this.initializeYearOptions();
   }
 
   /* =========================
@@ -75,7 +91,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
       if (this.activeCompanyId) {
         this.loadDashboardSummary(this.activeCompanyId);
-        this.loadGraphData(this.activeCompanyId);
+        this.loadGraphData(this.activeCompanyId, this.selectedYear);
       } else {
         this.dashboardData = {
           totalReceivables: 0,
@@ -87,8 +103,8 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
           totalCustomers: 0,
           currentPromiseToPay: 0,
         };
-        // Show last 12 months at zero when no company selected
-        this.graphLabels = this.generateLast12Months();
+        // Show all 12 months at zero when no company selected
+        this.graphLabels = this.generateMonthLabels(this.selectedYear);
         this.graphData = Array(12).fill(0);
         this.updateChart();
         this.cdr.detectChanges();
@@ -101,13 +117,39 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
     requestAnimationFrame(() => {
       this.initChart();
+      // If data was loaded before chart init, update it now
+      if (this.graphLabels.length > 0 && this.chart) {
+        this.updateChart();
+      }
     });
+  }
+
+  /* =========================
+     YEAR SELECTION
+  ========================= */
+  initializeYearOptions(): void {
+    const currentYear = new Date().getFullYear();
+    const startYear = 2024;
+
+    this.availableYears = [];
+    for (let year = startYear; year <= currentYear; year++) {
+      this.availableYears.push(year);
+    }
+  }
+
+  onYearChange(): void {
+    this.selectedYear = Number(this.selectedYear);
+    if (this.activeCompanyId) {
+      this.loadGraphData(this.activeCompanyId, this.selectedYear);
+    }
   }
 
   /* =========================
      API CALLS
   ========================= */
   loadDashboardSummary(companyId: number): void {
+    this.loadingSummary = true;
+
     this.dashboardService.getDashboardCardData(companyId).subscribe({
       next: (res) => {
         const data = res?.data;
@@ -125,41 +167,58 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
           };
         }
 
+        this.loadingSummary = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Dashboard summary error:', err);
+        this.loadingSummary = false;
+        this.cdr.detectChanges();
       },
     });
   }
 
   // Load graph data from API
-  loadGraphData(companyId: number): void {
+  loadGraphData(companyId: number, year: number): void {
+    year = Number(year);
+    const reqId = ++this.graphReqSeq;
+
     this.loadingGraph = true;
+    this.dashboardService.getDashboardInvoiceData(companyId, year).subscribe({
+      next: (res) => {
+        if (reqId !== this.graphReqSeq) return;
+        console.log('YEAR requested:', year, 'YEAR from dropdown:', this.selectedYear);
+        console.log('First point:', res?.data?.points?.[0]?.yearMonth);
 
-    this.dashboardService.getDashboardGraphData(companyId).subscribe({
-      next: (res: DashboardGraphResponse) => {
-        const series = res?.data?.series;
+        const points = res?.data?.points;
 
-        if (series && Array.isArray(series) && series.length > 0) {
-          // Convert month format from "YYYY-MM" to readable format
-          this.graphLabels = series.map((item) => this.formatMonth(item.month));
-          this.graphData = series.map((item) => item.balance);
-        } else {
-          // Show empty state with last 12 months at zero
-          this.graphLabels = this.generateLast12Months();
-          this.graphData = Array(12).fill(0);
+        const tempLabels = this.generateMonthLabels(year);
+        const tempData = Array(12).fill(0);
+
+        if (Array.isArray(points)) {
+          points.forEach((item) => {
+            const [itemYear, itemMonth] = item.yearMonth.split('-');
+            const monthIndex = Number(itemMonth) - 1;
+
+            if (Number(itemYear) === year && monthIndex >= 0 && monthIndex < 12) {
+              tempData[monthIndex] = item.totalAmount;
+            }
+          });
         }
+
+        this.graphLabels = tempLabels;
+        this.graphData = tempData;
 
         this.loadingGraph = false;
         this.updateChart();
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Graph data error:', err);
-        // Show empty state on error too
-        this.graphLabels = this.generateLast12Months();
+        if (reqId !== this.graphReqSeq) return;
+
+        this.graphLabels = this.generateMonthLabels(year);
         this.graphData = Array(12).fill(0);
+
         this.loadingGraph = false;
         this.updateChart();
         this.cdr.detectChanges();
@@ -167,16 +226,13 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Generate last 12 months labels for empty state
-  generateLast12Months(): string[] {
+  // Generate month labels for a given year
+  generateMonthLabels(year: number): string[] {
     const months: string[] = [];
-    const today = new Date();
 
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      months.push(this.formatMonth(`${year}-${month}`));
+    for (let month = 1; month <= 12; month++) {
+      const monthStr = String(month).padStart(2, '0');
+      months.push(this.formatMonth(`${year}-${monthStr}`));
     }
 
     return months;
@@ -322,7 +378,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
       this.chart.options.scales['y'].suggestedMax = this.calculateSuggestedMax(this.graphData);
     }
 
-    this.chart.update();
+    this.chart.update(); // single update
   }
 
   calculateSuggestedMax(data: number[]): number {

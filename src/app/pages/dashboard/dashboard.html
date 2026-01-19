@@ -1,10 +1,6 @@
-<div class="dashboard-container">
-  <!-- <div class="dashboard-header">
-    <div>
-      <h1 class="page-title">Dashboard</h1>
-    </div>
-  </div> -->
+<app-loader [visible]="loadingSummary || loadingGraph"></app-loader>
 
+<div class="dashboard-container">
   <!-- Cards Grid -->
   <div class="cards-grid">
     <!-- Total Receivables -->
@@ -20,7 +16,11 @@
     <div class="card card-blue">
       <div class="card-header">
         <p class="card-title">Current Receivables</p>
-        <img src="/assets/current-receivables-icon.svg" alt="Current Receivables" class="card-icon" />
+        <img
+          src="/assets/current-receivables-icon.svg"
+          alt="Current Receivables"
+          class="card-icon"
+        />
       </div>
       <p class="card-value">{{ dashboardData.currentReceivables | currency }}</p>
     </div>
@@ -83,7 +83,21 @@
   <!-- Chart -->
   <div class="chart-container">
     <div class="chart-header">
-      <h2 class="chart-title">Receivables Balance - Last 12 months</h2>
+      <h2 class="chart-title">Invoice Amount - Monthly Overview</h2>
+
+      <div class="year-selector">
+        <label for="yearSelect" class="year-label">Year:</label>
+        <select
+          id="yearSelect"
+          class="year-dropdown"
+          [(ngModel)]="selectedYear"
+          (change)="onYearChange()"
+        >
+          <option *ngFor="let year of availableYears" [ngValue]="year">
+            {{ year }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <div class="chart-wrapper">

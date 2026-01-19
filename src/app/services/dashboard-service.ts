@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DashboardSummaryResponse, DashboardGraphResponse } from '../models/dashboard.model';
+import { DashboardSummaryResponse, DashboardGraphResponse, DashboardInvoiceResponse } from '../models/dashboard.model';
 
 @Injectable({
   providedIn: 'root',
@@ -33,6 +33,15 @@ export class DashboardService {
 
     return this.http.get<DashboardGraphResponse>(
       `${this.baseUrl}/ar/company/${companyId}/balance-series`,
+      { headers }
+    );
+  }
+
+  getDashboardInvoiceData(companyId: number, year: number): Observable<DashboardInvoiceResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
+
+    return this.http.get<DashboardInvoiceResponse>(
+      `${this.baseUrl}/dashboard/invoices/monthly/company/${companyId}?year=${year}`, 
       { headers }
     );
   }
