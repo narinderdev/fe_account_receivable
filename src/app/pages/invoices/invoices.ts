@@ -27,19 +27,33 @@ export class Invoices implements OnInit, OnDestroy {
   pageSize = 10;
   totalPages = 0;
   totalItems = 0;
+
+  // Month filter properties
+  selectedPeriod: string = '12'; // Default to 12 months
+  isCustomPeriod: boolean = false;
   fromDate: string | null = null;
   toDate: string | null = null;
+
   Math = Math;
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   canCreateInvoice = false;
+
+  // Period options for dropdown
+  periodOptions = [
+    { value: '1', label: 'Last 1 Month' },
+    { value: '2', label: 'Last 2 Months' },
+    { value: '6', label: 'Last 6 Months' },
+    { value: '12', label: 'Last 12 Months' },
+    { value: 'custom', label: 'Custom Date Range' },
+  ];
 
   constructor(
     private invoiceService: InvoiceService,
     private cdr: ChangeDetectorRef,
     private router: Router,
     private companySelection: CompanySelectionService,
-    private userContext: UserContextService
+    private userContext: UserContextService,
   ) {
     this.canCreateInvoice = this.userContext.hasPermission('CREATE_INVOICE');
   }
@@ -73,35 +87,40 @@ export class Invoices implements OnInit, OnDestroy {
     this.loading = true;
     this.cdr.detectChanges();
 
-    this.invoiceService
-      .getInvoices(
-        companyId,
-        page,
-        this.pageSize,
-        this.fromDate || undefined,
-        this.toDate || undefined
-      )
-      .subscribe({
-        next: (res: InvoicePage) => {
-          const pageData = res?.data;
+    const params: any = {
+      page,
+      size: this.pageSize,
+    };
 
-          this.invoices = pageData?.content || [];
-          this.allInvoices = [...this.invoices];
+    // Add months parameter for preset periods, or dates for custom
+    if (this.isCustomPeriod) {
+      if (this.fromDate) params.fromDate = this.fromDate;
+      if (this.toDate) params.toDate = this.toDate;
+    } else {
+      params.months = parseInt(this.selectedPeriod, 10);
+    }
 
-          this.totalPages = pageData?.totalPages || 0;
-          this.currentPage = pageData?.number || 0;
-          this.totalItems = pageData?.totalElements || this.allInvoices.length;
+    this.invoiceService.getInvoices(companyId, params).subscribe({
+      next: (res: InvoicePage) => {
+        const pageData = res?.data;
 
-          this.loading = false;
-          this.applySearchFilter();
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          console.error('Invoice load error:', err);
-          this.loading = false;
-          this.cdr.detectChanges();
-        },
-      });
+        this.invoices = pageData?.content || [];
+        this.allInvoices = [...this.invoices];
+
+        this.totalPages = pageData?.totalPages || 0;
+        this.currentPage = pageData?.number || 0;
+        this.totalItems = pageData?.totalElements || this.allInvoices.length;
+
+        this.loading = false;
+        this.applySearchFilter();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Invoice load error:', err);
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   getInitialColor(index: number): { background: string; color: string } {
@@ -131,18 +150,36 @@ export class Invoices implements OnInit, OnDestroy {
     }
 
     this.invoices = this.allInvoices.filter((inv) =>
-      inv.customer.customerName.toLowerCase().includes(term)
+      inv.customer.customerName.toLowerCase().includes(term),
     );
   }
 
+  // Handle period dropdown change
+  onPeriodChange(): void {
+    if (this.selectedPeriod === 'custom') {
+      this.isCustomPeriod = true;
+      // Don't reload until user selects dates
+    } else {
+      this.isCustomPeriod = false;
+      this.fromDate = null;
+      this.toDate = null;
+      this.reloadWithFilters();
+    }
+  }
+
+  // Handle custom date changes
   handleFromDateChange(value: string) {
     this.fromDate = value || null;
-    this.reloadWithFilters();
+    if (this.isCustomPeriod && this.fromDate && this.toDate) {
+      this.reloadWithFilters();
+    }
   }
 
   handleToDateChange(value: string) {
     this.toDate = value || null;
-    this.reloadWithFilters();
+    if (this.isCustomPeriod && this.fromDate && this.toDate) {
+      this.reloadWithFilters();
+    }
   }
 
   private reloadWithFilters() {

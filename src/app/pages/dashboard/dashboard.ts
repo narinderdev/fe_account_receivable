@@ -267,31 +267,26 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     if (!canvas) return;
 
     this.chart = new Chart(canvas, {
-      type: 'line',
+      type: 'bar',
       data: {
         labels: this.graphLabels,
         datasets: [
           {
             data: this.graphData,
-            borderColor: '#3b82f6',
-            backgroundColor: (context: ScriptableContext<'line'>) => {
+            backgroundColor: (context: ScriptableContext<'bar'>) => {
               const ctx = context.chart.ctx;
               const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-              gradient.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
-              gradient.addColorStop(1, 'rgba(59, 130, 246, 0.01)');
+              gradient.addColorStop(0, '#2563eb');
+              gradient.addColorStop(1, '#1d4ed8');
               return gradient;
             },
-            borderWidth: 3,
-            tension: 0.4,
-            pointRadius: 5,
-            pointHoverRadius: 7,
-            pointBackgroundColor: '#3b82f6',
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
-            pointHoverBackgroundColor: '#3b82f6',
-            pointHoverBorderColor: '#ffffff',
-            pointHoverBorderWidth: 2,
-            fill: true,
+            borderColor: '#1e40af',
+            borderWidth: 0,
+            borderRadius: 8,
+            borderSkipped: false,
+            hoverBackgroundColor: '#1e3a8a',
+            barThickness: 'flex',
+            maxBarThickness: 60,
           },
         ],
       },
@@ -311,7 +306,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
             borderWidth: 1,
             displayColors: false,
             callbacks: {
-              label: (context: TooltipItem<'line'>) => {
+              label: (context: TooltipItem<'bar'>) => {
                 const value = context.parsed.y;
                 return value !== null
                   ? `$${value.toLocaleString('en-US', {

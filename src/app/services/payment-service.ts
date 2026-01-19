@@ -34,7 +34,7 @@ export class PaymentService {
 
     return this.http.get<PaymentPage>(
       `${this.baseUrl}/payment/company/${companyId}?page=${page}&size=${size}`,
-      { headers }
+      { headers },
     );
   }
 
@@ -43,7 +43,7 @@ export class PaymentService {
     return this.http.post<ApplyPaymentResponse>(
       `${this.baseUrl}/payment/apply/${customerId}`,
       data,
-      { headers }
+      { headers },
     );
   }
 
@@ -51,29 +51,33 @@ export class PaymentService {
     companyId: number,
     params: {
       statuses?: string[];
+      months?: number;
       fromDate?: string;
       toDate?: string;
       page?: number;
       size?: number;
-    }
+    },
   ): Observable<PaymentPage> {
     const headers = this.getAuthHeadersWithNgrok();
 
-    let queryParams: string[] = [];
+    const queryParams: string[] = [];
 
-    if (params.fromDate) {
-      queryParams.push(`fromDate=${params.fromDate}`);
-    }
-    if (params.toDate) {
-      queryParams.push(`toDate=${params.toDate}`);
-    }
-
+    // 1) pagination first
     queryParams.push(`page=${params.page ?? 0}`);
     queryParams.push(`size=${params.size ?? 10}`);
 
+    if (params.fromDate) queryParams.push(`fromDate=${encodeURIComponent(params.fromDate)}`);
+    if (params.toDate) queryParams.push(`toDate=${encodeURIComponent(params.toDate)}`);
+
+    if (params.months !== undefined) queryParams.push(`months=${params.months}`);
+
+    if (params.statuses?.length) {
+      params.statuses.forEach((s) => queryParams.push(`statuses=${encodeURIComponent(s)}`));
+    }
+
     return this.http.get<PaymentPage>(
       `${this.baseUrl}/payment/company/${companyId}/filter?${queryParams.join('&')}`,
-      { headers }
+      { headers },
     );
   }
 }

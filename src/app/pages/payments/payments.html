@@ -14,7 +14,22 @@
         />
       </div>
 
+      <!-- Period Dropdown -->
       <div class="filter-field">
+        <label>Time Period</label>
+        <select
+          class="filter-input period-select"
+          [(ngModel)]="selectedPeriod"
+          (ngModelChange)="onPeriodChange()"
+        >
+          <option *ngFor="let option of periodOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Custom Date Fields (only show when Custom is selected) -->
+      <div class="filter-field" *ngIf="isCustomPeriod">
         <label>From Date</label>
         <input
           type="date"
@@ -24,7 +39,7 @@
         />
       </div>
 
-      <div class="filter-field">
+      <div class="filter-field" *ngIf="isCustomPeriod">
         <label>To Date</label>
         <input
           type="date"
@@ -77,7 +92,7 @@
                 class="customer-initial"
                 [ngStyle]="{
                   backgroundColor: getInitialColor(i).background,
-                  color: getInitialColor(i).color
+                  color: getInitialColor(i).color,
                 }"
               >
                 {{ getCustomerInitial(payment) }}
@@ -95,7 +110,7 @@
           <td>{{ payment.bankDeposit || 0 | currency }}</td>
           <td>{{ payment.serviceFee || 0 | currency }}</td>
           <td>{{ payment.paymentMethod || '--' }}</td>
-          <td>{{ payment.paymentDate | date : 'mediumDate' }}</td>
+          <td>{{ payment.paymentDate | date: 'mediumDate' }}</td>
         </tr>
       </tbody>
     </table>

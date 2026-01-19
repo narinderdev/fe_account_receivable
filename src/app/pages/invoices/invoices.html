@@ -14,7 +14,22 @@
         />
       </div>
 
+      <!-- Period Dropdown -->
       <div class="filter-field">
+        <label>Time Period</label>
+        <select
+          class="filter-input period-select"
+          [(ngModel)]="selectedPeriod"
+          (ngModelChange)="onPeriodChange()"
+        >
+          <option *ngFor="let option of periodOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Custom Date Fields (only show when Custom is selected) -->
+      <div class="filter-field" *ngIf="isCustomPeriod">
         <label>From Date</label>
         <input
           type="date"
@@ -24,7 +39,7 @@
         />
       </div>
 
-      <div class="filter-field">
+      <div class="filter-field" *ngIf="isCustomPeriod">
         <label>To Date</label>
         <input
           type="date"
@@ -77,7 +92,7 @@
                 class="customer-initial"
                 [ngStyle]="{
                   backgroundColor: getInitialColor(i).background,
-                  color: getInitialColor(i).color
+                  color: getInitialColor(i).color,
                 }"
               >
                 {{ inv.customer.customerName[0] }}
@@ -95,8 +110,7 @@
     <div class="pagination-wrapper" *ngIf="totalPages > 1">
       <div class="pagination-info">
         Showing {{ totalItems === 0 ? 0 : currentPage * pageSize + 1 }} to
-        {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of
-        {{ totalItems }} results
+        {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
       </div>
 
       <div class="pagination-controls">

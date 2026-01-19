@@ -44,6 +44,31 @@
   font-size: 0.875rem;
   background: #fff;
   min-height: 46px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Period Select Dropdown */
+.period-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #111827;
+}
+
+.period-select:hover {
+  border-color: #3b82f6;
 }
 
 .search-input {
@@ -54,7 +79,9 @@
   display: flex;
   align-items: center;
   padding-left: 42px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   flex: 1;
   min-width: 300px;
 }
@@ -109,10 +136,11 @@
   margin-left: auto;
   white-space: nowrap;
   height: 46px;
+  transition: background 0.2s;
 }
 
 .btn-receive:hover {
-  background: #3a6ec7;
+  background: #2563eb;
 }
 
 /* Card that wraps the table */

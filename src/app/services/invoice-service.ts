@@ -22,48 +22,56 @@ export class InvoiceService {
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('logintoken');
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     });
   }
 
   private getAuthHeadersWithNgrok(): HttpHeaders {
     const token = localStorage.getItem('logintoken');
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       // 'ngrok-skip-browser-warning': 'true'
     });
   }
 
   getInvoices(
-    companyId: number, 
-    page = 0, 
-    size = 10,
-    dateFrom?: string,
-    dateTo?: string
+    companyId: number,
+    params: {
+      months?: number; // For preset periods (1, 2, 6, 12)
+      fromDate?: string; // For custom date range
+      toDate?: string; // For custom date range
+      page?: number;
+      size?: number;
+    },
   ): Observable<InvoicePage> {
     const headers = this.getAuthHeadersWithNgrok();
 
     let queryParams: string[] = [];
-    queryParams.push(`page=${page}`);
-    queryParams.push(`size=${size}`);
-    
-    if (dateFrom) {
-      queryParams.push(`dateFrom=${dateFrom}`);
+
+    // Add months parameter if present (for preset periods)
+    if (params.months !== undefined) {
+      queryParams.push(`months=${params.months}`);
     }
-    if (dateTo) {
-      queryParams.push(`dateTo=${dateTo}`);
+
+    // Add custom date range if present
+    if (params.fromDate) {
+      queryParams.push(`dateFrom=${params.fromDate}`);
     }
+    if (params.toDate) {
+      queryParams.push(`dateTo=${params.toDate}`);
+    }
+
+    // Add pagination
+    queryParams.push(`page=${params.page ?? 0}`);
+    queryParams.push(`size=${params.size ?? 10}`);
 
     return this.http.get<InvoicePage>(
       `${this.baseUrl}/invoice/unpaid/company/${companyId}?${queryParams.join('&')}`,
-      { headers }
+      { headers },
     );
   }
 
-  createInvoice(
-    customerId: number,
-    data: CreateInvoiceRequest
-  ): Observable<InvoiceDetailResponse> {
+  createInvoice(customerId: number, data: CreateInvoiceRequest): Observable<InvoiceDetailResponse> {
     const headers = this.getAuthHeaders();
     return this.http.post<InvoiceDetailResponse>(`${this.baseUrl}/invoice/${customerId}`, data, {
       headers,
@@ -87,20 +95,24 @@ export class InvoiceService {
 
   getCustomerInvoicesById(customerId: number): Observable<CustomerInvoiceListResponse> {
     const headers = this.getAuthHeadersWithNgrok();
-    return this.http.get<CustomerInvoiceListResponse>(`${this.baseUrl}/invoice/customer/${customerId}`, {
-      headers,
-    });
+    return this.http.get<CustomerInvoiceListResponse>(
+      `${this.baseUrl}/invoice/customer/${customerId}`,
+      {
+        headers,
+      },
+    );
   }
 
   getFilteredInvoices(
     companyId: number,
     params: {
       statuses?: string[];
-      fromDate?: string;
-      toDate?: string;
+      months?: number; // For preset periods
+      fromDate?: string; // For custom range
+      toDate?: string; // For custom range
       page?: number;
       size?: number;
-    }
+    },
   ): Observable<InvoicePage> {
     const headers = this.getAuthHeadersWithNgrok();
 
@@ -109,6 +121,13 @@ export class InvoiceService {
     if (params.statuses?.length) {
       queryParams.push(`statuses=${params.statuses.join(',')}`);
     }
+
+    // Add months parameter if present
+    if (params.months !== undefined) {
+      queryParams.push(`months=${params.months}`);
+    }
+
+    // Add custom date range if present
     if (params.fromDate) {
       queryParams.push(`fromDate=${params.fromDate}`);
     }
@@ -121,7 +140,7 @@ export class InvoiceService {
 
     return this.http.get<InvoicePage>(
       `${this.baseUrl}/invoice/company/${companyId}?${queryParams.join('&')}`,
-      { headers }
+      { headers },
     );
   }
 }

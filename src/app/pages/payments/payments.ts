@@ -20,8 +20,13 @@ export class Payments implements OnInit, OnDestroy {
   payments: Payment[] = [];
   allPayments: Payment[] = [];
   searchName: string = '';
+
+  // New filter properties
+  selectedPeriod: string = '12'; // Default to 12 months
+  isCustomPeriod: boolean = false;
   fromDate: string | null = null;
   toDate: string | null = null;
+
   loading = false;
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
@@ -32,12 +37,21 @@ export class Payments implements OnInit, OnDestroy {
   totalItems = 0;
   Math = Math;
 
+  // Period options for dropdown
+  periodOptions = [
+    { value: '1', label: 'Last 1 Month' },
+    { value: '2', label: 'Last 2 Months' },
+    { value: '6', label: 'Last 6 Months' },
+    { value: '12', label: 'Last 12 Months' },
+    { value: 'custom', label: 'Custom Date Range' },
+  ];
+
   constructor(
     private paymentService: PaymentService,
     private router: Router,
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService,
-    private userContext: UserContextService
+    private userContext: UserContextService,
   ) {
     this.canApplyPayment = this.userContext.hasPermission('APPLY_PAYMENT');
   }
@@ -71,12 +85,18 @@ export class Payments implements OnInit, OnDestroy {
     this.loading = true;
     this.cdr.detectChanges();
 
-    const filters = {
-      fromDate: this.fromDate || undefined,
-      toDate: this.toDate || undefined,
+    const filters: any = {
       page,
       size: this.pageSize,
     };
+
+    // Add months parameter for preset periods, or dates for custom
+    if (this.isCustomPeriod) {
+      if (this.fromDate) filters.fromDate = this.fromDate;
+      if (this.toDate) filters.toDate = this.toDate;
+    } else {
+      filters.months = parseInt(this.selectedPeriod, 10);
+    }
 
     this.paymentService.getFilteredPayments(companyId, filters).subscribe({
       next: (response) => {
@@ -105,14 +125,32 @@ export class Payments implements OnInit, OnDestroy {
     this.applySearchFilter();
   }
 
+  // Handle period dropdown change
+  onPeriodChange(): void {
+    if (this.selectedPeriod === 'custom') {
+      this.isCustomPeriod = true;
+      // Don't reload until user selects dates
+    } else {
+      this.isCustomPeriod = false;
+      this.fromDate = null;
+      this.toDate = null;
+      this.reloadWithFilters();
+    }
+  }
+
+  // Handle custom date changes
   handleFromDateChange(value: string) {
     this.fromDate = value || null;
-    this.reloadWithFilters();
+    if (this.isCustomPeriod && this.fromDate && this.toDate) {
+      this.reloadWithFilters();
+    }
   }
 
   handleToDateChange(value: string) {
     this.toDate = value || null;
-    this.reloadWithFilters();
+    if (this.isCustomPeriod && this.fromDate && this.toDate) {
+      this.reloadWithFilters();
+    }
   }
 
   private reloadWithFilters() {
@@ -142,7 +180,7 @@ export class Payments implements OnInit, OnDestroy {
     return (
       payment.applications?.reduce(
         (total: number, app: any) => total + (app.appliedAmount || 0),
-        0
+        0,
       ) || 0
     );
   }
