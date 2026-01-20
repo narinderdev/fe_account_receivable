@@ -6,6 +6,7 @@ import {
   CreateGlCodePayload,
   CreateGlCodeResponse,
   GlCodeListResponse,
+  GlCodePageResponse,
   UpdateGlCodePayload,
   UpdateGlCodeResponse,
 } from '../models/gl-code.model';
@@ -38,6 +39,16 @@ export class GlCodeService {
     return this.http.get<GlCodeListResponse>(`${this.baseUrl}/api/gl-codes/company/${companyId}`, {
       headers,
     });
+  }
+
+  getGlCodesPage(companyId: number, page = 0, size = 10): Observable<GlCodePageResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.get<GlCodePageResponse>(
+      `${this.baseUrl}/api/gl-codes/company/${companyId}?page=${page}&size=${size}`,
+      {
+        headers,
+      }
+    );
   }
 
   createGlCode(

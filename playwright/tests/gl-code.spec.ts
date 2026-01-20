@@ -14,6 +14,17 @@ const success = <T>(data: T) => ({
   data,
 });
 
+const paginated = <T>(content: T[]) => ({
+  rows: [],
+  content,
+  totalPages: content.length ? 1 : 0,
+  number: 0,
+  size: 10,
+  totalElements: content.length,
+  first: true,
+  last: true,
+});
+
 const glCodeRows = [
   {
     id: 301,
@@ -73,15 +84,24 @@ test.describe('GL Codes workspace', () => {
 });
 
 async function setupGlCodeRoutes(page: Page) {
-  await page.route('**/api/gl-codes/company/1', async (route) => {
+  await page.route('**/api/gl-codes/company/1*', async (route) => {
     if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    // let PUT/other specialized routes handle their logic
+    if (/\/api\/gl-codes\/company\/1\/\d+/.test(route.request().url())) {
+      await route.continue();
+      return;
+    }
+    if (/\/api\/gl-codes\/company\/1\/user\//.test(route.request().url())) {
       await route.continue();
       return;
     }
     await route.fulfill({
       status: 200,
       headers: jsonHeaders,
-      body: JSON.stringify(success(glCodeRows)),
+      body: JSON.stringify(success(paginated(glCodeRows))),
     });
   });
 

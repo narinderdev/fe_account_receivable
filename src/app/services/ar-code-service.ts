@@ -6,6 +6,7 @@ import {
   CreateArCodePayload,
   CreateArCodeResponse,
   ArCodeListResponse,
+  ArCodePageResponse,
   DeleteArCodeResponse,
   UpdateArCodePayload,
   UpdateArCodeResponse,
@@ -42,6 +43,16 @@ export class ArCodeService {
     return this.http.get<ArCodeListResponse>(`${this.baseUrl}/codes/ar-codes/${companyId}`, {
       headers,
     });
+  }
+
+  getCodesPage(companyId: number, page = 0, size = 10): Observable<ArCodePageResponse> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.get<ArCodePageResponse>(
+      `${this.baseUrl}/codes/ar-codes/${companyId}?page=${page}&size=${size}`,
+      {
+        headers,
+      }
+    );
   }
 
   createCode(data: CreateArCodePayload, companyId: number): Observable<CreateArCodeResponse> {

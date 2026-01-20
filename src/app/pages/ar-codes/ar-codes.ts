@@ -91,6 +91,12 @@ export class ArCodes implements OnInit, OnDestroy {
     debitGlCodeId: number | null;
     creditGlCodeId: number | null;
   } | null = null;
+  currentPage = 0;
+  totalPages = 0;
+  totalItems = 0;
+  readonly defaultPageSize = 10;
+  pageSize = this.defaultPageSize;
+  Math = Math;
 
   readonly statusOptions = [
     { label: 'Active', value: 'ACTIVE' as ArCodeStatus },
@@ -165,11 +171,16 @@ export class ArCodes implements OnInit, OnDestroy {
         this.loading = false;
         this.hasGlCodes = false;
         this.glCodeOptions = [];
+        this.currentPage = 0;
+        this.totalPages = 0;
+        this.totalItems = 0;
+        this.pageSize = this.defaultPageSize;
         this.cdr.detectChanges();
         return;
       }
       this.verifyGlCodeRequirement();
-      this.fetchArCodes();
+      this.currentPage = 0;
+      this.fetchArCodes(0);
     });
   }
 
@@ -492,6 +503,53 @@ export class ArCodes implements OnInit, OnDestroy {
       });
   }
 
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages;
+    if (total <= 0) {
+      return pages;
+    }
+    const current = this.currentPage + 1;
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current <= 3) {
+        pages.push(2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(-1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(-1, current - 1, current, current + 1, -1, total);
+      }
+    }
+    return pages;
+  }
+
+  goToPage(page: number) {
+    if (
+      this.activeCompanyId &&
+      page >= 0 &&
+      page < this.totalPages &&
+      page !== this.currentPage
+    ) {
+      this.fetchArCodes(page);
+    }
+  }
+
+  nextPage() {
+    if (this.activeCompanyId && this.currentPage < this.totalPages - 1) {
+      this.fetchArCodes(this.currentPage + 1);
+    }
+  }
+
+  prevPage() {
+    if (this.activeCompanyId && this.currentPage > 0) {
+      this.fetchArCodes(this.currentPage - 1);
+    }
+  }
+
   getStatusLabel(status: ArCodeStatus): string {
     return status === 'ACTIVE' ? 'Active' : 'Inactive';
   }
@@ -753,19 +811,25 @@ export class ArCodes implements OnInit, OnDestroy {
     return typeof codeId === 'number' && this.togglingCodeIds.has(codeId);
   }
 
-  private fetchArCodes() {
+  private fetchArCodes(page?: number) {
     if (!this.activeCompanyId) {
       this.records = [];
       this.loading = false;
+      this.totalItems = 0;
+      this.totalPages = 0;
+      this.currentPage = 0;
       this.cdr.detectChanges();
       return;
     }
+
+    const targetPage = typeof page === 'number' && page >= 0 ? page : this.currentPage;
+    const requestedPageSize = this.pageSize || this.defaultPageSize;
 
     this.loading = true;
     this.cdr.detectChanges();
 
     this.arCodeService
-      .getCode(this.activeCompanyId)
+      .getCodesPage(this.activeCompanyId, targetPage, requestedPageSize)
       .pipe(
         finalize(() => {
           this.loading = false;
@@ -774,8 +838,28 @@ export class ArCodes implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          const entities = Array.isArray(response?.data) ? response.data : [];
-          this.records = entities.map((entity) => this.mapEntityToRecord(entity));
+          const pageData = response?.data;
+          const content = pageData?.content ?? [];
+          const totalPages = pageData?.totalPages ?? (content.length ? 1 : 0);
+          const totalItems = pageData?.totalElements ?? content.length;
+          const normalizedPageSize = pageData?.size ?? requestedPageSize;
+          const maxPageIndex = totalPages > 0 ? totalPages - 1 : 0;
+          const responsePageNumber =
+            typeof pageData?.number === 'number' ? pageData.number : targetPage;
+          const normalizedPage = totalPages
+            ? Math.min(Math.max(responsePageNumber, 0), maxPageIndex)
+            : 0;
+
+          if (totalPages > 0 && responsePageNumber !== normalizedPage) {
+            this.fetchArCodes(normalizedPage);
+            return;
+          }
+
+          this.records = content.map((entity) => this.mapEntityToRecord(entity));
+          this.totalPages = totalPages;
+          this.totalItems = totalItems;
+          this.currentPage = normalizedPage;
+          this.pageSize = normalizedPageSize;
           this.cdr.detectChanges();
         },
         error: (error) => {

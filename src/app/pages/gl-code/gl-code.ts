@@ -71,6 +71,12 @@ export class GlCode implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   private userId: number | null = null;
+  currentPage = 0;
+  totalPages = 0;
+  totalItems = 0;
+  readonly defaultPageSize = 10;
+  pageSize = this.defaultPageSize;
+  Math = Math;
 
   readonly accountTypeOptions = [
     { label: 'Accounts Receivable', value: 'AR' },
@@ -120,9 +126,14 @@ export class GlCode implements OnInit, OnDestroy {
       if (!this.activeCompanyId) {
         this.records = [];
         this.loading = false;
+        this.totalPages = 0;
+        this.currentPage = 0;
+        this.totalItems = 0;
+        this.pageSize = this.defaultPageSize;
         this.cdr.detectChanges();
         return;
       }
+      this.currentPage = 0;
       this.fetchGlCodes();
     });
   }
@@ -317,19 +328,72 @@ export class GlCode implements OnInit, OnDestroy {
     };
   }
 
-  private fetchGlCodes(): void {
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages;
+    if (total <= 0) {
+      return pages;
+    }
+    const current = this.currentPage + 1;
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current <= 3) {
+        pages.push(2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(-1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(-1, current - 1, current, current + 1, -1, total);
+      }
+    }
+    return pages;
+  }
+
+  goToPage(page: number): void {
+    if (
+      this.activeCompanyId &&
+      page >= 0 &&
+      page < this.totalPages &&
+      page !== this.currentPage
+    ) {
+      this.fetchGlCodes(page);
+    }
+  }
+
+  nextPage(): void {
+    if (this.activeCompanyId && this.currentPage < this.totalPages - 1) {
+      this.fetchGlCodes(this.currentPage + 1);
+    }
+  }
+
+  prevPage(): void {
+    if (this.activeCompanyId && this.currentPage > 0) {
+      this.fetchGlCodes(this.currentPage - 1);
+    }
+  }
+
+  private fetchGlCodes(page?: number): void {
     if (!this.activeCompanyId) {
       this.records = [];
       this.loading = false;
+      this.currentPage = 0;
+      this.totalPages = 0;
+      this.totalItems = 0;
       this.cdr.detectChanges();
       return;
     }
+
+    const targetPage = typeof page === 'number' && page >= 0 ? page : this.currentPage;
+    const requestedPageSize = this.pageSize || this.defaultPageSize;
 
     this.loading = true;
     this.cdr.detectChanges();
 
     this.glCodeService
-      .getGlCode(this.activeCompanyId)
+      .getGlCodesPage(this.activeCompanyId, targetPage, requestedPageSize)
       .pipe(
         finalize(() => {
           this.loading = false;
@@ -338,8 +402,28 @@ export class GlCode implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          const entities = Array.isArray(response?.data) ? response.data : [];
-          this.records = entities.map((entity) => this.mapEntityToRecord(entity));
+          const pageData = response?.data;
+          const content = pageData?.content ?? [];
+          const totalPages = pageData?.totalPages ?? (content.length ? 1 : 0);
+          const totalItems = pageData?.totalElements ?? content.length;
+          const size = pageData?.size ?? requestedPageSize;
+          const responsePageNumber =
+            typeof pageData?.number === 'number' ? pageData.number : targetPage;
+          const maxPageIndex = totalPages > 0 ? totalPages - 1 : 0;
+          const normalizedPage = totalPages
+            ? Math.min(Math.max(responsePageNumber, 0), maxPageIndex)
+            : 0;
+
+          if (totalPages > 0 && responsePageNumber !== normalizedPage) {
+            this.fetchGlCodes(normalizedPage);
+            return;
+          }
+
+          this.records = content.map((entity) => this.mapEntityToRecord(entity));
+          this.totalPages = totalPages;
+          this.totalItems = totalItems;
+          this.currentPage = normalizedPage;
+          this.pageSize = size;
           this.cdr.detectChanges();
         },
         error: (error) => {

@@ -14,6 +14,17 @@ const success = <T>(data: T) => ({
   data,
 });
 
+const paginated = <T>(content: T[]) => ({
+  rows: [],
+  content,
+  totalPages: content.length ? 1 : 0,
+  number: 0,
+  size: 10,
+  totalElements: content.length,
+  first: true,
+  last: true,
+});
+
 const glCodeOptions = [
   { id: 1, glCode: '1000', description: 'Cash' },
   { id: 2, glCode: '2000', description: 'Revenue' },
@@ -117,13 +128,13 @@ async function setupArCodeRoutes(page: Page) {
     });
   });
 
-  await page.route('**/codes/ar-codes/1', async (route) => {
+  await page.route('**/codes/ar-codes/1*', async (route) => {
     const method = route.request().method();
     if (method === 'GET') {
       await route.fulfill({
         status: 200,
         headers: jsonHeaders,
-        body: JSON.stringify(success(arCodeRows)),
+        body: JSON.stringify(success(paginated(arCodeRows))),
       });
       return;
     }

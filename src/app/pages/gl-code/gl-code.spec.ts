@@ -10,8 +10,22 @@ describe('GlCode', () => {
   let component: GlCode;
   let fixture: ComponentFixture<GlCode>;
 
+  const paginatedResponse = {
+    data: {
+      rows: [],
+      content: [],
+      totalPages: 0,
+      number: 0,
+      size: 10,
+      totalElements: 0,
+      first: true,
+      last: true,
+    },
+  };
+
   const glCodeServiceMock = {
     getGlCode: () => of({ data: [] }),
+    getGlCodesPage: () => of(paginatedResponse),
     createGlCode: () => of({ message: '' }),
     updateGlCode: () => of({ message: '' }),
   };

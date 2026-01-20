@@ -434,7 +434,8 @@ function resolveApiResponse(url: URL, method: string) {
     return defaultSuccess(sampleInvoice);
   }
   if (/\/codes\/ar-codes\/\d+/.test(pathname)) {
-    return defaultSuccess(sampleArCodes);
+    const hasPagination = searchParams.has('page') || searchParams.has('size');
+    return hasPagination ? defaultSuccess(paginated(sampleArCodes)) : defaultSuccess(sampleArCodes);
   }
   if (/\/api\/roles\/company\/\d+/.test(pathname)) {
     return defaultSuccess(sampleRoles);

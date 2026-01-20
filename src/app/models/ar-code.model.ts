@@ -1,3 +1,5 @@
+import { PaginatedResponse } from './customer.model';
+
 export interface ArCodeEntity {
   id: number;
   codeType: string | null;
@@ -44,6 +46,7 @@ export interface ArCodeApiResponse<T> {
 
 export type CreateArCodeResponse = ArCodeApiResponse<ArCodeEntity>;
 export type ArCodeListResponse = ArCodeApiResponse<ArCodeEntity[]>;
+export type ArCodePageResponse = ArCodeApiResponse<PaginatedResponse<ArCodeEntity>>;
 export type DeleteArCodeResponse = ArCodeApiResponse<null>;
 export type UpdateArCodePayload = Partial<CreateArCodePayload>;
 export type UpdateArCodeResponse = ArCodeApiResponse<ArCodeEntity>;
