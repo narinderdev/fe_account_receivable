@@ -3,7 +3,7 @@
     <button class="btn-primary" (click)="openModal()" *ngIf="canCreateWriteOff">New Write-Off</button>
   </div>
 
-  <div class="tabs">
+  <div class="tabs" *ngIf="canViewWriteOff">
     <button class="tab" [class.active]="activeTab === 'DRAFT'" (click)="setTab('DRAFT')">
       Draft
     </button>
@@ -12,7 +12,7 @@
     </button>
   </div>
 
-  <div class="card">
+  <div class="card" *ngIf="canViewWriteOff; else noWriteOffPermission">
     <div *ngIf="activeTabState.loading" class="loader-block">
       <app-loader [visible]="activeTabState.loading"></app-loader>
     </div>
@@ -135,6 +135,10 @@
       </div>
     </ng-container>
   </div>
+
+  <ng-template #noWriteOffPermission>
+    <div class="card empty-text">You do not have permission to view write-offs.</div>
+  </ng-template>
 
   <!-- New Write-Off Modal -->
   <div class="modal-overlay" *ngIf="modalOpen">

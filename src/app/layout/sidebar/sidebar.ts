@@ -27,6 +27,8 @@ export class Sidebar {
   canViewRoles = false;
   canViewArCodes = false;
   canViewGlCodes = false;
+  canViewCreditMemo = false;
+  canViewWriteOff = false;
   showSetupLinks = false;
 
   constructor(private router: Router, private userContext: UserContextService) {
@@ -59,6 +61,8 @@ export class Sidebar {
     const canViewGlCodes = this.userContext.hasPermission('VIEW_GL_CODE');
     this.canViewArCodes = canViewArCodes;
     this.canViewGlCodes = canViewGlCodes;
+    this.canViewCreditMemo = this.userContext.hasPermission('VIEW_MEMOS');
+    this.canViewWriteOff = this.userContext.hasPermission('VIEW_WRITE_OFF');
     this.showSetupLinks =
       this.userContext.isAdmin() ||
       this.canViewCompany ||

@@ -88,6 +88,7 @@
         </a>
 
         <a
+          *ngIf="canViewCreditMemo"
           routerLink="credit-memo"
           routerLinkActive="active"
           #creditMemoLink="routerLinkActive"
@@ -99,6 +100,7 @@
         </a>
 
         <a
+          *ngIf="canViewWriteOff"
           routerLink="write-off"
           routerLinkActive="active"
           #writeOffLink="routerLinkActive"
@@ -271,6 +273,7 @@
           Integration
         </a> -->
         <a
+          *ngIf="canViewCreditMemo"
           routerLink="credit-memo"
           routerLinkActive="active"
           #mobileCreditMemoLink="routerLinkActive"
@@ -281,6 +284,7 @@
         </a>
 
         <a
+          *ngIf="canViewWriteOff"
           routerLink="write-off"
           routerLinkActive="active"
           #mobileWriteOffLink="routerLinkActive"

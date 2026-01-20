@@ -312,7 +312,13 @@ export class ArCodes implements OnInit, OnDestroy {
         next: (response) => {
           this.toastr.success(response?.message ?? 'AR code created successfully', 'Success');
           this.closeModal();
-          this.fetchArCodes();
+          const createdEntity = response?.data;
+          if (createdEntity) {
+            this.insertCreatedRecord(this.mapEntityToRecord(createdEntity));
+          } else {
+            console.warn('Create AR code response did not include data');
+            this.fetchArCodes();
+          }
         },
         error: (error) => {
           console.error('Failed to create AR code', error);
@@ -946,5 +952,19 @@ export class ArCodes implements OnInit, OnDestroy {
       id: entity.id,
       label: labelParts.join(' - '),
     };
+  }
+
+  private insertCreatedRecord(record: ArCodeRecord) {
+    const effectivePageSize = this.pageSize || this.defaultPageSize;
+    const nextRecords = [record, ...this.records];
+    if (nextRecords.length > effectivePageSize && effectivePageSize > 0) {
+      nextRecords.pop();
+    }
+    this.records = nextRecords;
+    this.totalItems = (this.totalItems || 0) + 1;
+    const computedPages =
+      effectivePageSize > 0 ? Math.ceil(this.totalItems / effectivePageSize) : 0;
+    this.totalPages = this.totalItems > 0 ? Math.max(computedPages, 1) : 0;
+    this.cdr.detectChanges();
   }
 }

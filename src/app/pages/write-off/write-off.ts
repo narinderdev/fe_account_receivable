@@ -63,6 +63,7 @@ export class WriteOff implements OnInit, OnDestroy {
   approveModalOpen = false;
   submitted = false;
   saving = false;
+  canViewWriteOff = false;
   canCreateWriteOff = false;
   canApproveWriteOff = false;
   customerInvoicesLoading = false;
@@ -90,6 +91,7 @@ export class WriteOff implements OnInit, OnDestroy {
     private writeOffService: WriteOffService,
     private userContext: UserContextService
   ) {
+    this.canViewWriteOff = this.userContext.hasPermission('VIEW_WRITE_OFF');
     this.canCreateWriteOff = this.userContext.hasPermission('CREATE_WRITE_OFF');
     this.canApproveWriteOff = this.userContext.hasPermission('APPROVE_WRITE_OFF');
     this.writeOffForm = this.fb.group({
@@ -101,6 +103,11 @@ export class WriteOff implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    if (!this.canViewWriteOff) {
+      this.resetTabStates('You do not have permission to view write-offs.');
+      this.cdr.detectChanges();
+      return;
+    }
     this.companySelection.selectedCompanyId$
       .pipe(takeUntil(this.destroy$))
       .subscribe((companyIdValue) => {
