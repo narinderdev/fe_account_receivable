@@ -10,7 +10,14 @@ test.describe('Admin workspace smoke tests', () => {
   test('renders AR Codes for the selected company', async ({ page }) => {
     await page.goto('/admin/ar-code');
 
-    await expect(page.getByRole('button', { name: 'New AR Code' })).toBeVisible();
+    const newButton = page.getByRole('button', { name: 'New AR Code' });
+    await expect(newButton).toBeVisible();
+    await expect(newButton).toBeDisabled();
+    await expect(newButton).toHaveAttribute(
+      'title',
+      'Create at least one GL code before adding AR codes.'
+    );
+
     const rows = page.locator('table.data-table tbody tr');
     await expect(rows).toHaveCount(2);
     const firstRowCells = rows.first().locator('td');
@@ -22,10 +29,6 @@ test.describe('Admin workspace smoke tests', () => {
     await expect(secondRowCells.nth(1)).toHaveText('Bank Cash');
     await expect(secondRowCells.nth(3)).toHaveText('Cash on Hand');
 
-    await page.getByRole('button', { name: 'New AR Code' }).click();
-    await expect(page.getByRole('heading', { name: 'New AR Code' })).toBeVisible();
-    await expect(page.getByPlaceholder('Enter AR code')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Save AR Code' })).toBeVisible();
   });
 
   test('lists existing roles and enforces permission helpers', async ({ page }) => {

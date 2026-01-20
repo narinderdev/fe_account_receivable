@@ -418,6 +418,12 @@ function resolveApiResponse(url: URL, method: string) {
   if (/\/invoice\/unpaid\/company\/\d+/.test(pathname)) {
     return defaultSuccess(paginated([sampleInvoice]));
   }
+  if (/\/invoice\/company\/\d+\/with-pending-amounts/.test(pathname)) {
+    return defaultSuccess(pendingCustomerSummaries);
+  }
+  if (/\/invoice\/company\/\d+\/overdue-invoices/.test(pathname)) {
+    return defaultSuccess(overdueInvoices);
+  }
   if (/\/invoice\/company\/\d+/.test(pathname)) {
     return defaultSuccess(paginated([sampleInvoice]));
   }
@@ -440,6 +446,10 @@ function resolveApiResponse(url: URL, method: string) {
     return defaultSuccess(samplePayment);
   }
   if (/\/credit-memos\/company\/\d+/.test(pathname)) {
+    const statusFilter = searchParams.get('status');
+    if (statusFilter && statusFilter.toUpperCase() === 'APPROVED') {
+      return defaultSuccess(paginated([]));
+    }
     return defaultSuccess(paginated([sampleCreditMemo]));
   }
   if (/\/credit-memos\/customer\/\d+/.test(pathname)) {
@@ -462,12 +472,6 @@ function resolveApiResponse(url: URL, method: string) {
   }
   if (/\/invoice\/\d+\/pending-amount-company/.test(pathname)) {
     return defaultSuccess(18500);
-  }
-  if (/\/invoice\/company\/\d+\/with-pending-amounts/.test(pathname)) {
-    return defaultSuccess(pendingCustomerSummaries);
-  }
-  if (/\/invoice\/company\/\d+\/overdue-invoices/.test(pathname)) {
-    return defaultSuccess(overdueInvoices);
   }
   if (/\/api\/disputes\/codes/.test(pathname)) {
     return defaultSuccess([{ code: 'DAMAGES', label: 'Damages' }]);

@@ -11,10 +11,7 @@
     </button>
   </div>
 
-  <div
-    class="info-banner"
-    *ngIf="canCreateArCode && !checkingGlCodes && !hasGlCodes"
-  >
+  <div class="info-banner" *ngIf="canCreateArCode && !checkingGlCodes && !hasGlCodes">
     {{ glCodeRequirementMessage }}
   </div>
   <div class="card" *ngIf="canViewArCodes; else noPermission">
@@ -23,9 +20,7 @@
     </div>
 
     <ng-container *ngIf="!loading">
-      <div *ngIf="records.length === 0" class="empty-text">
-        No AR codes have been created yet.
-      </div>
+      <div *ngIf="records.length === 0" class="empty-text">No AR codes have been created yet.</div>
 
       <div class="table-scroll" *ngIf="records.length > 0">
         <table class="data-table">
@@ -62,7 +57,7 @@
                       class="mapping-badge mapping-clickable"
                       [ngClass]="{
                         'mapping-configured': meta.variant === 'configured',
-                        'mapping-missing': meta.variant === 'missing'
+                        'mapping-missing': meta.variant === 'missing',
                       }"
                       (click)="openGlMappingModal(record)"
                     >
@@ -83,7 +78,10 @@
                     <span class="slider round"></span>
                   </label>
                   <span class="status-text">{{ getStatusLabel(record.status) }}</span>
-                  <app-spinner *ngIf="isTogglingStatus(record.id)" class="switch-spinner"></app-spinner>
+                  <app-spinner
+                    *ngIf="isTogglingStatus(record.id)"
+                    class="switch-spinner"
+                  ></app-spinner>
                 </div>
               </td>
               <td class="actions" *ngIf="showActionsColumn">
@@ -115,9 +113,7 @@
   </div>
 
   <ng-template #noPermission>
-    <div class="card empty-text">
-      You do not have permission to view AR codes.
-    </div>
+    <div class="card empty-text">You do not have permission to view AR codes.</div>
   </ng-template>
 
   <div class="confirm-modal-overlay" *ngIf="deleteModalOpen">
@@ -125,10 +121,13 @@
       <h3>Delete AR Code</h3>
       <p>Are you sure you want to delete this AR code?</p>
       <div class="confirm-actions">
-        <button type="button" class="btn-secondary" (click)="closeDeleteModal()">
-          Cancel
-        </button>
-        <button type="button" class="btn-primary danger" (click)="confirmDelete()" [disabled]="deleting">
+        <button type="button" class="btn-secondary" (click)="closeDeleteModal()">Cancel</button>
+        <button
+          type="button"
+          class="btn-primary danger"
+          (click)="confirmDelete()"
+          [disabled]="deleting"
+        >
           <ng-container *ngIf="!deleting">Delete</ng-container>
           <ng-container *ngIf="deleting">
             <app-spinner></app-spinner>
@@ -179,7 +178,11 @@
 
           <div class="form-field">
             <label>Description <span class="color">*</span></label>
-            <textarea rows="4" formControlName="description" placeholder="Describe this AR code"></textarea>
+            <textarea
+              rows="4"
+              formControlName="description"
+              placeholder="Describe this AR code"
+            ></textarea>
             <p class="error" *ngIf="submitted && arCodeForm.controls['description'].invalid">
               Description is required
             </p>
@@ -203,26 +206,37 @@
     <div class="gl-mapping-modal">
       <div class="modal-header">
         <h2>GL Mapping</h2>
-        <button class="btn-close" (click)="closeGlMappingModal()" [disabled]="mappingSaving">
+        <button
+          class="btn-close"
+          (click)="closeGlMappingModal()"
+          [disabled]="mappingSaving || mappingPrefillLoading"
+        >
           <span>&times;</span>
         </button>
       </div>
 
       <form [formGroup]="glMappingForm" (ngSubmit)="saveGlMapping()">
         <div class="modal-body mapping-body">
-          <div class="mapping-prefill" *ngIf="mappingPrefillLoading">
-            <app-spinner></app-spinner>
-            <span>Loading existing mapping...</span>
+          <!-- Black overlay with spinner -->
+          <div class="mapping-loading-overlay" *ngIf="mappingPrefillLoading">
+            <app-loader [visible]="true"></app-loader>
           </div>
+
           <div class="form-field">
             <label>Debit GL Code <span class="color">*</span></label>
-            <select formControlName="debitGlCodeId" [disabled]="mappingSaving || mappingPrefillLoading">
+            <select
+              formControlName="debitGlCodeId"
+              [disabled]="mappingSaving || mappingPrefillLoading"
+            >
               <option value="">Select debit GL code</option>
               <option *ngFor="let option of glCodeOptions" [value]="option.id">
                 {{ option.label }}
               </option>
             </select>
-            <p class="error" *ngIf="mappingSubmitted && glMappingForm.controls['debitGlCodeId'].invalid">
+            <p
+              class="error"
+              *ngIf="mappingSubmitted && glMappingForm.controls['debitGlCodeId'].invalid"
+            >
               Debit GL code is required.
             </p>
           </div>
@@ -253,13 +267,22 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" (click)="closeGlMappingModal()" [disabled]="mappingSaving">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="closeGlMappingModal()"
+            [disabled]="mappingSaving || mappingPrefillLoading"
+          >
             Cancel
           </button>
-          <button type="submit" class="btn-primary" [disabled]="mappingSaving">
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="mappingSaving || mappingPrefillLoading"
+          >
             <app-spinner *ngIf="mappingSaving"></app-spinner>
             <span *ngIf="!mappingSaving">Save</span>
-            <span *ngIf="mappingSaving">Saving...</span>
+            <!-- <span *ngIf="mappingSaving">Saving...</span> -->
           </button>
         </div>
       </form>
