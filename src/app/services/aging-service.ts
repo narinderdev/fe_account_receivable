@@ -15,7 +15,7 @@ export class AgingService {
     const token = localStorage.getItem('logintoken');
     return new HttpHeaders({
       'Authorization': `Bearer ${token}`,
-      'ngrok-skip-browser-warning': 'true'
+      // 'ngrok-skip-browser-warning': 'true'
     });
   }
 

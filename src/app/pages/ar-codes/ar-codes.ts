@@ -838,7 +838,26 @@ export class ArCodes implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          const pageData = response?.data;
+          const responseData = response?.data;
+          if (Array.isArray(responseData)) {
+            this.records = responseData.map((entity) => this.mapEntityToRecord(entity));
+            this.totalItems = this.records.length;
+            this.totalPages = this.records.length ? 1 : 0;
+            this.currentPage = 0;
+            this.pageSize = this.records.length || this.defaultPageSize;
+            this.cdr.detectChanges();
+            return;
+          }
+          if (responseData && !('content' in responseData) && (responseData as any).id) {
+            this.records = [this.mapEntityToRecord(responseData as ArCodeEntity)];
+            this.totalItems = 1;
+            this.totalPages = 1;
+            this.currentPage = 0;
+            this.pageSize = 1;
+            this.cdr.detectChanges();
+            return;
+          }
+          const pageData = responseData;
           const content = pageData?.content ?? [];
           const totalPages = pageData?.totalPages ?? (content.length ? 1 : 0);
           const totalItems = pageData?.totalElements ?? content.length;

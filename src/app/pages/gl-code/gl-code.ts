@@ -402,7 +402,19 @@ export class GlCode implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          const pageData = response?.data;
+          const responseData = response?.data;
+          if (Array.isArray(responseData)) {
+            const records = responseData.map((entity) => this.mapEntityToRecord(entity));
+            this.records = records;
+            this.totalItems = records.length;
+            this.totalPages = records.length ? 1 : 0;
+            this.currentPage = 0;
+            this.pageSize = records.length || this.defaultPageSize;
+            this.cdr.detectChanges();
+            return;
+          }
+
+          const pageData = responseData;
           const content = pageData?.content ?? [];
           const totalPages = pageData?.totalPages ?? (content.length ? 1 : 0);
           const totalItems = pageData?.totalElements ?? content.length;
