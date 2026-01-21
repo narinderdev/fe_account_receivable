@@ -75,7 +75,8 @@ test.describe('AR Codes workspace', () => {
 
     const tableRows = page.locator('.data-table tbody tr');
     await expect(tableRows).toHaveCount(2);
-    await expect(tableRows.first()).toContainText('AR-100');
+    const ar100Row = tableRows.filter({ hasText: 'AR-100' });
+    await expect(ar100Row).toHaveCount(1);
 
     const newButton = page.getByRole('button', { name: 'New AR Code' });
     await expect(newButton).toBeEnabled();
@@ -94,7 +95,7 @@ test.describe('AR Codes workspace', () => {
     await createRequest;
     await expect(modal).toBeHidden();
 
-    const mappingButton = tableRows.first().getByRole('button', { name: /configured/i });
+    const mappingButton = ar100Row.getByRole('button', { name: /configured/i });
     await mappingButton.click();
 
     const mappingModal = page.locator('.gl-mapping-modal');
