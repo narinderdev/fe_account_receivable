@@ -257,25 +257,25 @@ export class InvoiceReport implements OnInit, OnDestroy {
           this.totalInvoices = data.total || 0;
           this.statusCounts = [
             {
-              status: 'OPEN',
+              status: 'Open',
               count: data.open || 0,
               percentage:
                 this.totalInvoices > 0 ? ((data.open || 0) / this.totalInvoices) * 100 : 0,
             },
             {
-              status: 'PARTIAL',
+              status: 'Partial',
               count: data.partial || 0,
               percentage:
                 this.totalInvoices > 0 ? ((data.partial || 0) / this.totalInvoices) * 100 : 0,
             },
             {
-              status: 'PAID',
+              status: 'Paid',
               count: data.paid || 0,
               percentage:
                 this.totalInvoices > 0 ? ((data.paid || 0) / this.totalInvoices) * 100 : 0,
             },
             {
-              status: 'WRITTEN_OFF',
+              status: 'Written Off',
               count: data.writtenOff || 0,
               percentage:
                 this.totalInvoices > 0 ? ((data.writtenOff || 0) / this.totalInvoices) * 100 : 0,
