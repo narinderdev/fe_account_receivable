@@ -101,7 +101,7 @@
           <div class="col-item">Item</div>
           <div class="col-description">Description</div>
           <div class="col-quantity">Quantity</div>
-          <div class="col-rate">Rate</div>
+          <div class="col-rate">Unit Cost</div>
           <div class="col-tax">Tax (%)</div>
           <div class="col-action"></div>
         </div>
@@ -117,15 +117,37 @@
           </div>
 
           <div class="col-quantity">
-            <input type="number" [(ngModel)]="item.quantity" />
+            <input
+              type="text"
+              [(ngModel)]="item.quantity"
+              placeholder="Enter quantity"
+              (keypress)="onlyDigits($event)"
+              (paste)="onPaste($event)"
+            />
           </div>
 
           <div class="col-rate">
-            <input type="number" [(ngModel)]="item.rate" />
+            <input
+              type="text"
+              [(ngModel)]="item.rateDisplay"
+              placeholder="Enter unit cost"
+              (input)="onRateInput(item, $event)"
+              (blur)="formatRateOnBlur(item)"
+              (focus)="removeRateFormatting(item)"
+              (keypress)="onlyDigitsAndDecimal($event)"
+              (paste)="onPaste($event)"
+            />
           </div>
 
           <div class="col-tax">
-            <input type="number" [(ngModel)]="item.tax" max="50" />
+            <input
+              type="text"
+              [(ngModel)]="item.tax"
+              placeholder="Enter tax %"
+              (keypress)="onlyDigitsAndDecimal($event)"
+              (paste)="onPaste($event)"
+              (blur)="validateTax(item)"
+            />
           </div>
 
           <div class="col-action">
@@ -183,7 +205,7 @@
         </div>
 
         <!-- Credit Limit Warning -->
-        <div class="credit-limit-warning" *ngIf="selectedCustomer && customerCreditLimit > 0">
+        <!-- <div class="credit-limit-warning" *ngIf="selectedCustomer && customerCreditLimit > 0">
           <div class="credit-info">
             <span class="credit-label">Customer Credit Limit:</span>
             <span class="credit-value">{{ customerCreditLimit | currency }}</span>
@@ -209,7 +231,7 @@
               </span>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>

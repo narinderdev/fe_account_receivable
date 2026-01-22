@@ -24,7 +24,14 @@ describe('CreateInvoice', () => {
       selectedCompanyId$: new Subject<number | null>(),
     } as unknown as CompanySelectionService;
 
-    return new CreateInvoice(customerService, invoiceService, router, cdr, toastr, companySelection);
+    return new CreateInvoice(
+      customerService,
+      invoiceService,
+      router,
+      cdr,
+      toastr,
+      companySelection,
+    );
   };
 
   it('should create', () => {
@@ -36,8 +43,22 @@ describe('CreateInvoice', () => {
     it('computes subtotal, tax and total correctly', () => {
       const instance = createComponent();
       instance.invoice.items = [
-        { itemName: 'Item 1', description: '', quantity: 2, rate: 100, tax: 10 },
-        { itemName: 'Item 2', description: '', quantity: 1, rate: 50, tax: 0 },
+        {
+          itemName: 'Item 1',
+          description: '',
+          quantity: '2',
+          rate: '100',
+          rateDisplay: '100',
+          tax: '10',
+        },
+        {
+          itemName: 'Item 2',
+          description: '',
+          quantity: '1',
+          rate: '50',
+          rateDisplay: '50',
+          tax: '0',
+        },
       ];
       expect(instance.subtotal).toBe(250);
       expect(instance.taxAmount).toBe(20);
@@ -49,7 +70,16 @@ describe('CreateInvoice', () => {
       instance.selectedCustomer = createCustomerStub({
         dunning: createDunning({ creditLimit: 100 }),
       });
-      instance.invoice.items = [{ itemName: 'Item', description: '', quantity: 1, rate: 150, tax: 0 }];
+      instance.invoice.items = [
+        {
+          itemName: 'Item',
+          description: '',
+          quantity: '1',
+          rate: '150',
+          rateDisplay: '150',
+          tax: '0',
+        },
+      ];
       expect(instance.exceedsCreditLimit).toBe(true);
     });
   });

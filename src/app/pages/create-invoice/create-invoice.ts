@@ -14,9 +14,10 @@ import { InvoiceDetailResponse } from '../../models/invoice.model';
 interface InvoiceItemDraft {
   itemName: string;
   description: string;
-  quantity: number;
-  rate: number;
-  tax: number;
+  quantity: string;
+  rate: string;
+  rateDisplay: string; // For displaying formatted value
+  tax: string;
 }
 
 interface InvoiceDraft {
@@ -68,7 +69,14 @@ export class CreateInvoice implements OnInit, OnDestroy {
     invoiceDate: this.today,
     dueDate: '',
     note: '',
-    items: [{ itemName: '', description: '', quantity: 1, rate: 0, tax: 0 }],
+    items: [{ 
+      itemName: '', 
+      description: '', 
+      quantity: '1', 
+      rate: '', 
+      rateDisplay: '',
+      tax: '' 
+    }],
   };
 
   constructor(
@@ -77,7 +85,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private toastr: ToastrService,
-    private companySelection: CompanySelectionService
+    private companySelection: CompanySelectionService,
   ) {}
 
   ngOnInit(): void {
@@ -115,6 +123,115 @@ export class CreateInvoice implements OnInit, OnDestroy {
         this.toastr.error('Could not load customers. Please try again.', 'Error');
       },
     });
+  }
+
+  // ---------------------------
+  // INPUT VALIDATION METHODS
+  // ---------------------------
+  onlyDigits(event: KeyboardEvent): boolean {
+    const charCode = event.which ? event.which : event.keyCode;
+    // Allow: backspace, delete, tab, escape, enter
+    if (
+      [46, 8, 9, 27, 13].indexOf(charCode) !== -1 ||
+      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      (charCode === 65 && event.ctrlKey === true) ||
+      (charCode === 67 && event.ctrlKey === true) ||
+      (charCode === 86 && event.ctrlKey === true) ||
+      (charCode === 88 && event.ctrlKey === true)
+    ) {
+      return true;
+    }
+    // Ensure that it is a number and stop the keypress
+    if (charCode < 48 || charCode > 57) {
+      event.preventDefault();
+      return false;
+    }
+    return true;
+  }
+
+  onlyDigitsAndDecimal(event: KeyboardEvent): boolean {
+    const charCode = event.which ? event.which : event.keyCode;
+    const inputValue = (event.target as HTMLInputElement).value;
+
+    // Allow: backspace, delete, tab, escape, enter
+    if (
+      [46, 8, 9, 27, 13].indexOf(charCode) !== -1 ||
+      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      (charCode === 65 && event.ctrlKey === true) ||
+      (charCode === 67 && event.ctrlKey === true) ||
+      (charCode === 86 && event.ctrlKey === true) ||
+      (charCode === 88 && event.ctrlKey === true)
+    ) {
+      return true;
+    }
+
+    // Allow decimal point only once
+    if (charCode === 46) {
+      if (inputValue.indexOf('.') !== -1) {
+        event.preventDefault();
+        return false;
+      }
+      return true;
+    }
+
+    // Ensure that it is a number
+    if (charCode < 48 || charCode > 57) {
+      event.preventDefault();
+      return false;
+    }
+    return true;
+  }
+
+  onPaste(event: ClipboardEvent): void {
+    const pastedText = event.clipboardData?.getData('text');
+    if (pastedText && !/^\d*\.?\d*$/.test(pastedText)) {
+      event.preventDefault();
+    }
+  }
+
+  validateTax(item: InvoiceItemDraft): void {
+    const taxValue = parseFloat(item.tax);
+    if (!isNaN(taxValue) && taxValue > 50) {
+      item.tax = '50';
+    }
+  }
+
+  // ---------------------------
+  // RATE FORMATTING METHODS
+  // ---------------------------
+  onRateInput(item: InvoiceItemDraft, event: any): void {
+    // Remove all non-digit and non-decimal characters for the actual value
+    const input = event.target.value.replace(/[^\d.]/g, '');
+    item.rate = input;
+    item.rateDisplay = input;
+  }
+
+  formatRateOnBlur(item: InvoiceItemDraft): void {
+    if (!item.rate) {
+      item.rateDisplay = '';
+      return;
+    }
+
+    const numericValue = parseFloat(item.rate);
+    if (isNaN(numericValue)) {
+      item.rateDisplay = '';
+      item.rate = '';
+      return;
+    }
+
+    // Format with thousand separators
+    item.rateDisplay = this.formatNumberWithCommas(numericValue);
+  }
+
+  removeRateFormatting(item: InvoiceItemDraft): void {
+    // When focused, show the raw number without formatting
+    item.rateDisplay = item.rate;
+  }
+
+  private formatNumberWithCommas(value: number): string {
+    const parts = value.toString().split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
   }
 
   // ---------------------------
@@ -156,9 +273,10 @@ export class CreateInvoice implements OnInit, OnDestroy {
     this.invoice.items.push({
       itemName: '',
       description: '',
-      quantity: 1,
-      rate: 0,
-      tax: 0,
+      quantity: '1',
+      rate: '',
+      rateDisplay: '',
+      tax: '',
     });
   }
 
@@ -174,16 +292,20 @@ export class CreateInvoice implements OnInit, OnDestroy {
   }
 
   get subtotal(): number {
-    return this.invoice.items.reduce(
-      (sum: number, item: InvoiceItemDraft) => sum + item.quantity * item.rate,
-      0
-    );
+    return this.invoice.items.reduce((sum: number, item: InvoiceItemDraft) => {
+      const qty = parseFloat(item.quantity) || 0;
+      const rate = parseFloat(item.rate) || 0;
+      return sum + qty * rate;
+    }, 0);
   }
 
   get taxAmount(): number {
     return this.invoice.items.reduce((sum: number, item: InvoiceItemDraft) => {
-      const st = item.quantity * item.rate;
-      return sum + (st * (item.tax || 0)) / 100;
+      const qty = parseFloat(item.quantity) || 0;
+      const rate = parseFloat(item.rate) || 0;
+      const tax = parseFloat(item.tax) || 0;
+      const st = qty * rate;
+      return sum + (st * tax) / 100;
     }, 0);
   }
 
@@ -240,9 +362,9 @@ export class CreateInvoice implements OnInit, OnDestroy {
     if (this.exceedsCreditLimit) {
       this.toastr.error(
         `Invoice total ($${this.totalAmount.toFixed(
-          2
+          2,
         )}) exceeds customer's credit limit ($${this.customerCreditLimit.toFixed(2)})`,
-        'Credit Limit Exceeded'
+        'Credit Limit Exceeded',
       );
       return;
     }
@@ -270,10 +392,10 @@ export class CreateInvoice implements OnInit, OnDestroy {
 
       items: this.invoice.items.map((item: InvoiceItemDraft) => ({
         itemName: item.itemName,
-        rate: item.rate,
+        rate: parseFloat(item.rate) || 0,
         description: item.description,
-        quantity: item.quantity,
-        tax: item.tax,
+        quantity: parseFloat(item.quantity) || 0,
+        tax: parseFloat(item.tax) || 0,
       })),
     };
 
