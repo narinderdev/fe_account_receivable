@@ -1,4 +1,11 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ChangeDetectorRef,
+  ViewChild,
+  ElementRef,
+  OnDestroy,
+} from '@angular/core';
 import { Router, RouterLink, RouterModule } from '@angular/router';
 import { Customer } from '../../services/customer';
 import { CompanyService } from '../../services/company-service';
@@ -23,7 +30,7 @@ import { UserContextService } from '../../services/user-context.service';
 export class Customers implements OnInit, OnDestroy {
   customers: CustomerEntity[] = [];
   loading = true;
-
+  downloadingTemplate = false;
   // Delete Modal
   isDeleteModalOpen = false;
   deleteId: number | null = null;
@@ -59,7 +66,7 @@ export class Customers implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private router: Router,
     private toastr: ToastrService,
-    private userContext: UserContextService
+    private userContext: UserContextService,
   ) {
     this.setPermissionFlags();
   }
@@ -70,29 +77,27 @@ export class Customers implements OnInit, OnDestroy {
       return;
     }
 
-    this.companySelection.selectedCompanyId$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((id) => {
-        const parsed = id ? Number(id) : NaN;
-        const nextId = Number.isFinite(parsed) ? parsed : null;
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      const parsed = id ? Number(id) : NaN;
+      const nextId = Number.isFinite(parsed) ? parsed : null;
 
-        if (this.activeCompanyId === nextId) {
-          return;
-        }
+      if (this.activeCompanyId === nextId) {
+        return;
+      }
 
-        this.activeCompanyId = nextId;
+      this.activeCompanyId = nextId;
 
-        if (this.activeCompanyId) {
-          this.loadCustomers(this.activeCompanyId);
-        } else {
-          this.customers = [];
-          this.totalPages = 0;
-          this.currentPage = 0;
-          this.totalItems = 0;
-          this.loading = false;
-          this.cdr.detectChanges();
-        }
-      });
+      if (this.activeCompanyId) {
+        this.loadCustomers(this.activeCompanyId);
+      } else {
+        this.customers = [];
+        this.totalPages = 0;
+        this.currentPage = 0;
+        this.totalItems = 0;
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   /** Load paginated customers */
@@ -242,12 +247,7 @@ export class Customers implements OnInit, OnDestroy {
   }
 
   goToPage(page: number) {
-    if (
-      this.activeCompanyId &&
-      page >= 0 &&
-      page < this.totalPages &&
-      page !== this.currentPage
-    ) {
+    if (this.activeCompanyId && page >= 0 && page < this.totalPages && page !== this.currentPage) {
       this.loadCustomers(this.activeCompanyId, page);
     }
   }
@@ -316,17 +316,79 @@ export class Customers implements OnInit, OnDestroy {
 
   getInitialColor(index: number): { background: string; color: string } {
     const palette = [
-      { background: '#DBEAFE', color: '#2563EB' }, 
-      { background: '#F3E8FF', color: '#9333EA' }, 
-      { background: '#FFEDD5', color: '#EA580C' }, 
-      { background: '#FEE2E2', color: '#DC2626' }, 
-      { background: '#E0E7FF', color: '#4F46E5' }, 
-      { background: '#CCFBF1', color: '#0D9488' }, 
+      { background: '#DBEAFE', color: '#2563EB' },
+      { background: '#F3E8FF', color: '#9333EA' },
+      { background: '#FFEDD5', color: '#EA580C' },
+      { background: '#FEE2E2', color: '#DC2626' },
+      { background: '#E0E7FF', color: '#4F46E5' },
+      { background: '#CCFBF1', color: '#0D9488' },
     ];
 
     // Use modulo to cycle through colors
     const colorIndex = index % palette.length;
     return palette[colorIndex];
+  }
+
+  downloadTemplate() {
+    this.downloadingTemplate = true;
+    this.cdr.detectChanges();
+
+    this.customerService.downloadTemplate().subscribe({
+      next: (res) => {
+        const metadata = res.data;
+
+        // Generate CSV with two rows: headers and required indicators
+        const headers: string[] = [];
+        const requiredIndicators: string[] = [];
+
+        metadata.tabs.forEach((tab: any) => {
+          tab.fields.forEach((field: any) => {
+            // Add field label with asterisk if required
+            if (field.required) {
+              headers.push(`${field.label} *`);
+            } else if (field.requiredIf) {
+              headers.push(`${field.label} (Conditional)`);
+            } else {
+              headers.push(field.label);
+            }
+
+            // Add indicator in second row
+            if (field.required) {
+              requiredIndicators.push('Required');
+            } else if (field.requiredIf) {
+              requiredIndicators.push(`Required if ${field.requiredIf}`);
+            } else {
+              requiredIndicators.push('Optional');
+            }
+          });
+        });
+
+        // Create CSV content with headers and requirement info
+        const csvContent = headers.join(',') + '\n' + requiredIndicators.join(',') + '\n';
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'customer_import_template.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        this.downloadingTemplate = false;
+        this.toastr.success('Template downloaded successfully!', 'Success');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.downloadingTemplate = false;
+        console.error('Template download failed:', err);
+        this.toastr.error('Failed to download template!', 'Error');
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   ngOnDestroy() {

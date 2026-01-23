@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { CompanySelectionService } from '../../services/company-selection.service';
@@ -32,11 +33,14 @@ export class PaymentReport implements OnInit, OnDestroy {
   loading = false;
   pieChartLoading = false;
   barChartLoading = false;
+  showExportMenu = false;
+
   paymentMethodCounts: PaymentMethodCount[] = [];
   totalPayments = 0;
+
   monthlyPayments: MonthlyPayment[] = [];
   selectedYear: number = new Date().getFullYear();
-  selectedMonths: number = 6; // Default to 6 months for payment method filter
+  selectedMonths: number = 6;
 
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
@@ -49,7 +53,6 @@ export class PaymentReport implements OnInit, OnDestroy {
     { label: '12 Months', value: 12 },
   ];
 
-  // Pie Chart Configuration
   pieChartData: ChartData<'doughnut'> = {
     labels: [],
     datasets: [
@@ -60,13 +63,12 @@ export class PaymentReport implements OnInit, OnDestroy {
       },
     ],
   };
+
   pieChartOptions: ChartConfiguration<'doughnut'>['options'] = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: (context) => {
@@ -82,7 +84,6 @@ export class PaymentReport implements OnInit, OnDestroy {
     cutout: '65%',
   };
 
-  // Bar Chart Configuration
   barChartData: ChartData<'bar'> = {
     labels: [],
     datasets: [
@@ -94,13 +95,12 @@ export class PaymentReport implements OnInit, OnDestroy {
       },
     ],
   };
+
   barChartOptions: ChartConfiguration<'bar'>['options'] = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: (context) => {
@@ -111,11 +111,7 @@ export class PaymentReport implements OnInit, OnDestroy {
       },
     },
     scales: {
-      x: {
-        grid: {
-          display: false,
-        },
-      },
+      x: { grid: { display: false } },
       y: {
         beginAtZero: true,
         ticks: {
@@ -123,9 +119,7 @@ export class PaymentReport implements OnInit, OnDestroy {
             return '$' + value.toLocaleString();
           },
         },
-        grid: {
-          color: '#F3F4F6',
-        },
+        grid: { color: '#F3F4F6' },
       },
     },
   };
@@ -133,11 +127,10 @@ export class PaymentReport implements OnInit, OnDestroy {
   constructor(
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService,
-    private paymentReportService: PaymentReportService
+    private paymentReportService: PaymentReportService,
   ) {}
 
   ngOnInit() {
-    // Initialize with static data for demo
     this.initializeStaticData();
 
     this.companySelection.selectedCompanyId$
@@ -146,9 +139,7 @@ export class PaymentReport implements OnInit, OnDestroy {
         const parsed = companyIdValue ? Number(companyIdValue) : NaN;
         const nextCompanyId = Number.isFinite(parsed) ? parsed : null;
 
-        if (this.activeCompanyId === nextCompanyId) {
-          return;
-        }
+        if (this.activeCompanyId === nextCompanyId) return;
 
         this.activeCompanyId = nextCompanyId;
 
@@ -177,12 +168,10 @@ export class PaymentReport implements OnInit, OnDestroy {
     this.barChartLoading = false;
     this.selectedYear = new Date().getFullYear();
     this.selectedMonths = 6;
-    // Keep static data visible even when no company is selected
     this.initializeStaticData();
   }
 
   private initializeStaticData() {
-    // Static data for Payment Method Breakdown
     this.totalPayments = 6;
     this.paymentMethodCounts = [
       { method: 'Cash', count: 3, percentage: 50.0 },
@@ -190,11 +179,9 @@ export class PaymentReport implements OnInit, OnDestroy {
       { method: 'Credit Card', count: 1, percentage: 16.7 },
     ];
 
-    // Update pie chart with static data
     this.pieChartData.labels = this.paymentMethodCounts.map((p) => p.method);
     this.pieChartData.datasets[0].data = this.paymentMethodCounts.map((p) => p.count);
 
-    // Static data for Payments Collected Over Time
     this.monthlyPayments = [
       { month: 'January', amount: 300 },
       { month: 'February', amount: 0 },
@@ -202,7 +189,6 @@ export class PaymentReport implements OnInit, OnDestroy {
       { month: 'April', amount: 1010 },
     ];
 
-    // Update bar chart with static data
     this.barChartData.labels = this.monthlyPayments.map((item) => item.month);
     this.barChartData.datasets[0].data = this.monthlyPayments.map((item) => item.amount);
   }
@@ -217,7 +203,6 @@ export class PaymentReport implements OnInit, OnDestroy {
           const data = response.data;
           this.totalPayments = data.totalPayments || 0;
 
-          // Map methodCounts object to array
           const methodCounts = data.methodCounts || {};
           const total = this.totalPayments;
 
@@ -227,10 +212,8 @@ export class PaymentReport implements OnInit, OnDestroy {
             percentage: total > 0 ? ((count as number) / total) * 100 : 0,
           }));
 
-          // Filter out methods with 0 count
           this.paymentMethodCounts = this.paymentMethodCounts.filter((p) => p.count > 0);
 
-          // Update pie chart
           this.pieChartData.labels = this.paymentMethodCounts.map((p) => p.method);
           this.pieChartData.datasets[0].data = this.paymentMethodCounts.map((p) => p.count);
 
@@ -256,13 +239,12 @@ export class PaymentReport implements OnInit, OnDestroy {
         if (response.statusCode === 200 && response.data) {
           const data = response.data;
 
-          // Map monthly data
           this.monthlyPayments = data.map((item: any) => ({
             month: item.month,
             amount: item.totalAmount || 0,
           }));
 
-          // Update bar chart
+          // ✅ Ensure chart is always updated from API data
           this.barChartData.labels = this.monthlyPayments.map((item) => item.month);
           this.barChartData.datasets[0].data = this.monthlyPayments.map((item) => item.amount);
 
@@ -294,7 +276,6 @@ export class PaymentReport implements OnInit, OnDestroy {
   }
 
   private formatPaymentMethod(method: string): string {
-    // Convert BANK_TRANSFER to "Bank Transfer", CASH to "Cash", etc.
     return method
       .split('_')
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -324,20 +305,26 @@ export class PaymentReport implements OnInit, OnDestroy {
   }
 
   hasNoMonthlyData(): boolean {
-    if (!this.monthlyPayments || this.monthlyPayments.length === 0) {
-      return true;
-    }
+    if (!this.monthlyPayments || this.monthlyPayments.length === 0) return true;
     return this.monthlyPayments.every((payment) => payment.amount === 0);
   }
 
+  toggleExportMenu() {
+    this.showExportMenu = !this.showExportMenu;
+  }
+
+  closeExportMenu() {
+    this.showExportMenu = false;
+  }
+
   async generatePdf() {
+    this.closeExportMenu();
     const element = document.getElementById('paymentReportCharts');
     if (!element) {
       console.error('Payment report charts not found.');
       return;
     }
 
-    // Temporarily show the filter summary for PDF generation
     const filterSummary = element.querySelector('.pdf-filter-summary') as HTMLElement;
     if (filterSummary) {
       filterSummary.style.display = 'block';
@@ -349,7 +336,6 @@ export class PaymentReport implements OnInit, OnDestroy {
       backgroundColor: '#ffffff',
     });
 
-    // Hide the filter summary again after capturing
     if (filterSummary) {
       filterSummary.style.display = 'none';
     }
@@ -375,6 +361,157 @@ export class PaymentReport implements OnInit, OnDestroy {
     }
 
     pdf.save('payment-report-charts.pdf');
+  }
+
+  exportToExcel() {
+    this.closeExportMenu();
+
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Payment Method Breakdown
+    const methodData = [
+      ['Payment Method Breakdown'],
+      ['Generated On:', this.getCurrentDate()],
+      ['Payment Method Period:', `${this.selectedMonths} Month(s)`],
+      ['Total Payments:', this.totalPayments],
+      [],
+      ['Payment Method', 'Count', 'Percentage'],
+      ...this.paymentMethodCounts.map((item) => [
+        item.method,
+        item.count,
+        `${item.percentage.toFixed(1)}%`,
+      ]),
+    ];
+
+    const wsMethod = XLSX.utils.aoa_to_sheet(methodData);
+    this.formatExcelSheet(wsMethod, methodData.length, 3);
+    XLSX.utils.book_append_sheet(wb, wsMethod, 'Payment Methods');
+
+    // Sheet 2: Payments Collected Over Time
+    const labelsFromChart = (this.barChartData.labels || []) as string[];
+    const valuesFromChart = (this.barChartData.datasets?.[0]?.data || []) as number[];
+
+    const finalMonthlyRows: Array<[string, number]> =
+      this.monthlyPayments?.length > 0
+        ? this.monthlyPayments.map((m) => [m.month, m.amount || 0])
+        : labelsFromChart.length > 0
+          ? labelsFromChart.map((label, i) => [label, Number(valuesFromChart[i] ?? 0)])
+          : [];
+
+    const monthlyData = [
+      ['Payments Collected Over Time'],
+      ['Generated On:', this.getCurrentDate()],
+      ['Year:', this.selectedYear],
+      [],
+      ['Month', 'Amount'],
+      ...finalMonthlyRows,
+    ];
+
+    const wsMonthly = XLSX.utils.aoa_to_sheet(monthlyData);
+    this.formatExcelSheet(wsMonthly, monthlyData.length, 2);
+    XLSX.utils.book_append_sheet(wb, wsMonthly, 'Monthly Payments');
+
+    XLSX.writeFile(wb, `payment-report-${this.formatDateForFilename()}.xlsx`);
+  }
+
+  exportToCSV() {
+    this.closeExportMenu();
+
+    const labelsFromChart = (this.barChartData.labels || []) as string[];
+    const valuesFromChart = (this.barChartData.datasets?.[0]?.data || []) as number[];
+
+    const finalMonthlyRows: Array<[string, number]> =
+      this.monthlyPayments?.length > 0
+        ? this.monthlyPayments.map((m) => [m.month, m.amount || 0])
+        : labelsFromChart.length > 0
+          ? labelsFromChart.map((label, i) => [label, Number(valuesFromChart[i] ?? 0)])
+          : [];
+
+    const csvData = [
+      ['Payment Reports - Export'],
+      ['Generated On:', this.getCurrentDate()],
+      ['Payment Method Period:', `${this.selectedMonths} Month(s)`],
+      ['Year:', this.selectedYear],
+      [],
+      ['PAYMENT METHOD BREAKDOWN'],
+      ['Total Payments:', this.totalPayments],
+      ['Payment Method', 'Count', 'Percentage'],
+      ...this.paymentMethodCounts.map((item) => [
+        item.method,
+        item.count,
+        `${item.percentage.toFixed(1)}%`,
+      ]),
+      [],
+      [],
+      ['PAYMENTS COLLECTED OVER TIME'],
+      ['Month', 'Amount'],
+      ...finalMonthlyRows,
+    ];
+
+    const csvContent = csvData
+      .map((row) =>
+        row
+          .map((cell) => {
+            const cellStr = String(cell);
+            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+              return `"${cellStr.replace(/"/g, '""')}"`;
+            }
+            return cellStr;
+          })
+          .join(','),
+      )
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `payment-report-${this.formatDateForFilename()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  private formatExcelSheet(ws: XLSX.WorkSheet, rowCount: number, colCount: number) {
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+
+    ws['!cols'] = [];
+    for (let i = 0; i <= colCount; i++) {
+      ws['!cols'].push({ wch: 20 });
+    }
+
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const titleCell = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (ws[titleCell]) {
+        ws[titleCell].s = {
+          font: { bold: true, sz: 14, color: { rgb: '000000' } },
+          fill: { fgColor: { rgb: 'E5E7EB' } },
+          alignment: { horizontal: 'left', vertical: 'center' },
+        };
+      }
+
+      const headerRow = 5;
+      const headerCell = XLSX.utils.encode_cell({ r: headerRow, c: C });
+      if (ws[headerCell]) {
+        ws[headerCell].s = {
+          font: { bold: true, color: { rgb: '000000' } },
+          fill: { fgColor: { rgb: 'F3F4F6' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+        };
+      }
+    }
+  }
+
+  private formatDateForFilename(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}${month}${day}-${hours}${minutes}`;
   }
 
   ngOnDestroy() {

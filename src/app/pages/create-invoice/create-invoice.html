@@ -5,7 +5,7 @@
       <button class="btn-cancel" routerLink="/admin/invoices">Cancel</button>
       <button class="btn-save-send" type="button" (click)="submitInvoice()" [disabled]="loading">
         <app-spinner *ngIf="loading"></app-spinner>
-        <span *ngIf="!loading">Save & Send</span>
+        <span *ngIf="!loading">Save</span>
       </button>
     </div>
   </div>

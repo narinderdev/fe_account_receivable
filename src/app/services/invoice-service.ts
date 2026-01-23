@@ -30,7 +30,7 @@ export class InvoiceService {
     const token = localStorage.getItem('logintoken');
     return new HttpHeaders({
       Authorization: `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true'
+      // 'ngrok-skip-browser-warning': 'true',
     });
   }
 
@@ -69,6 +69,20 @@ export class InvoiceService {
       `${this.baseUrl}/invoice/unpaid/company/${companyId}?${queryParams.join('&')}`,
       { headers },
     );
+  }
+
+  getDraftedInvoice(companyId: number): Observable<any> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.get<any>(`${this.baseUrl}/invoice/company/${companyId}/drafts`, {
+      headers,
+    });
+  }
+
+  approveInvoice(invoiceId: number): Observable<any> {
+    const headers = this.getAuthHeaders();
+    return this.http.post<any>(`${this.baseUrl}/invoice/approve/${invoiceId}`, null, {
+      headers,
+    });
   }
 
   createInvoice(customerId: number, data: CreateInvoiceRequest): Observable<InvoiceDetailResponse> {

@@ -165,6 +165,37 @@
     <h3>Import Customer List</h3>
 
     <div class="modal-body">
+      <!-- Download Template Section -->
+      <div class="template-section">
+        <p class="template-info">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          Download the template first to see the required format
+        </p>
+        <button 
+          class="download-template-btn" 
+          (click)="downloadTemplate()"
+          [disabled]="downloadingTemplate"
+        >
+          <ng-container *ngIf="!downloadingTemplate">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download Template
+          </ng-container>
+          <ng-container *ngIf="downloadingTemplate">
+            <app-spinner></app-spinner>
+          </ng-container>
+        </button>
+      </div>
+
+      <div class="divider"></div>
+
       <div class="form-group">
         <label for="companySelect">Select Company</label>
         <select
@@ -195,7 +226,14 @@
         (click)="csvInput.click()"
         [disabled]="!selectedCompanyId || uploadingCsv || loadingCompanies"
       >
-        <ng-container *ngIf="!uploadingCsv">Upload CSV</ng-container>
+        <ng-container *ngIf="!uploadingCsv">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Upload CSV
+        </ng-container>
         <ng-container *ngIf="uploadingCsv">
           <app-spinner></app-spinner>
         </ng-container>
@@ -203,7 +241,8 @@
     </div>
 
     <div class="modal-actions">
-      <button class="cancelBtn" (click)="closeImportModal()">Cancel</button>
+      <button class="cancelBtn" (click)="closeImportModal()">Close</button>
     </div>
   </div>
 </div>
+

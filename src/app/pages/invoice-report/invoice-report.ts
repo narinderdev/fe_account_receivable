@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { Invoice, InvoicePage } from '../../models/invoice.model';
@@ -38,9 +39,10 @@ export class InvoiceReport implements OnInit, OnDestroy {
   totalInvoices = 0;
   overdueBreakdown: OverdueBreakdown[] = [];
   selectedDateRange: string = 'LAST_1_MONTH';
-  selectedMonths: number = 6; // Default to 6 months for pie chart filter
+  selectedMonths: number = 6;
   pieChartLoading = false;
   barChartLoading = false;
+  showExportMenu = false;
 
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
@@ -61,7 +63,6 @@ export class InvoiceReport implements OnInit, OnDestroy {
     { label: '12 Months', value: 12 },
   ];
 
-  // Pie Chart Configuration
   pieChartData: ChartData<'doughnut'> = {
     labels: [],
     datasets: [
@@ -72,6 +73,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
       },
     ],
   };
+
   pieChartOptions: ChartConfiguration<'doughnut'>['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -93,7 +95,6 @@ export class InvoiceReport implements OnInit, OnDestroy {
     cutout: '65%',
   };
 
-  // Bar Chart Configuration
   barChartData: ChartData<'bar'> = {
     labels: [],
     datasets: [
@@ -105,6 +106,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
       },
     ],
   };
+
   barChartOptions: ChartConfiguration<'bar'>['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -142,11 +144,10 @@ export class InvoiceReport implements OnInit, OnDestroy {
     private invoiceService: InvoiceService,
     private invoiceReportService: InvoiceReportService,
     private cdr: ChangeDetectorRef,
-    private companySelection: CompanySelectionService
+    private companySelection: CompanySelectionService,
   ) {}
 
   ngOnInit() {
-    // Initialize with static data for demo
     this.initializeStaticData();
 
     this.companySelection.selectedCompanyId$
@@ -179,13 +180,11 @@ export class InvoiceReport implements OnInit, OnDestroy {
     this.selectedMonths = 6;
     this.pieChartLoading = false;
     this.barChartLoading = false;
-    // Keep static data visible even when no company is selected
     this.initializeStaticData();
     this.cdr.detectChanges();
   }
 
   private initializeStaticData() {
-    // Static data for Invoice Status Breakdown
     this.totalInvoices = 12;
     this.statusCounts = [
       { status: 'OPEN', count: 8, percentage: 66.7 },
@@ -194,7 +193,6 @@ export class InvoiceReport implements OnInit, OnDestroy {
       { status: 'WRITTEN_OFF', count: 1, percentage: 8.3 },
     ];
 
-    // Update pie chart with static data
     this.pieChartData.labels = this.statusCounts.map((s) => s.status);
     this.pieChartData.datasets[0].data = this.statusCounts.map((s) => s.count);
 
@@ -206,7 +204,6 @@ export class InvoiceReport implements OnInit, OnDestroy {
       { range: '>90 DAYS', count: 1 },
     ];
 
-    // Update bar chart with static data
     this.barChartData.labels = this.overdueBreakdown.map((item) => item.range);
     this.barChartData.datasets[0].data = this.overdueBreakdown.map((item) => item.count);
   }
@@ -217,10 +214,8 @@ export class InvoiceReport implements OnInit, OnDestroy {
 
     this.invoiceReportService.getInvoiceAging(companyId).subscribe({
       next: (response) => {
-        // Assuming response is in the structure provided
         const agingData = response.data;
 
-        // Prepare bar chart data
         this.barChartData.labels = ['Current', '0-30 Days', '31-60 Days', '61-90 Days', '90+ Days'];
         this.barChartData.datasets[0].data = [
           agingData.current,
@@ -253,7 +248,6 @@ export class InvoiceReport implements OnInit, OnDestroy {
         if (response.statusCode === 200 && response.data) {
           const data = response.data;
 
-          // Map API response to status counts
           this.totalInvoices = data.total || 0;
           this.statusCounts = [
             {
@@ -282,10 +276,8 @@ export class InvoiceReport implements OnInit, OnDestroy {
             },
           ];
 
-          // Filter out statuses with 0 count
           this.statusCounts = this.statusCounts.filter((s) => s.count > 0);
 
-          // Update pie chart
           this.pieChartData.labels = this.statusCounts.map((s) => s.status);
           this.pieChartData.datasets[0].data = this.statusCounts.map((s) => s.count);
 
@@ -325,7 +317,6 @@ export class InvoiceReport implements OnInit, OnDestroy {
       percentage: this.totalInvoices > 0 ? (count / this.totalInvoices) * 100 : 0,
     }));
 
-    // Update pie chart
     this.pieChartData.labels = this.statusCounts.map((s) => s.status);
     this.pieChartData.datasets[0].data = this.statusCounts.map((s) => s.count);
   }
@@ -369,7 +360,6 @@ export class InvoiceReport implements OnInit, OnDestroy {
       count,
     }));
 
-    // Update bar chart
     this.barChartData.labels = this.overdueBreakdown.map((item) => item.range);
     this.barChartData.datasets[0].data = this.overdueBreakdown.map((item) => item.count);
   }
@@ -469,28 +459,40 @@ export class InvoiceReport implements OnInit, OnDestroy {
   getStatusColor(status: string): string {
     const colors: Record<string, string> = {
       OPEN: '#3B82F6',
+      Open: '#3B82F6',
       PARTIAL: '#F59E0B',
+      Partial: '#F59E0B',
       PAID: '#10B981',
+      Paid: '#10B981',
       WRITTEN_OFF: '#EF4444',
+      'Written Off': '#EF4444',
     };
     return colors[status] || '#6B7280';
   }
 
   hasNoAgingData(): boolean {
-    if (!this.overdueBreakdown || this.overdueBreakdown.length === 0) {
+    if (!this.barChartData.datasets[0]?.data || this.barChartData.datasets[0].data.length === 0) {
       return true;
     }
-    return this.overdueBreakdown.every((item) => item.count === 0);
+    return this.barChartData.datasets[0].data.every((value) => value === 0);
+  }
+
+  toggleExportMenu() {
+    this.showExportMenu = !this.showExportMenu;
+  }
+
+  closeExportMenu() {
+    this.showExportMenu = false;
   }
 
   async generatePdf() {
+    this.closeExportMenu();
     const element = document.getElementById('invoiceReportCharts');
     if (!element) {
       console.error('Invoice report charts not found.');
       return;
     }
 
-    // Temporarily show the filter summary for PDF generation
     const filterSummary = element.querySelector('.pdf-filter-summary') as HTMLElement;
     if (filterSummary) {
       filterSummary.style.display = 'block';
@@ -502,7 +504,6 @@ export class InvoiceReport implements OnInit, OnDestroy {
       backgroundColor: '#ffffff',
     });
 
-    // Hide the filter summary again after capturing
     if (filterSummary) {
       filterSummary.style.display = 'none';
     }
@@ -528,6 +529,143 @@ export class InvoiceReport implements OnInit, OnDestroy {
     }
 
     pdf.save('invoice-report-charts.pdf');
+  }
+
+  exportToExcel() {
+    this.closeExportMenu();
+
+    const wb = XLSX.utils.book_new();
+
+    const statusData = [
+      ['Invoice Reports - Export'],
+      ['Generated On:', this.getCurrentDate()],
+      ['Date Range:', this.getSelectedDateRangeLabel()],
+      ['Status Period:', `${this.selectedMonths} Month(s)`],
+      [],
+      ['INVOICE STATUS BREAKDOWN'],
+      ['Total Invoices:', this.totalInvoices],
+      ['Status', 'Count', 'Percentage'],
+      ...this.statusCounts.map((item) => [
+        item.status,
+        item.count,
+        `${item.percentage.toFixed(1)}%`,
+      ]),
+    ];
+
+    const agingLabels = this.barChartData.labels || [];
+    const agingValues = this.barChartData.datasets[0]?.data || [];
+
+    const agingData = [
+      [],
+      [],
+      ['OVERDUE vs NOT DUE INVOICES'],
+      ['Age Range', 'Count'],
+      ...agingLabels.map((label, index) => [label, agingValues[index] || 0]),
+    ];
+
+    const combined = [...statusData, ...agingData];
+
+    const ws = XLSX.utils.aoa_to_sheet(combined);
+
+    // optional: set column widths
+    ws['!cols'] = [{ wch: 28 }, { wch: 18 }, { wch: 18 }];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Invoice Report');
+
+    XLSX.writeFile(wb, `invoice-report-${this.formatDateForFilename()}.xlsx`);
+  }
+
+  exportToCSV() {
+    this.closeExportMenu();
+
+    const agingLabels = this.barChartData.labels || [];
+    const agingValues = this.barChartData.datasets[0]?.data || [];
+
+    const csvData = [
+      ['Invoice Reports - Export'],
+      ['Generated On:', this.getCurrentDate()],
+      ['Date Range:', this.getSelectedDateRangeLabel()],
+      ['Status Period:', `${this.selectedMonths} Month(s)`],
+      [],
+      ['INVOICE STATUS BREAKDOWN'],
+      ['Total Invoices:', this.totalInvoices],
+      ['Status', 'Count', 'Percentage'],
+      ...this.statusCounts.map((item) => [
+        item.status,
+        item.count,
+        `${item.percentage.toFixed(1)}%`,
+      ]),
+      [],
+      [],
+      ['OVERDUE vs NOT DUE INVOICES'],
+      ['Age Range', 'Count'],
+      ...agingLabels.map((label, index) => [label, agingValues[index] || 0]),
+    ];
+
+    const csvContent = csvData
+      .map((row) =>
+        row
+          .map((cell) => {
+            const cellStr = String(cell);
+            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+              return `"${cellStr.replace(/"/g, '""')}"`;
+            }
+            return cellStr;
+          })
+          .join(','),
+      )
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `invoice-report-${this.formatDateForFilename()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  private formatExcelSheet(ws: XLSX.WorkSheet, rowCount: number, colCount: number) {
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+
+    ws['!cols'] = [];
+    for (let i = 0; i <= colCount; i++) {
+      ws['!cols'].push({ wch: 20 });
+    }
+
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const titleCell = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (ws[titleCell]) {
+        ws[titleCell].s = {
+          font: { bold: true, sz: 14, color: { rgb: '000000' } },
+          fill: { fgColor: { rgb: 'E5E7EB' } },
+          alignment: { horizontal: 'left', vertical: 'center' },
+        };
+      }
+
+      const headerRow = 5;
+      const headerCell = XLSX.utils.encode_cell({ r: headerRow, c: C });
+      if (ws[headerCell]) {
+        ws[headerCell].s = {
+          font: { bold: true, color: { rgb: '000000' } },
+          fill: { fgColor: { rgb: 'F3F4F6' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+        };
+      }
+    }
+  }
+
+  private formatDateForFilename(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}${month}${day}-${hours}${minutes}`;
   }
 
   ngOnDestroy() {

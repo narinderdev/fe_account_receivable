@@ -102,7 +102,7 @@ export class AddCustomer implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private toastr: ToastrService,
-    private companyService: CompanyService
+    private companyService: CompanyService,
   ) {}
 
   ngOnInit() {
@@ -152,7 +152,7 @@ export class AddCustomer implements OnInit {
       addressLine1: ['', Validators.required],
       city: ['', Validators.required],
       stateProvince: ['', Validators.required],
-      postalCode: ['', [Validators.required, Validators.pattern(/^[0-9]{1,6}$/)]], 
+      postalCode: ['', [Validators.required, Validators.pattern(/^[0-9]{1,6}$/)]],
       country: ['', Validators.required],
     });
 
@@ -179,13 +179,20 @@ export class AddCustomer implements OnInit {
       ibanAccountNumber: ['', Validators.required],
       bankIdentifierCode: ['', Validators.required],
       enableAchPayments: [false],
-      allowDirectDebit: [false], 
+      allowDirectDebit: [false],
     });
 
     // VAT
+    // this.vatForm = this.fb.group({
+    //   taxIdentificationNumber: ['', Validators.required],
+    //   taxAgencyName: ['', Validators.required],
+    //   enableVatCodes: [false],
+    //   vatCode: [''],
+    // });
+
     this.vatForm = this.fb.group({
-      taxIdentificationNumber: ['', Validators.required],
-      taxAgencyName: ['', Validators.required],
+      taxIdentificationNumber: [''],
+      taxAgencyName: [''],
       enableVatCodes: [false],
       vatCode: [''],
     });
@@ -238,7 +245,7 @@ export class AddCustomer implements OnInit {
   // ----------------------------------------------
   private getUpdatedFields<T extends GenericRecord>(
     formValue: T,
-    originalValue: Partial<T> | null | undefined
+    originalValue: Partial<T> | null | undefined,
   ) {
     const updated: Partial<T> = {};
 
@@ -399,10 +406,27 @@ export class AddCustomer implements OnInit {
   }
 
   // VAT → DUNNING
+  // VAT → DUNNING (Modified to allow skipping)
   saveVatData() {
     if (this.isEditMode) return;
 
     this.vatSubmitted = true;
+
+    // Check if form has any data
+    const hasVatData =
+      this.vatForm.value.taxIdentificationNumber ||
+      this.vatForm.value.taxAgencyName ||
+      this.vatForm.value.enableVatCodes ||
+      this.vatForm.value.vatCode;
+
+    // If no data is filled, skip the API call and move to next tab
+    if (!hasVatData) {
+      this.allowedTabs.push('dunning');
+      this.goToTab('dunning');
+      return;
+    }
+
+    // If data is filled but invalid, show errors
     if (this.vatForm.invalid || !this.createdCustomerId || this.isSavingVat) return;
 
     this.isSavingVat = true;
@@ -436,7 +460,6 @@ export class AddCustomer implements OnInit {
     });
   }
 
-  // UPDATE (kept completely intact)
   updateCustomer() {
     if (!this.isEditMode || !this.customerId || this.isUpdatingCustomer) return;
 
@@ -452,7 +475,7 @@ export class AddCustomer implements OnInit {
     const addr = this.addressForm.dirty
       ? this.getUpdatedFields(
           this.addressForm.value as GenericRecord,
-          (this.originalData?.address ?? {}) as GenericRecord
+          (this.originalData?.address ?? {}) as GenericRecord,
         )
       : {};
     if (Object.keys(addr).length) payload['addresses'] = addr;
@@ -460,7 +483,7 @@ export class AddCustomer implements OnInit {
     const app = this.applicationForm.dirty
       ? this.getUpdatedFields(
           this.applicationForm.value as GenericRecord,
-          (this.originalData?.cashApplication ?? {}) as GenericRecord
+          (this.originalData?.cashApplication ?? {}) as GenericRecord,
         )
       : {};
     if (Object.keys(app).length) payload['cashApplication'] = app;
@@ -468,7 +491,7 @@ export class AddCustomer implements OnInit {
     const st = this.statementForm.dirty
       ? this.getUpdatedFields(
           this.statementForm.value as GenericRecord,
-          (this.originalData?.statement ?? {}) as GenericRecord
+          (this.originalData?.statement ?? {}) as GenericRecord,
         )
       : {};
     if (Object.keys(st).length) payload['statement'] = st;
@@ -476,7 +499,7 @@ export class AddCustomer implements OnInit {
     const ef = this.eftForm.dirty
       ? this.getUpdatedFields(
           this.eftForm.value as GenericRecord,
-          (this.originalData?.eft ?? {}) as GenericRecord
+          (this.originalData?.eft ?? {}) as GenericRecord,
         )
       : {};
     if (Object.keys(ef).length) payload['eft'] = ef;
@@ -484,7 +507,7 @@ export class AddCustomer implements OnInit {
     const vt = this.vatForm.dirty
       ? this.getUpdatedFields(
           this.vatForm.value as GenericRecord,
-          (this.originalData?.vat ?? {}) as GenericRecord
+          (this.originalData?.vat ?? {}) as GenericRecord,
         )
       : {};
     if (Object.keys(vt).length) payload['vat'] = vt;
@@ -492,14 +515,15 @@ export class AddCustomer implements OnInit {
     const dn = this.dunningForm.dirty
       ? this.getUpdatedFields(
           this.dunningForm.value as GenericRecord,
-          (this.originalData?.dunning ?? {}) as GenericRecord
+          (this.originalData?.dunning ?? {}) as GenericRecord,
         )
       : {};
     if (Object.keys(dn).length) payload['dunningCredit'] = dn;
 
     if (!Object.keys(payload).length) {
-      alert('No changes detected.');
+      // No changes detected - just navigate back without showing toaster
       this.isUpdatingCustomer = false;
+      this.router.navigate(['/admin/customers']);
       return;
     }
 
@@ -509,7 +533,11 @@ export class AddCustomer implements OnInit {
         this.toastr.success('Customer details updated successfully.', 'Success');
         this.router.navigate(['/admin/customers']);
       },
-      error: () => (this.isUpdatingCustomer = false),
+      error: (err) => {
+        this.isUpdatingCustomer = false;
+        const message = err?.error?.message || 'Failed to update customer.';
+        this.toastr.error(message, 'Error');
+      },
     });
   }
 }

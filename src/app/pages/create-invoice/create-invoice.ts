@@ -69,14 +69,16 @@ export class CreateInvoice implements OnInit, OnDestroy {
     invoiceDate: this.today,
     dueDate: '',
     note: '',
-    items: [{ 
-      itemName: '', 
-      description: '', 
-      quantity: '1', 
-      rate: '', 
-      rateDisplay: '',
-      tax: '' 
-    }],
+    items: [
+      {
+        itemName: '',
+        description: '',
+        quantity: '1',
+        rate: '',
+        rateDisplay: '',
+        tax: '',
+      },
+    ],
   };
 
   constructor(
@@ -415,32 +417,11 @@ export class CreateInvoice implements OnInit, OnDestroy {
     // ---------------------------
     this.invoiceService.createInvoice(customerId, payload).subscribe({
       next: (res: InvoiceDetailResponse) => {
+        this.loading = false;
         this.toastr.success('Invoice created successfully.', 'Success');
-
-        const invoiceId = res?.data?.id;
-        if (!invoiceId) {
-          this.toastr.error('Could not get invoice ID from response.', 'Error');
-          this.loading = false;
-          return;
-        }
-
-        // ---------------------------
-        // SEND INVOICE
-        // ---------------------------
-        this.invoiceService.sendInvoice(invoiceId).subscribe({
-          next: () => {
-            this.toastr.success('Invoice sent successfully.', 'Success');
-            this.router.navigate(['/admin/invoices']);
-          },
-          error: (err) => {
-            const msg = err?.error?.message || 'Failed to send invoice.';
-            this.toastr.error(msg, 'Send Invoice Error');
-            this.loading = false;
-            this.cdr.detectChanges();
-          },
-        });
+        this.router.navigate(['/admin/invoices']);
+        this.cdr.detectChanges();
       },
-
       error: (err) => {
         const msg = err?.error?.message || 'Unknown error';
         this.toastr.error('Failed to create invoice: ' + msg, 'Error');

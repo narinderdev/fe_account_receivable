@@ -58,14 +58,14 @@ export class Customer {
     const headers = this.getAuthHeadersWithNgrok();
     return this.http.get<CustomerListResponse>(
       `${this.baseUrl}/customer/company/${companyId}?page=${page}&size=${size}`,
-      { headers }
+      { headers },
     );
   }
 
   createCustomer(
     companyId: number,
     data: CreateCustomerPayload,
-    userId?: number
+    userId?: number,
   ): Observable<ApiResponse<CustomerEntity>> {
     const headers = this.getAuthHeaders();
     const resolvedUserId = userId ?? this.getStoredUserId();
@@ -74,20 +74,24 @@ export class Customer {
       data,
       {
         headers,
-      }
+      },
     );
   }
 
   saveAddress(customerId: number, data: AddressPayload): Observable<ApiResponse<Address>> {
     const headers = this.getAuthHeaders();
-    return this.http.post<ApiResponse<Address>>(`${this.baseUrl}/customer/${customerId}/address`, data, {
-      headers,
-    });
+    return this.http.post<ApiResponse<Address>>(
+      `${this.baseUrl}/customer/${customerId}/address`,
+      data,
+      {
+        headers,
+      },
+    );
   }
 
   saveApplication(
     customerId: number,
-    data: CashApplicationPayload
+    data: CashApplicationPayload,
   ): Observable<ApiResponse<CashApplication>> {
     const headers = this.getAuthHeaders();
     return this.http.post<ApiResponse<CashApplication>>(
@@ -95,19 +99,16 @@ export class Customer {
       data,
       {
         headers,
-      }
+      },
     );
   }
 
-  saveStatement(
-    customerId: number,
-    data: StatementPayload
-  ): Observable<ApiResponse<Statement>> {
+  saveStatement(customerId: number, data: StatementPayload): Observable<ApiResponse<Statement>> {
     const headers = this.getAuthHeaders();
     return this.http.post<ApiResponse<Statement>>(
       `${this.baseUrl}/customer/${customerId}/statement`,
       data,
-      { headers }
+      { headers },
     );
   }
 
@@ -132,7 +133,7 @@ export class Customer {
       data,
       {
         headers,
-      }
+      },
     );
   }
 
@@ -165,17 +166,19 @@ export class Customer {
     return this.http.get<InvoiceDetailResponse>(`${this.baseUrl}/invoice/${id}`, { headers });
   }
 
-  uploadCsv(
-    companyId: number,
-    data: FormData
-  ): Observable<ApiResponse<CustomerCsvUploadResult>> {
+  uploadCsv(companyId: number, data: FormData): Observable<ApiResponse<CustomerCsvUploadResult>> {
     const headers = this.getAuthHeaders();
     return this.http.post<ApiResponse<CustomerCsvUploadResult>>(
       `${this.baseUrl}/customer/import-csv?companyId=${companyId}`,
       data,
       {
         headers,
-      }
+      },
     );
+  }
+
+  downloadTemplate(): Observable<any> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.get(`${this.baseUrl}/customer/import/template-metadata`, {headers});
   }
 }

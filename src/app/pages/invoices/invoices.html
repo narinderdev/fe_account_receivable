@@ -14,8 +14,8 @@
         />
       </div>
 
-      <!-- Period Dropdown -->
-      <div class="filter-field">
+      <!-- Period Dropdown (only for APPROVED tab) -->
+      <div class="filter-field" *ngIf="activeTab === 'APPROVED'">
         <label>Time Period</label>
         <select
           class="filter-input period-select"
@@ -28,8 +28,8 @@
         </select>
       </div>
 
-      <!-- Custom Date Fields (only show when Custom is selected) -->
-      <div class="filter-field" *ngIf="isCustomPeriod">
+      <!-- Custom Date Fields (only show when Custom is selected and on APPROVED tab) -->
+      <div class="filter-field" *ngIf="isCustomPeriod && activeTab === 'APPROVED'">
         <label>From Date</label>
         <input
           type="date"
@@ -39,7 +39,7 @@
         />
       </div>
 
-      <div class="filter-field" *ngIf="isCustomPeriod">
+      <div class="filter-field" *ngIf="isCustomPeriod && activeTab === 'APPROVED'">
         <label>To Date</label>
         <input
           type="date"
@@ -56,85 +56,197 @@
     </div>
   </div>
 
-  <!-- ===== LOADER (FULL WIDTH) ===== -->
-  <div *ngIf="loading" class="loader-wrapper">
-    <app-loader [visible]="loading"></app-loader>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab === 'APPROVED'" (click)="setTab('APPROVED')">
+      Approved
+    </button>
+    <button class="tab" [class.active]="activeTab === 'DRAFT'" (click)="setTab('DRAFT')">
+      Draft
+    </button>
   </div>
 
-  <!-- ===== TABLE (WHEN NOT LOADING) ===== -->
-  <div class="backgrount-table" *ngIf="!loading">
-    <table class="invoice-table">
-      <thead class="head">
-        <tr>
-          <th>INVOICE</th>
-          <th>CUSTOMER</th>
-          <th>DATE</th>
-          <th>DUE DATE</th>
-        </tr>
-      </thead>
+  <!-- Card Container -->
+  <div class="card">
+    <!-- Loader -->
+    <div *ngIf="activeTabState.loading" class="loader-block">
+      <app-loader [visible]="activeTabState.loading"></app-loader>
+    </div>
 
-      <tbody>
-        <!-- EMPTY STATE -->
-        <tr *ngIf="invoices.length === 0">
-          <td colspan="5" style="text-align: center; padding: 20px">No invoices found.</td>
-        </tr>
-
-        <!-- DATA ROWS -->
-        <tr
-          *ngFor="let inv of invoices; let i = index"
-          class="invoice-row"
-          (click)="openInvoice(inv.id)"
-        >
-          <td class="invoice-number">{{ inv.invoiceNumber }}</td>
-          <td>
-            <div class="customer-info">
-              <div
-                class="customer-initial"
-                [ngStyle]="{
-                  backgroundColor: getInitialColor(i).background,
-                  color: getInitialColor(i).color,
-                }"
-              >
-                {{ inv.customer.customerName[0] }}
-              </div>
-              <span class="customer-name">{{ inv.customer.customerName }}</span>
-            </div>
-          </td>
-          <td>{{ formatDate(inv.invoiceDate) }}</td>
-          <td>{{ formatDate(inv.dueDate) }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Pagination - Below Table -->
-    <div class="pagination-wrapper" *ngIf="totalPages > 1">
-      <div class="pagination-info">
-        Showing {{ totalItems === 0 ? 0 : currentPage * pageSize + 1 }} to
-        {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
+    <ng-container *ngIf="!activeTabState.loading">
+      <!-- Error State -->
+      <div *ngIf="activeTabState.error" class="empty-text error">
+        {{ activeTabState.error }}
       </div>
 
-      <div class="pagination-controls">
-        <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
-          <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
-        </button>
+      <!-- Empty State -->
+      <div *ngIf="!activeTabState.error && activeTabState.invoices.length === 0" class="empty-text">
+        {{
+          activeTab === 'APPROVED'
+            ? 'No approved invoices found.'
+            : 'No draft invoices have been created yet.'
+        }}
+      </div>
 
-        <button
-          *ngFor="let page of getPageNumbers()"
-          class="page-number-btn"
-          [class.active]="page === currentPage + 1"
-          [class.ellipsis]="page === -1"
-          (click)="page !== -1 && goToPage(page - 1)"
-          [disabled]="page === -1"
-        >
-          {{ page === -1 ? '...' : page }}
-        </button>
+      <!-- Table -->
+      <div class="table-scroll" *ngIf="!activeTabState.error && activeTabState.invoices.length > 0">
+        <table class="invoice-table">
+          <thead class="head">
+            <tr>
+              <th>INVOICE</th>
+              <th>CUSTOMER</th>
+              <th>DATE</th>
+              <th>DUE DATE</th>
+              <th *ngIf="activeTab === 'DRAFT'">ACTIONS</th>
+            </tr>
+          </thead>
 
+          <tbody>
+            <tr
+              *ngFor="let inv of activeTabState.invoices; let i = index"
+              class="invoice-row"
+              (click)="openInvoice(inv.id)"
+            >
+              <td class="invoice-number">{{ inv.invoiceNumber }}</td>
+              <td>
+                <div class="customer-info">
+                  <div
+                    class="customer-initial"
+                    [ngStyle]="{
+                      backgroundColor: getInitialColor(i).background,
+                      color: getInitialColor(i).color,
+                    }"
+                  >
+                    {{ inv.customer.customerName[0] }}
+                  </div>
+                  <span class="customer-name">{{ inv.customer.customerName }}</span>
+                </div>
+              </td>
+              <td>{{ formatDate(inv.invoiceDate) }}</td>
+              <td>{{ formatDate(inv.dueDate) }}</td>
+              <td *ngIf="activeTab === 'DRAFT'" class="actions-cell">
+                <button class="btn-approve" (click)="openApproveModal(inv, $event)">Approve</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div
+        class="pagination-wrapper"
+        *ngIf="activeTabState.totalPages > 1 && activeTabState.totalItems > 0"
+      >
+        <div class="pagination-info">
+          Showing
+          {{
+            activeTabState.totalItems === 0
+              ? 0
+              : activeTabState.currentPage * activeTabState.pageSize + 1
+          }}
+          to
+          {{
+            activeTabState.totalItems === 0
+              ? 0
+              : Math.min(
+                  (activeTabState.currentPage + 1) * activeTabState.pageSize,
+                  activeTabState.totalItems
+                )
+          }}
+          of {{ activeTabState.totalItems }} invoices
+        </div>
+
+        <div class="pagination-controls">
+          <button
+            class="page-nav-btn"
+            (click)="prevPage()"
+            [disabled]="activeTabState.currentPage === 0"
+          >
+            <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+          </button>
+
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number-btn"
+            [class.active]="page === activeTabState.currentPage + 1"
+            [class.ellipsis]="page === -1"
+            (click)="page !== -1 && goToPage(page - 1)"
+            [disabled]="page === -1"
+          >
+            {{ page === -1 ? '...' : page }}
+          </button>
+
+          <button
+            class="page-nav-btn"
+            (click)="nextPage()"
+            [disabled]="activeTabState.currentPage === activeTabState.totalPages - 1"
+          >
+            <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+          </button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Approve Invoice Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="approveModalOpen">
+    <div class="approve-modal">
+      <div class="modal-header">
+        <h2>Approve Invoice</h2>
         <button
-          class="page-nav-btn"
-          (click)="nextPage()"
-          [disabled]="currentPage === totalPages - 1"
+          class="btn-close"
+          (click)="closeApproveModal()"
+          aria-label="Close"
+          [disabled]="approvingInvoiceId"
         >
-          <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+          <span>&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="confirmation-text">Are you sure you want to approve this invoice?</p>
+        <div class="invoice-details" *ngIf="invoiceToApprove">
+          <div class="detail-row">
+            <span class="detail-label">Invoice #:</span>
+            <span class="detail-value">{{ invoiceToApprove.invoiceNumber }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Customer:</span>
+            <span class="detail-value">{{ invoiceToApprove.customer.customerName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Invoice Date:</span>
+            <span class="detail-value">{{ formatDate(invoiceToApprove.invoiceDate) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Due Date:</span>
+            <span class="detail-value">{{ formatDate(invoiceToApprove.dueDate) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Total Amount:</span>
+            <span class="detail-value">{{ invoiceToApprove.totalAmount | currency }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeApproveModal()"
+          [disabled]="approvingInvoiceId"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="confirmApproveInvoice()"
+          [disabled]="approvingInvoiceId"
+        >
+          <app-spinner *ngIf="approvingInvoiceId"></app-spinner>
+          <span *ngIf="!approvingInvoiceId">Confirm Approval</span>
+          <span *ngIf="approvingInvoiceId">Approving...</span>
         </button>
       </div>
     </div>

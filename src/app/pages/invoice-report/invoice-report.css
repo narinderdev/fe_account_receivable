@@ -65,7 +65,9 @@
   min-height: 42px;
   cursor: pointer;
   color: #374151;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .filter-select:hover {
@@ -78,7 +80,12 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.btn-generate {
+/* Export Dropdown Styles */
+.export-dropdown {
+  position: relative;
+}
+
+.btn-export {
   background: #3b82f6;
   color: white;
   padding: 10px 20px;
@@ -89,12 +96,71 @@
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   height: 42px;
   transition: background 0.2s;
 }
 
-.btn-generate:hover {
+.btn-export:hover {
   background: #2563eb;
+}
+
+.btn-export .chevron-icon {
+  transition: transform 0.2s;
+}
+
+.export-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.export-menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: white;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.15s;
+}
+
+.export-menu-item:hover {
+  background: #f9fafb;
+}
+
+.export-menu-item:active {
+  background: #f3f4f6;
+}
+
+.export-menu-item svg {
+  flex-shrink: 0;
+  color: #6b7280;
 }
 
 .loader-wrapper {
@@ -223,7 +289,9 @@
   background: #fff;
   cursor: pointer;
   color: #374151;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   min-width: 120px;
 }
 
