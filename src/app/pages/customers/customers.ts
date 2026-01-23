@@ -8,14 +8,11 @@ import {
 } from '@angular/core';
 import { Router, RouterLink, RouterModule } from '@angular/router';
 import { Customer } from '../../services/customer';
-import { CompanyService } from '../../services/company-service';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Loader } from '../../shared/loader/loader';
 import { Spinner } from '../../shared/spinner/spinner';
 import { ToastrService } from 'ngx-toastr';
 import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
-import { CompanyEntity } from '../../models/company.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
@@ -23,7 +20,7 @@ import { UserContextService } from '../../services/user-context.service';
 @Component({
   selector: 'app-customers',
   standalone: true,
-  imports: [RouterLink, CommonModule, RouterModule, FormsModule, Loader, Spinner],
+  imports: [RouterLink, CommonModule, RouterModule, Loader, Spinner],
   templateUrl: './customers.html',
   styleUrls: ['./customers.css'],
 })
@@ -38,9 +35,6 @@ export class Customers implements OnInit, OnDestroy {
 
   // Import Modal
   isImportModalOpen = false;
-  companies: CompanyEntity[] = [];
-  selectedCompanyId: number | null = null;
-  loadingCompanies = false;
 
   // CSV Upload
   @ViewChild('csvInput') csvInput!: ElementRef;
@@ -61,7 +55,6 @@ export class Customers implements OnInit, OnDestroy {
 
   constructor(
     private customerService: Customer,
-    private companyService: CompanyService,
     private companySelection: CompanySelectionService,
     private cdr: ChangeDetectorRef,
     private router: Router,
@@ -124,28 +117,6 @@ export class Customers implements OnInit, OnDestroy {
     });
   }
 
-  /** Load companies for dropdown */
-  loadCompanies() {
-    this.loadingCompanies = true;
-    this.cdr.detectChanges();
-
-    this.companyService.getCompany(0, 100).subscribe({
-      next: (res) => {
-        const data = res?.data as PaginatedResponse<CompanyEntity>;
-        this.companies = data.content;
-
-        this.loadingCompanies = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load companies', err);
-        this.loadingCompanies = false;
-        this.toastr.error('Failed to load companies!', 'Error');
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
   /* ---------------- IMPORT MODAL ---------------- */
 
   openImportModal() {
@@ -153,15 +124,17 @@ export class Customers implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select a company from the navbar before importing.', 'Warning');
+      return;
+    }
+
     this.isImportModalOpen = true;
-    this.selectedCompanyId = null;
-    this.loadCompanies();
+    this.cdr.detectChanges();
   }
 
   closeImportModal() {
     this.isImportModalOpen = false;
-    this.selectedCompanyId = null;
-    this.companies = [];
 
     if (this.csvInput) {
       this.csvInput.nativeElement.value = '';
@@ -183,7 +156,9 @@ export class Customers implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.selectedCompanyId) {
+    const companyId = this.activeCompanyId;
+
+    if (!companyId) {
       this.toastr.warning('Please select a company first!', 'Warning');
       return;
     }
@@ -194,7 +169,7 @@ export class Customers implements OnInit, OnDestroy {
     this.uploadingCsv = true;
     this.cdr.detectChanges();
 
-    this.customerService.uploadCsv(this.selectedCompanyId, formData).subscribe({
+    this.customerService.uploadCsv(companyId, formData).subscribe({
       next: () => {
         this.uploadingCsv = false;
         this.toastr.success('Customer CSV uploaded successfully!', 'Success');

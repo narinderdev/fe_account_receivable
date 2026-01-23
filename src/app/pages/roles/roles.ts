@@ -188,7 +188,7 @@ export class Roles implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private companySelection: CompanySelectionService,
     private userContext: UserContextService,
-    private router: Router
+    private router: Router,
   ) {
     this.canCreateRoles = this.userContext.hasPermission('CREATE_ROLES');
   }
@@ -240,6 +240,14 @@ export class Roles implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  formatRoleName(name: string | undefined | null): string {
+    if (!name) return '';
+    return name
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
   openModal() {
@@ -299,6 +307,53 @@ export class Roles implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  private getAllPermissionCodes(): string[] {
+    const all: string[] = [];
+
+    for (const row of this.permissionRows) {
+      const p = row.permissions;
+      (['view', 'create', 'update', 'delete', 'approve'] as const).forEach((k) => {
+        const code = p[k];
+        if (code) all.push(code);
+      });
+    }
+
+    // unique
+    return Array.from(new Set(all));
+  }
+
+  isAllPermissionsSelected(): boolean {
+    const selected = this.getSelectedPermissions();
+    const allCodes = this.getAllPermissionCodes();
+
+    // “all selected” means every permission code is present
+    return allCodes.every((c) => selected.includes(c));
+  }
+
+  isAssignAllIndeterminate(): boolean {
+    const selected = this.getSelectedPermissions();
+    const allCodes = this.getAllPermissionCodes();
+
+    const selectedCount = allCodes.filter((c) => selected.includes(c)).length;
+    return selectedCount > 0 && selectedCount < allCodes.length;
+  }
+
+  toggleAssignAll(event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    const control = this.addRoleForm.get('permissions');
+    if (!control) return;
+
+    if (checked) {
+      // Select everything
+      control.setValue(this.getAllPermissionCodes());
+    } else {
+      // Clear everything except required permission
+      control.setValue([this.REQUIRED_VIEW_COMPANY]);
+    }
+
+    this.cdr.detectChanges();
   }
 
   isPermissionSelected(code: string | undefined): boolean {

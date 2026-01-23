@@ -1,7 +1,6 @@
 import { ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Customer } from '../../services/customer';
-import { CompanyService } from '../../services/company-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
@@ -13,7 +12,6 @@ import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 describe('Customers', () => {
   const createComponent = (canCreate = true) => {
     const customerService = createSpyObj<Customer>('Customer', ['getCustomers']);
-    const companyService = createSpyObj<CompanyService>('CompanyService', ['getCompany']);
     const companySelection = {
       selectedCompanyId$: new Subject<number | null>(),
     } as unknown as CompanySelectionService;
@@ -25,7 +23,6 @@ describe('Customers', () => {
 
     return new Customers(
       customerService,
-      companyService,
       companySelection,
       cdr,
       router,

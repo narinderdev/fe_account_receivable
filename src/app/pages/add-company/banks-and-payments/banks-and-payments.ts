@@ -259,8 +259,8 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       'revenueRecognitionMode',
       'defaultTaxHandling',
       'defaultPaymentTerms',
-      'agingBucketConfig',
-      'dunningFrequencyDays',
+      // 'agingBucketConfig',
+      // 'dunningFrequencyDays',
       'defaultCreditLimit',
     ];
     if (!this.hasValues(financialSource, financialFields)) {
@@ -268,10 +268,10 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       return false;
     }
 
-    if (!this.hasMinValue(financialSource.dunningFrequencyDays, 1)) {
-      this.toastr.error('Financial & AR Settings requires a valid dunning frequency (>= 1).');
-      return false;
-    }
+    // if (!this.hasMinValue(financialSource.dunningFrequencyDays, 1)) {
+    //   this.toastr.error('Financial & AR Settings requires a valid dunning frequency (>= 1).');
+    //   return false;
+    // }
 
     if (!this.hasMinValue(financialSource.defaultCreditLimit, 0)) {
       this.toastr.error('Financial & AR Settings requires a valid credit limit (>= 0).');

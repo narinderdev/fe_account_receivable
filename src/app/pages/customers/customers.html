@@ -194,23 +194,17 @@
         </button>
       </div>
 
-      <div class="divider"></div>
+      <!-- <div class="divider"></div> -->
 
-      <div class="form-group">
-        <label for="companySelect">Select Company</label>
-        <select
-          id="companySelect"
-          [(ngModel)]="selectedCompanyId"
-          class="company-select"
-          [disabled]="loadingCompanies"
-        >
-          <option [value]="null" disabled selected>Choose a company</option>
-          <option *ngFor="let company of companies" [value]="company.id">
-            {{ company.legalName || company.tradeName }}
-          </option>
-        </select>
-        <p *ngIf="loadingCompanies" class="loading-text">Loading companies...</p>
-      </div>
+      <!-- <div class="form-group">
+        <label>Company</label>
+        <p class="loading-text" *ngIf="activeCompanyId; else noCompany">
+          Using company ID {{ activeCompanyId }} selected from the navbar.
+        </p>
+        <ng-template #noCompany>
+          <p class="loading-text">Select a company from the navbar to enable importing.</p>
+        </ng-template>
+      </div> -->
 
       <!-- Hidden file input -->
       <input
@@ -224,7 +218,7 @@
       <button
         class="upload-btn"
         (click)="csvInput.click()"
-        [disabled]="!selectedCompanyId || uploadingCsv || loadingCompanies"
+        [disabled]="!activeCompanyId || uploadingCsv"
       >
         <ng-container *ngIf="!uploadingCsv">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

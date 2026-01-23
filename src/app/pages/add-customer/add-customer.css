@@ -572,6 +572,24 @@ input:checked + .slider:hover {
   max-width: 300px;
 }
 
+.credit-settings-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.credit-settings-row .credit-limit-field {
+  max-width: 300px;
+  width: 100%;
+}
+
+.credit-settings-row .small-dropdown {
+  max-width: 250px;
+  width: 100%;
+}
+
+
 /* ---------------------------
  SMALL DROPDOWN
 ---------------------------- */

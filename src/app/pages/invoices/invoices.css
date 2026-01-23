@@ -258,6 +258,48 @@
   color: #111827;
 }
 
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.status-draft {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.status-sent {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-paid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-overdue {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-unknown {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.no-data-row {
+  text-align: center;
+  padding: 32px 12px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
 /* Pagination Wrapper */
 .pagination-wrapper {
   display: flex;

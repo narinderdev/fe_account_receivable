@@ -471,7 +471,7 @@
   border: 1px solid #bfdbfe;
   border-left: 4px solid #3b82f6;
   border-radius: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-size: 13px;
   color: #1e40af;
   line-height: 1.5;
@@ -518,7 +518,7 @@
 .divider {
   height: 1px;
   background: #e5e7eb;
-  margin: 20px 0;
+  margin: 10px 0;
 }
 
 .upload-btn svg {

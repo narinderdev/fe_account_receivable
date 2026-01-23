@@ -24,6 +24,30 @@
   margin-bottom: 10px;
 }
 
+.permissions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 👈 this is the key */
+  margin-bottom: 8px;
+}
+
+.assign-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+}
+
+.assign-all input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
 .btn-add:hover {
   background: #2563eb;
 }
@@ -152,12 +176,12 @@
   overflow-y: auto;
   padding-right: 8px;
   flex: 1;
-  scrollbar-width: none; 
+  scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
 .modal-body::-webkit-scrollbar {
-  display: none; 
+  display: none;
 }
 
 .form-field {

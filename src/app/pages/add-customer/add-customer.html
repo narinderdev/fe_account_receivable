@@ -29,24 +29,6 @@
         <form [formGroup]="mainForm" (ngSubmit)="(false)" (submit)="(false)">
           <div class="form-grid">
             <div class="form-field">
-              <label>Select Company <span class="color">*</span></label>
-
-              <select formControlName="companyId">
-                <option value="" disabled selected>Select a company</option>
-                <option *ngFor="let c of companies" [value]="c.id">
-                  {{ c.legalName }}
-                </option>
-              </select>
-
-              <div
-                class="error"
-                *ngIf="submitted && mainForm.controls['companyId'].hasError('required')"
-              >
-                Company is required.
-              </div>
-            </div>
-
-            <div class="form-field">
               <label>Customer Name <span class="color">*</span></label>
               <input type="text" formControlName="customerName" placeholder="Enter customer name" />
               <div class="error" *ngIf="submitted && mainForm.controls['customerName'].errors">
@@ -94,6 +76,43 @@
                   Invalid email format.
                 </span>
               </div>
+            </div>
+
+            <div class="form-field">
+              <label>Phone Number <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="phoneNumber"
+                placeholder="Enter 10-digit phone number"
+                (input)="onPhoneInput()"
+              />
+
+              <div class="error" *ngIf="submitted && mainForm.controls['phoneNumber'].errors">
+                <span *ngIf="mainForm.controls['phoneNumber'].hasError('required')">
+                  Phone Number is required.
+                </span>
+                <span *ngIf="mainForm.controls['phoneNumber'].hasError('pattern')">
+                  Enter a valid phone number.
+                </span>
+              </div>
+            </div>
+          </div>
+          <h2 class="section-title">Social Media</h2>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Facebook</label>
+              <input type="text" formControlName="facebook" placeholder="Facebook profile/link" />
+            </div>
+
+            <div class="form-field">
+              <label>Twitter</label>
+              <input type="text" formControlName="twitter" placeholder="Twitter profile/link" />
+            </div>
+
+            <div class="form-field">
+              <label>LinkedIn</label>
+              <input type="text" formControlName="linkedin" placeholder="LinkedIn profile/link" />
             </div>
           </div>
         </form>
@@ -597,19 +616,40 @@
             </label>
           </div>
 
-          <div class="form-field credit-limit-field">
-            <label>Credit Limit <span class="color">*</span></label>
-            <input type="number" formControlName="creditLimit" placeholder="5000.00" />
-            <div
-              class="error"
-              *ngIf="dunningSubmitted && dunningForm.controls['creditLimit'].errors"
-            >
-              <span *ngIf="dunningForm.controls['creditLimit'].hasError('required')">
-                Credit Limit is required.
-              </span>
-              <span *ngIf="dunningForm.controls['creditLimit'].hasError('min')">
-                Credit Limit must be positive.
-              </span>
+          <div class="credit-settings-row">
+            <div class="form-field credit-limit-field">
+              <label>Credit Limit <span class="color">*</span></label>
+              <input type="number" formControlName="creditLimit" placeholder="5000.00" />
+              <div
+                class="error"
+                *ngIf="dunningSubmitted && dunningForm.controls['creditLimit'].errors"
+              >
+                <span *ngIf="dunningForm.controls['creditLimit'].hasError('required')">
+                  Credit Limit is required.
+                </span>
+                <span *ngIf="dunningForm.controls['creditLimit'].hasError('min')">
+                  Credit Limit must be positive.
+                </span>
+              </div>
+            </div>
+
+            <div class="form-field small-dropdown">
+              <label>Payment Terms <span class="color">*</span></label>
+              <select formControlName="paymentTerms">
+                <option value="" disabled selected>Select payment terms</option>
+                <option value="due on receipt">Due on receipt</option>
+                <option value="Net 30">Net 30</option>
+                <option value="Net60">Net 60</option>
+                <option value="Net90">Net 90</option>
+              </select>
+              <div
+                class="error"
+                *ngIf="dunningSubmitted && dunningForm.controls['paymentTerms'].errors"
+              >
+                <span *ngIf="dunningForm.controls['paymentTerms'].hasError('required')">
+                  Payment Terms are required.
+                </span>
+              </div>
             </div>
           </div>
 

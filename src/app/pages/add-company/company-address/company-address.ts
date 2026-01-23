@@ -79,6 +79,7 @@ export class CompanyAddress implements OnInit, OnDestroy {
       ],
       addressCountry: ['', Validators.required],
       primaryContactName: ['', Validators.required],
+       position: ['', Validators.required],
       primaryContactEmail: [
         '',
         [Validators.required, Validators.pattern(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/)],

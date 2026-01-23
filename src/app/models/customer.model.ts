@@ -25,6 +25,7 @@ export interface Dunning {
   level3: string;
   level4: string;
   pastDue: string;
+  paymentTerms: string | null;
   placeOnCreditHold: boolean;
 }
 

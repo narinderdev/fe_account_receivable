@@ -1,13 +1,13 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Customer } from '../../services/customer';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { Spinner } from '../../shared/spinner/spinner';
 import { ToastrService } from 'ngx-toastr';
-import { CompanyService } from '../../services/company-service';
-import { CompanyEntity } from '../../models/company.model';
 import { CustomerEntity } from '../../models/customer.model';
+import { Subject, takeUntil } from 'rxjs';
+import { CompanySelectionService } from '../../services/company-selection.service';
 
 type TabKey =
   | 'main'
@@ -34,7 +34,7 @@ type GenericRecord = Record<string, unknown>;
   templateUrl: './add-customer.html',
   styleUrls: ['./add-customer.css'],
 })
-export class AddCustomer implements OnInit {
+export class AddCustomer implements OnInit, OnDestroy {
   activeTab: TabKey = 'main';
   pageTitle = 'New Customer';
   tabItems: Array<{ key: TabKey; label: string }> = [
@@ -50,8 +50,6 @@ export class AddCustomer implements OnInit {
   customerId: number | null = null;
   createdCustomerId: number | null = null;
   originalData: CustomerDetail | null = null;
-  companies: CompanyEntity[] = [];
-
   // TAB LOCKING FOR ADD MODE
   allowedTabs: TabKey[] = ['main'];
 
@@ -82,6 +80,7 @@ export class AddCustomer implements OnInit {
   isSavingVat = false;
   isSavingDunning = false;
   isUpdatingCustomer = false;
+  selectedCompanyId: string | null = null;
 
   private titleMap: Record<TabKey, string> = {
     main: 'Customer – Basic Info',
@@ -94,6 +93,8 @@ export class AddCustomer implements OnInit {
     dunning: 'Dunning / Credit',
   };
 
+  private destroy$ = new Subject<void>();
+
   constructor(
     private fb: FormBuilder,
     private customerService: Customer,
@@ -102,11 +103,10 @@ export class AddCustomer implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private toastr: ToastrService,
-    private companyService: CompanyService,
+    private companySelection: CompanySelectionService,
   ) {}
 
   ngOnInit() {
-    this.loadCompanies();
     const idParam = this.route.snapshot.params['id'];
     if (idParam) {
       this.isEditMode = true;
@@ -116,23 +116,14 @@ export class AddCustomer implements OnInit {
 
     this.initializeForms();
 
+    if (!this.isEditMode) {
+      this.initializeCompanySelection();
+    }
+
     if (this.isEditMode) {
       this.allowedTabs = ['main', 'address', 'eft', 'vat', 'dunning'];
       this.loadCustomerData();
     }
-  }
-
-  loadCompanies() {
-    this.companyService.getCompany(0, 100).subscribe({
-      next: (res) => {
-        const content = res?.data?.content;
-        this.companies = Array.isArray(content) ? content : [];
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Error loading companies', err);
-      },
-    });
   }
 
   initializeForms() {
@@ -145,6 +136,10 @@ export class AddCustomer implements OnInit {
       ],
       customerType: ['', [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)]],
       email: ['', [Validators.required, Validators.email]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
+      facebook: [''],
+      twitter: [''],
+      linkedin: [''],
     });
 
     // ADDRESS
@@ -203,12 +198,20 @@ export class AddCustomer implements OnInit {
       creditLimit: ['', [Validators.required, Validators.min(0)]],
       dunningLevel: ['', Validators.required],
       pastDue: ['', Validators.required],
+      paymentTerms: ['', Validators.required],
       level1: ['', Validators.required],
       level2: ['', Validators.required],
       level3: ['', Validators.required],
       level4: ['', Validators.required],
     });
   }
+  
+  onPhoneInput() {
+  let value = this.mainForm.get('phoneNumber')?.value || '';
+  value = value.replace(/\D/g, '').slice(0, 10);
+  this.mainForm.get('phoneNumber')?.setValue(value, { emitEvent: false });
+}
+
 
   limitPostalCode(event: Event) {
     const input = event.target as HTMLInputElement | null;
@@ -302,11 +305,27 @@ export class AddCustomer implements OnInit {
     if (this.isEditMode) return;
 
     this.submitted = true;
-    if (this.mainForm.invalid || this.isSavingMain) return;
+    if (this.mainForm.invalid || this.isSavingMain) {
+      if (!this.mainForm.value.companyId) {
+        this.toastr.error(
+          'Please select a company from the navbar before adding a customer.',
+          'Company Required',
+        );
+      }
+      return;
+    }
 
     this.isSavingMain = true;
 
-    const companyId = this.mainForm.value.companyId;
+    const companyId = Number(this.mainForm.value.companyId);
+    if (!Number.isFinite(companyId) || companyId <= 0) {
+      this.isSavingMain = false;
+      this.toastr.error(
+        'Please select a company from the navbar before adding a customer.',
+        'Company Required',
+      );
+      return;
+    }
 
     this.customerService.createCustomer(companyId, this.mainForm.value).subscribe({
       next: (res) => {
@@ -539,5 +558,40 @@ export class AddCustomer implements OnInit {
         this.toastr.error(message, 'Error');
       },
     });
+  }
+
+  private initializeCompanySelection() {
+    this.selectedCompanyId = this.companySelection.getSelectedCompanyId();
+    this.applySelectedCompanyId(this.selectedCompanyId);
+
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      this.selectedCompanyId = id;
+      this.applySelectedCompanyId(id);
+    });
+  }
+
+  private applySelectedCompanyId(id: string | null) {
+    const control = this.mainForm?.get('companyId');
+    if (!control) return;
+
+    if (!id) {
+      control.reset('', { emitEvent: false });
+      return;
+    }
+
+    const parsed = Number(id);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      control.reset('', { emitEvent: false });
+      return;
+    }
+
+    control.setValue(parsed, { emitEvent: false });
+    control.markAsPristine();
+    control.updateValueAndValidity({ emitEvent: false });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

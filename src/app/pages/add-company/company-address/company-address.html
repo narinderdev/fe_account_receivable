@@ -95,6 +95,16 @@
           </div>
 
           <div class="form-field">
+            <label>Position <span class="color">*</span></label>
+            <input type="text" formControlName="position" placeholder="e.g. AR Manager" />
+            <div class="error" *ngIf="submitted && addressForm.get('position')?.errors">
+              <small *ngIf="addressForm.get('position')?.hasError('required')"
+                >Position is required</small
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
             <label>Contact Email <span class="color">*</span></label>
             <input type="email" formControlName="primaryContactEmail" (input)="onEmailInput()" />
             <div class="error" *ngIf="submitted && addressForm.get('primaryContactEmail')?.errors">
@@ -135,7 +145,10 @@
               <option>USA</option>
               <option>UK</option>
             </select>
-            <div class="error" *ngIf="submitted && addressForm.get('primaryContactCountry')?.errors">
+            <div
+              class="error"
+              *ngIf="submitted && addressForm.get('primaryContactCountry')?.errors"
+            >
               <small *ngIf="addressForm.get('primaryContactCountry')?.hasError('required')"
                 >Country is required</small
               >

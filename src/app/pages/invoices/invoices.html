@@ -1,5 +1,4 @@
 <div class="invoice-container">
-  <!-- Search & Filters -->
   <div class="search-card">
     <div class="search-card-body">
       <div class="search-input">
@@ -14,41 +13,6 @@
         />
       </div>
 
-      <!-- Period Dropdown (only for APPROVED tab) -->
-      <div class="filter-field" *ngIf="activeTab === 'APPROVED'">
-        <label>Time Period</label>
-        <select
-          class="filter-input period-select"
-          [(ngModel)]="selectedPeriod"
-          (ngModelChange)="onPeriodChange()"
-        >
-          <option *ngFor="let option of periodOptions" [value]="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Custom Date Fields (only show when Custom is selected and on APPROVED tab) -->
-      <div class="filter-field" *ngIf="isCustomPeriod && activeTab === 'APPROVED'">
-        <label>From Date</label>
-        <input
-          type="date"
-          class="filter-input"
-          [(ngModel)]="fromDate"
-          (ngModelChange)="handleFromDateChange($event)"
-        />
-      </div>
-
-      <div class="filter-field" *ngIf="isCustomPeriod && activeTab === 'APPROVED'">
-        <label>To Date</label>
-        <input
-          type="date"
-          class="filter-input"
-          [(ngModel)]="toDate"
-          (ngModelChange)="handleToDateChange($event)"
-        />
-      </div>
-
       <button class="btn-new" routerLink="create" *ngIf="canCreateInvoice">
         <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
         New Invoice
@@ -56,40 +20,17 @@
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab" [class.active]="activeTab === 'APPROVED'" (click)="setTab('APPROVED')">
-      Approved
-    </button>
-    <button class="tab" [class.active]="activeTab === 'DRAFT'" (click)="setTab('DRAFT')">
-      Draft
-    </button>
-  </div>
-
-  <!-- Card Container -->
   <div class="card">
-    <!-- Loader -->
-    <div *ngIf="activeTabState.loading" class="loader-block">
-      <app-loader [visible]="activeTabState.loading"></app-loader>
+    <div *ngIf="state.loading" class="loader-block">
+      <app-loader [visible]="state.loading"></app-loader>
     </div>
 
-    <ng-container *ngIf="!activeTabState.loading">
-      <!-- Error State -->
-      <div *ngIf="activeTabState.error" class="empty-text error">
-        {{ activeTabState.error }}
+    <ng-container *ngIf="!state.loading">
+      <div *ngIf="state.error" class="empty-text error">
+        {{ state.error }}
       </div>
 
-      <!-- Empty State -->
-      <div *ngIf="!activeTabState.error && activeTabState.invoices.length === 0" class="empty-text">
-        {{
-          activeTab === 'APPROVED'
-            ? 'No approved invoices found.'
-            : 'No draft invoices have been created yet.'
-        }}
-      </div>
-
-      <!-- Table -->
-      <div class="table-scroll" *ngIf="!activeTabState.error && activeTabState.invoices.length > 0">
+      <div class="table-scroll" *ngIf="!state.error">
         <table class="invoice-table">
           <thead class="head">
             <tr>
@@ -97,78 +38,84 @@
               <th>CUSTOMER</th>
               <th>DATE</th>
               <th>DUE DATE</th>
-              <th *ngIf="activeTab === 'DRAFT'">ACTIONS</th>
+              <th>STATUS</th>
+              <th>ACTIONS</th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody *ngIf="state.invoices.length > 0; else noInvoices">
             <tr
-              *ngFor="let inv of activeTabState.invoices; let i = index"
+              *ngFor="let inv of state.invoices; let i = index"
               class="invoice-row"
               (click)="openInvoice(inv.id)"
             >
               <td class="invoice-number">{{ inv.invoiceNumber }}</td>
+
               <td>
                 <div class="customer-info">
-                  <div
-                    class="customer-initial"
-                    [ngStyle]="{
-                      backgroundColor: getInitialColor(i).background,
-                      color: getInitialColor(i).color,
-                    }"
-                  >
-                    {{ inv.customer.customerName[0] }}
+                  <div class="customer-initial" [ngStyle]="getInitialColor(i)">
+                    {{ getCustomerInitial(inv.customer.customerName) }}
                   </div>
-                  <span class="customer-name">{{ inv.customer.customerName }}</span>
+                  <span class="customer-name">
+                    {{ formatCustomerName(inv.customer.customerName) }}
+                  </span>
                 </div>
               </td>
+
               <td>{{ formatDate(inv.invoiceDate) }}</td>
               <td>{{ formatDate(inv.dueDate) }}</td>
-              <td *ngIf="activeTab === 'DRAFT'" class="actions-cell">
-                <button class="btn-approve" (click)="openApproveModal(inv, $event)">Approve</button>
+
+              <td>
+                <span class="status-chip" [ngClass]="getStatusClass(inv.status)">
+                  {{ formatStatus(inv.status) }}
+                </span>
+              </td>
+
+              <td class="actions-cell">
+                <button
+                  *ngIf="isDraft(inv)"
+                  class="btn-approve"
+                  (click)="openApproveModal(inv, $event)"
+                >
+                  Approve
+                </button>
+
+                <span *ngIf="!isDraft(inv)" class="muted">—</span>
               </td>
             </tr>
           </tbody>
+          <ng-template #noInvoices>
+            <tbody>
+              <tr>
+                <td colspan="6" class="no-data-row">No invoices found.</td>
+              </tr>
+            </tbody>
+          </ng-template>
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div
-        class="pagination-wrapper"
-        *ngIf="activeTabState.totalPages > 1 && activeTabState.totalItems > 0"
-      >
+      <div class="pagination-wrapper" *ngIf="state.totalPages > 1 && state.totalItems > 0">
         <div class="pagination-info">
           Showing
-          {{
-            activeTabState.totalItems === 0
-              ? 0
-              : activeTabState.currentPage * activeTabState.pageSize + 1
-          }}
+          {{ state.totalItems === 0 ? 0 : state.currentPage * state.pageSize + 1 }}
           to
           {{
-            activeTabState.totalItems === 0
+            state.totalItems === 0
               ? 0
-              : Math.min(
-                  (activeTabState.currentPage + 1) * activeTabState.pageSize,
-                  activeTabState.totalItems
-                )
+              : Math.min((state.currentPage + 1) * state.pageSize, state.totalItems)
           }}
-          of {{ activeTabState.totalItems }} invoices
+          of {{ state.totalItems }} invoices
         </div>
 
         <div class="pagination-controls">
-          <button
-            class="page-nav-btn"
-            (click)="prevPage()"
-            [disabled]="activeTabState.currentPage === 0"
-          >
+          <button class="page-nav-btn" (click)="prevPage()" [disabled]="state.currentPage === 0">
             <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
           </button>
 
           <button
             *ngFor="let page of getPageNumbers()"
             class="page-number-btn"
-            [class.active]="page === activeTabState.currentPage + 1"
+            [class.active]="page === state.currentPage + 1"
             [class.ellipsis]="page === -1"
             (click)="page !== -1 && goToPage(page - 1)"
             [disabled]="page === -1"
@@ -179,7 +126,7 @@
           <button
             class="page-nav-btn"
             (click)="nextPage()"
-            [disabled]="activeTabState.currentPage === activeTabState.totalPages - 1"
+            [disabled]="state.currentPage === state.totalPages - 1"
           >
             <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
           </button>
@@ -205,6 +152,7 @@
 
       <div class="modal-body">
         <p class="confirmation-text">Are you sure you want to approve this invoice?</p>
+
         <div class="invoice-details" *ngIf="invoiceToApprove">
           <div class="detail-row">
             <span class="detail-label">Invoice #:</span>
@@ -238,6 +186,7 @@
         >
           Cancel
         </button>
+
         <button
           type="button"
           class="btn-primary"
