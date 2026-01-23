@@ -26,12 +26,12 @@
   margin-bottom: 24px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-  overflow: hidden;
   padding: 20px;
   display: flex;
   gap: 16px;
   align-items: center;
   flex-wrap: wrap;
+  position: relative;
 }
 
 /* Selects */
@@ -57,11 +57,16 @@
   border-color: #9ca3af;
 }
 
-/* Generate button */
-.btn-generate {
+/* Export Dropdown Styles */
+.export-dropdown {
+  position: relative;
+  margin-left: auto;
+}
+
+.btn-export {
   background: #3b82f6;
   color: white;
-  padding: 8px 20px;
+  padding: 10px 20px;
   border: none;
   cursor: pointer;
   font-size: 14px;
@@ -69,10 +74,71 @@
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+  height: 42px;
+  transition: background 0.2s;
 }
 
-.btn-generate:hover {
-  background: #3a6ec7;
+.btn-export:hover {
+  background: #2563eb;
+}
+
+.btn-export .chevron-icon {
+  transition: transform 0.2s;
+}
+
+.export-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 9999;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.export-menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: white;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.15s;
+}
+
+.export-menu-item:hover {
+  background: #f9fafb;
+}
+
+.export-menu-item:active {
+  background: #f3f4f6;
+}
+
+.export-menu-item svg {
+  flex-shrink: 0;
+  color: #6b7280;
 }
 
 /* Table card wrapper */
@@ -243,8 +309,12 @@ tbody td app-loader {
   }
 
   .filters-row select,
-  .btn-generate {
+  .btn-export {
     width: 100%;
+  }
+
+  .export-dropdown {
+    margin-left: 0;
   }
 }
 
@@ -253,7 +323,7 @@ tbody td app-loader {
     padding: 20px 12px;
   }
 
-  .btn-generate {
+  .btn-export {
     width: 100%;
   }
 }

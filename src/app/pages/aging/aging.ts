@@ -6,6 +6,7 @@ import { Customer } from '../../services/customer';
 import { Loader } from '../../shared/loader/loader';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
 import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
@@ -34,6 +35,7 @@ interface SelectOption {
 })
 export class Aging implements OnInit, OnDestroy {
   loading = false;
+  showExportMenu = false;
 
   customers: SelectOption[] = [{ label: 'All Customers', value: '' }];
 
@@ -60,40 +62,37 @@ export class Aging implements OnInit, OnDestroy {
     private agingService: AgingService,
     private customerService: Customer,
     private cdr: ChangeDetectorRef,
-    private companySelection: CompanySelectionService
+    private companySelection: CompanySelectionService,
   ) {}
 
   ngOnInit() {
-    this.companySelection.selectedCompanyId$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((id) => {
-        const parsed = id ? Number(id) : NaN;
-        const nextId = Number.isFinite(parsed) ? parsed : null;
+    this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
+      const parsed = id ? Number(id) : NaN;
+      const nextId = Number.isFinite(parsed) ? parsed : null;
 
-        if (this.activeCompanyId === nextId) {
-          return;
-        }
+      if (this.activeCompanyId === nextId) {
+        return;
+      }
 
-        this.activeCompanyId = nextId;
+      this.activeCompanyId = nextId;
 
-        if (this.activeCompanyId) {
-          this.loadCustomers(this.activeCompanyId);
-          this.loadAgingData(this.activeCompanyId);
-        } else {
-          this.customers = [{ label: 'All Customers', value: '' }];
-          this.selectedCustomer = '';
-          this.agingData = [];
-          this.allRows = [];
-          this.totalPages = 0;
-          this.totalItems = 0;
-          this.currentPage = 0;
-          this.loading = false;
-          this.cdr.detectChanges();
-        }
-      });
+      if (this.activeCompanyId) {
+        this.loadCustomers(this.activeCompanyId);
+        this.loadAgingData(this.activeCompanyId);
+      } else {
+        this.customers = [{ label: 'All Customers', value: '' }];
+        this.selectedCustomer = '';
+        this.agingData = [];
+        this.allRows = [];
+        this.totalPages = 0;
+        this.totalItems = 0;
+        this.currentPage = 0;
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
-  /** GET INITIAL COLOR BASED ON ROW INDEX (CYCLING PALETTE) */
   getInitialColor(index: number): { background: string; color: string } {
     const palette = [
       { background: '#DBEAFE', color: '#2563EB' },
@@ -108,7 +107,6 @@ export class Aging implements OnInit, OnDestroy {
     return palette[colorIndex];
   }
 
-  /** LOAD CUSTOMERS INTO DROPDOWN */
   loadCustomers(companyId: number) {
     this.loading = true;
     this.cdr.detectChanges();
@@ -135,7 +133,6 @@ export class Aging implements OnInit, OnDestroy {
     });
   }
 
-  /** INITIAL LOAD */
   loadAgingData(companyId: number) {
     this.loading = true;
     this.cdr.detectChanges();
@@ -153,24 +150,28 @@ export class Aging implements OnInit, OnDestroy {
     });
   }
 
-  /** AUTO CALL WHEN CUSTOMER SELECTED */
   onCustomerChange() {
     this.loading = true;
     this.cdr.detectChanges();
-
     this.fetchWithFilters();
   }
 
-  /** AUTO CALL WHEN STATUS SELECTED */
   onStatusChange() {
     this.loading = true;
     this.cdr.detectChanges();
-
     this.fetchWithFilters();
   }
 
-  /** APPLY FILTERS WHEN CLICKING PDF */
+  toggleExportMenu() {
+    this.showExportMenu = !this.showExportMenu;
+  }
+
+  closeExportMenu() {
+    this.showExportMenu = false;
+  }
+
   async generatePdf() {
+    this.closeExportMenu();
     const element = document.getElementById('agingTable');
 
     if (!element) {
@@ -184,11 +185,9 @@ export class Aging implements OnInit, OnDestroy {
     });
 
     const imgData = canvas.toDataURL('image/png');
-
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-
     const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
@@ -206,6 +205,190 @@ export class Aging implements OnInit, OnDestroy {
     }
 
     pdf.save('aging-report.pdf');
+  }
+
+  exportToExcel() {
+    this.closeExportMenu();
+
+    const wb = XLSX.utils.book_new();
+
+    // Prepare data for export - use ALL rows, not just current page
+    const exportData = [
+      ['Customer Aging Report'],
+      ['Generated On:', this.getCurrentDate()],
+      ['Customer Filter:', this.getSelectedCustomerLabel()],
+      ['Status Filter:', this.getSelectedStatusLabel()],
+      ['Total Records:', this.totalItems],
+      [],
+      ['Customer', 'Total Due', 'Current', '1-30 Days', '31-60 Days', '>90 Days'],
+      ...this.allRows.map((row) => [
+        row.customer,
+        row.totalDue,
+        row.current,
+        row.days1to30,
+        row.days31to60,
+        row.days90plus,
+      ]),
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+    // Format the sheet
+    this.formatExcelSheet(ws, exportData.length, 6);
+
+    // Add totals row
+    const totals = this.calculateTotals();
+    const totalsRow = [
+      'TOTAL',
+      totals.totalDue,
+      totals.current,
+      totals.days1to30,
+      totals.days31to60,
+      totals.days90plus,
+    ];
+
+    XLSX.utils.sheet_add_aoa(ws, [totalsRow], { origin: -1 });
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Aging Report');
+    XLSX.writeFile(wb, `aging-report-${this.formatDateForFilename()}.xlsx`);
+  }
+
+  exportToCSV() {
+    this.closeExportMenu();
+
+    // Prepare CSV data - use ALL rows, not just current page
+    const csvData = [
+      ['Customer Aging Report'],
+      ['Generated On:', this.getCurrentDate()],
+      ['Customer Filter:', this.getSelectedCustomerLabel()],
+      ['Status Filter:', this.getSelectedStatusLabel()],
+      ['Total Records:', this.totalItems],
+      [],
+      ['Customer', 'Total Due', 'Current', '1-30 Days', '31-60 Days', '>90 Days'],
+      ...this.allRows.map((row) => [
+        row.customer,
+        row.totalDue,
+        row.current,
+        row.days1to30,
+        row.days31to60,
+        row.days90plus,
+      ]),
+    ];
+
+    // Add totals row
+    const totals = this.calculateTotals();
+    csvData.push([
+      'TOTAL',
+      totals.totalDue,
+      totals.current,
+      totals.days1to30,
+      totals.days31to60,
+      totals.days90plus,
+    ]);
+
+    const csvContent = csvData
+      .map((row) =>
+        row
+          .map((cell) => {
+            const cellStr = String(cell);
+            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+              return `"${cellStr.replace(/"/g, '""')}"`;
+            }
+            return cellStr;
+          })
+          .join(','),
+      )
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `aging-report-${this.formatDateForFilename()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  private calculateTotals() {
+    return this.allRows.reduce(
+      (acc, row) => ({
+        totalDue: acc.totalDue + row.totalDue,
+        current: acc.current + row.current,
+        days1to30: acc.days1to30 + row.days1to30,
+        days31to60: acc.days31to60 + row.days31to60,
+        days90plus: acc.days90plus + row.days90plus,
+      }),
+      {
+        totalDue: 0,
+        current: 0,
+        days1to30: 0,
+        days31to60: 0,
+        days90plus: 0,
+      },
+    );
+  }
+
+  private getSelectedCustomerLabel(): string {
+    const customer = this.customers.find((c) => c.value === this.selectedCustomer);
+    return customer ? customer.label : 'All Customers';
+  }
+
+  private getSelectedStatusLabel(): string {
+    const status = this.statuses.find((s) => s.value === this.selectedStatus);
+    return status ? status.label : 'All Statuses';
+  }
+
+  private getCurrentDate(): string {
+    return new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  private formatExcelSheet(ws: XLSX.WorkSheet, rowCount: number, colCount: number) {
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+
+    ws['!cols'] = [];
+    for (let i = 0; i <= colCount; i++) {
+      ws['!cols'].push({ wch: i === 0 ? 30 : 15 });
+    }
+
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const titleCell = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (ws[titleCell]) {
+        ws[titleCell].s = {
+          font: { bold: true, sz: 14, color: { rgb: '000000' } },
+          fill: { fgColor: { rgb: 'E5E7EB' } },
+          alignment: { horizontal: 'left', vertical: 'center' },
+        };
+      }
+
+      const headerRow = 6;
+      const headerCell = XLSX.utils.encode_cell({ r: headerRow, c: C });
+      if (ws[headerCell]) {
+        ws[headerCell].s = {
+          font: { bold: true, color: { rgb: '000000' } },
+          fill: { fgColor: { rgb: 'F3F4F6' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+        };
+      }
+    }
+  }
+
+  private formatDateForFilename(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}${month}${day}-${hours}${minutes}`;
   }
 
   private fetchWithFilters() {
