@@ -13,6 +13,39 @@
         />
       </div>
 
+      <div class="filter-field">
+        <label>Time Period</label>
+        <select
+          class="filter-input period-select"
+          [(ngModel)]="selectedPeriod"
+          (ngModelChange)="onPeriodChange()"
+        >
+          <option *ngFor="let option of periodOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-field" *ngIf="isCustomPeriod">
+        <label>From Date</label>
+        <input
+          type="date"
+          class="filter-input"
+          [(ngModel)]="fromDate"
+          (ngModelChange)="handleFromDateChange($event)"
+        />
+      </div>
+
+      <div class="filter-field" *ngIf="isCustomPeriod">
+        <label>To Date</label>
+        <input
+          type="date"
+          class="filter-input"
+          [(ngModel)]="toDate"
+          (ngModelChange)="handleToDateChange($event)"
+        />
+      </div>
+
       <button class="btn-new" routerLink="create" *ngIf="canCreateInvoice">
         <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
         New Invoice

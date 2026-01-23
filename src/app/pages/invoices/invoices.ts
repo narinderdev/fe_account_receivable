@@ -33,6 +33,10 @@ interface InvoiceState {
 export class Invoices implements OnInit, OnDestroy {
   searchName: string = '';
   Math = Math;
+  selectedPeriod: string = '12';
+  isCustomPeriod = false;
+  fromDate: string | null = null;
+  toDate: string | null = null;
 
   state: InvoiceState = this.buildInitialState();
 
@@ -44,6 +48,14 @@ export class Invoices implements OnInit, OnDestroy {
   approvingInvoiceId: number | null = null;
   approveModalOpen = false;
   invoiceToApprove: Invoice | null = null;
+
+  periodOptions = [
+    { value: '1', label: 'Last 1 Month' },
+    { value: '2', label: 'Last 2 Months' },
+    { value: '6', label: 'Last 6 Months' },
+    { value: '12', label: 'Last 12 Months' },
+    { value: 'custom', label: 'Custom Date Range' },
+  ];
 
   constructor(
     private invoiceService: InvoiceService,
@@ -94,7 +106,20 @@ export class Invoices implements OnInit, OnDestroy {
     this.state = { ...this.state, loading: true, error: null };
     this.cdr.detectChanges();
 
-    const params: any = { page, size: pageSize };
+    const params: {
+      page: number;
+      size: number;
+      months?: number;
+      fromDate?: string;
+      toDate?: string;
+    } = { page, size: pageSize };
+
+    if (this.isCustomPeriod) {
+      if (this.fromDate) params.fromDate = this.fromDate;
+      if (this.toDate) params.toDate = this.toDate;
+    } else {
+      params.months = parseInt(this.selectedPeriod, 10);
+    }
 
     this.invoiceService.getInvoices(companyId, params).subscribe({
       next: (res: InvoicePage) => {
@@ -207,6 +232,31 @@ export class Invoices implements OnInit, OnDestroy {
     this.applySearchFilter();
   }
 
+  onPeriodChange(): void {
+    if (this.selectedPeriod === 'custom') {
+      this.isCustomPeriod = true;
+      return;
+    }
+    this.isCustomPeriod = false;
+    this.fromDate = null;
+    this.toDate = null;
+    this.reloadWithFilters();
+  }
+
+  handleFromDateChange(value: string) {
+    this.fromDate = value || null;
+    if (this.isCustomPeriod && this.fromDate && this.toDate) {
+      this.reloadWithFilters();
+    }
+  }
+
+  handleToDateChange(value: string) {
+    this.toDate = value || null;
+    if (this.isCustomPeriod && this.fromDate && this.toDate) {
+      this.reloadWithFilters();
+    }
+  }
+
   private applySearchFilter() {
     const term = this.searchName.trim().toLowerCase();
 
@@ -220,6 +270,13 @@ export class Invoices implements OnInit, OnDestroy {
     );
 
     this.state = { ...this.state, invoices: filtered };
+  }
+
+  private reloadWithFilters() {
+    if (!this.activeCompanyId) {
+      return;
+    }
+    this.loadInvoices(this.activeCompanyId, 0);
   }
 
   getPageNumbers(): number[] {
