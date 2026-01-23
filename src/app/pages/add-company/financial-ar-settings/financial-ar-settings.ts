@@ -28,7 +28,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private companyService: CompanyService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit() {
@@ -77,8 +77,8 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       defaultPaymentTerms: ['', Validators.required],
       allowOtherTerms: [false],
       enableCreditLimitChecking: [false],
-      agingBucketConfig: ['', Validators.required],
-      dunningFrequencyDays: ['', [Validators.required, Validators.min(1)]],
+      agingBucketConfig: [''], // Made optional - field is hidden
+      dunningFrequencyDays: ['', [Validators.min(1)]], // Made optional - field is hidden
       enableAutomatedDunningEmails: [false],
       defaultCreditLimit: ['', [Validators.required, Validators.min(0)]],
     });
@@ -103,7 +103,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       .pipe(
         finalize(() => {
           this.isSaving = false;
-        })
+        }),
       )
       .subscribe({
         next: () => {

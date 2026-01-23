@@ -29,14 +29,16 @@
           <!-- Revenue Recognition -->
           <div class="form-field">
             <label>
-              Revenue Recognition Mode
+              Revenue Recognition Mode <span class="color">*</span>
               <a class="link">(Advanced options can be enabled later)</a>
             </label>
             <select formControlName="revenueRecognitionMode">
               <option value="">Choose</option>
               <option value="On Invoice">On Invoice</option>
               <option value="On Payment Received">On Payment Received</option>
-              <option value="Deferred/After Service Delivery">Deferred/After Service Delivery</option>
+              <option value="Deferred/After Service Delivery">
+                Deferred/After Service Delivery
+              </option>
               <option value="Straight Line/Over Time">Straight Line/Over Time</option>
               <option value="Milestone Based">Milestone Based</option>
             </select>
@@ -50,7 +52,7 @@
 
           <!-- Default Tax Handling -->
           <div class="form-field">
-            <label>Default Tax Handling</label>
+            <label>Default Tax Handling <span class="color">*</span></label>
             <select formControlName="defaultTaxHandling">
               <option value="">Choose</option>
               <option value="Line Item Level">Line Item Level</option>
@@ -72,7 +74,7 @@
 
         <div class="form-grid">
           <div class="form-field">
-            <label>Default Terms</label>
+            <label>Default Terms <span class="color">*</span></label>
             <select formControlName="defaultPaymentTerms">
               <option value="">Choose</option>
               <option value="Due on Receipt">Due on Receipt</option>
@@ -99,14 +101,26 @@
               <span class="slider"></span>
             </label>
           </div>
+
+          <!-- Default Credit Limit (moved here without heading) -->
+          <div class="form-field">
+            <label>Default Credit Limit <span class="color">*</span></label>
+            <input type="number" formControlName="defaultCreditLimit" />
+            <div
+              class="error"
+              *ngIf="submitted && financialForm.controls['defaultCreditLimit'].errors"
+            >
+              Must be 0 or above.
+            </div>
+          </div>
         </div>
 
-        <!-- AGING -->
+        <!-- AGING BUCKET CONFIGURATION - COMMENTED OUT
         <h2 class="section-title">Aging Bucket Configuration</h2>
 
         <div class="form-grid">
           <div class="form-field">
-            <label>Aging Bucket Config</label>
+            <label>Aging Bucket Config <span class="color">*</span></label>
             <select formControlName="agingBucketConfig">
               <option value="">Choose</option>
               <option value="0-30">0-30</option>
@@ -121,7 +135,6 @@
             </div>
           </div>
 
-          <!-- Enable Dunning -->
           <div class="form-field toggle-container">
             <label>
               Enable Automated Dunning Emails
@@ -133,21 +146,8 @@
             </label>
           </div>
 
-          <!-- Default Credit Limit -->
           <div class="form-field">
-            <label>Default Credit Limit</label>
-            <input type="number" formControlName="defaultCreditLimit" />
-            <div
-              class="error"
-              *ngIf="submitted && financialForm.controls['defaultCreditLimit'].errors"
-            >
-              Must be 0 or above.
-            </div>
-          </div>
-
-          <!-- Frequency -->
-          <div class="form-field">
-            <label>Dunning Frequency (Days)</label>
+            <label>Dunning Frequency (Days) <span class="color">*</span></label>
             <input type="number" formControlName="dunningFrequencyDays" />
             <div
               class="error"
@@ -157,7 +157,6 @@
             </div>
           </div>
 
-          <!-- Enable Credit Limit Checking -->
           <div class="form-field toggle-container">
             <label>Enable Credit Limit Checking</label>
             <label class="switch">
@@ -166,6 +165,7 @@
             </label>
           </div>
         </div>
+        -->
       </div>
 
       <!-- BUTTONS -->
