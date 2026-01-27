@@ -36,4 +36,10 @@ export class RoleService {
     const headers = this.getAuthHeaders();
     return this.http.post<RolesResponse>(`${this.baseUrl}/api/roles/company/${companyId}`, data, { headers });
   }
+
+  updateRoles(companyId: number, roleId:number, data: any): Observable<any> {
+    const headers = this.getAuthHeaders();
+    return this.http.put<any>(`${this.baseUrl}/api/roles/${roleId}/company/${companyId}`, data, { headers });
+  }
+  
 }

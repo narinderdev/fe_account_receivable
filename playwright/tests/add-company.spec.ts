@@ -21,6 +21,7 @@ const defaultAddressInfo = {
   postalCode: '62704',
   addressCountry: 'USA',
   primaryContactName: 'Lisa Simpson',
+  position: 'AR Manager',
   primaryContactEmail: 'lisa@example.com',
   primaryContactPhone: '3125550199',
   website: 'https://acme.example.com',
@@ -282,6 +283,7 @@ async function setupOnboardingApiMocks(page: Page) {
           postalCode: null,
           addressCountry: null,
           primaryContactName: null,
+          position: null,
           primaryContactEmail: null,
           primaryContactPhone: null,
           website: null,
@@ -353,6 +355,7 @@ async function fillCompanyAddressForm(page: Page, data = defaultAddressInfo) {
   await page.locator('[formcontrolname="postalCode"]').fill(data.postalCode);
   await page.locator('select[formcontrolname="addressCountry"]').selectOption(data.addressCountry);
   await page.locator('[formcontrolname="primaryContactName"]').fill(data.primaryContactName);
+  await page.locator('[formcontrolname="position"]').fill(data.position);
   await page.locator('[formcontrolname="primaryContactEmail"]').fill(data.primaryContactEmail);
   await page.locator('[formcontrolname="primaryContactPhone"]').fill(data.primaryContactPhone);
   await page.locator('[formcontrolname="website"]').fill(data.website);

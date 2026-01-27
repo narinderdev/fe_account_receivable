@@ -243,6 +243,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       'postalCode',
       'addressCountry',
       'primaryContactName',
+      'position',
       'primaryContactEmail',
       'primaryContactPhone',
       'primaryContactCountry',

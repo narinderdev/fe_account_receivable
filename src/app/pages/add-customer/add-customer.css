@@ -620,6 +620,43 @@ input:checked + .slider:hover {
   color: #3b72d6;
 }
 
+/* VAT Toggle Section */
+.vat-toggle-section {
+  margin-bottom: 30px;
+}
+
+.vat-toggle-section .toggle-row {
+  padding: 20px 24px;
+}
+
+.toggle-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.toggle-description {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.vat-disabled-message {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+}
+
+.vat-disabled-message p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
 /* ---------------------------
  RESPONSIVE BREAKPOINTS
 ---------------------------- */

@@ -786,8 +786,14 @@ export class Collections implements OnInit, OnDestroy {
       return;
     }
 
+    const companyId = this.selectedCompanyId;
+    if (!companyId) {
+      this.toastr.error('Select a company before sending reminders.');
+      return;
+    }
+
     this.reminderSending[invoiceId] = true;
-    this.collectionService.sendReminders(invoiceId).subscribe({
+    this.collectionService.sendReminders(invoiceId, companyId).subscribe({
       next: (res) => {
         const message = res?.message || 'Reminder sent successfully.';
         this.toastr.success(message);

@@ -142,6 +142,7 @@ function createCompanyStub(): CompanyEntity {
       postalCode: '',
       addressCountry: '',
       primaryContactName: '',
+      position: '',
       primaryContactEmail: '',
       primaryContactPhone: '',
       website: '',

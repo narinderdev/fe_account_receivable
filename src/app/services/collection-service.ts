@@ -140,10 +140,10 @@ export class CollectionService {
     );
   }
 
-  sendReminders(invoiceId: number): Observable<SendReminderResponse> {
+  sendReminders(invoiceId: number, companyId: number): Observable<SendReminderResponse> {
     const headers = this.getAuthHeadersWithNgrok();
     return this.http.post<SendReminderResponse>(
-      `${this.baseUrl}/api/reminders/invoice/${invoiceId}`,
+      `${this.baseUrl}/api/reminders/invoice/${companyId}/${invoiceId}`,
       {},
       { headers }
     );

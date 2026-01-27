@@ -72,6 +72,7 @@ const demoCompany = {
     postalCode: '12345',
     addressCountry: 'USA',
     primaryContactName: 'Alex Admin',
+    position: 'Director of Finance',
     primaryContactEmail: 'alex@example.com',
     primaryContactPhone: '555-0101',
     website: 'https://example.com',

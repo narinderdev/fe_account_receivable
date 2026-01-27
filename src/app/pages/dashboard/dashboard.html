@@ -55,10 +55,10 @@
     <!-- Number of Invoices -->
     <div class="card card-gray">
       <div class="card-header">
-        <p class="card-title">Number of Invoices</p>
+        <p class="card-title">Outstanding Payment (>30 days)</p>
         <img src="/assets/invoices-icon.svg" alt="Invoices" class="card-icon" />
       </div>
-      <p class="card-value">{{ dashboardData.totalInvoices }}</p>
+      <p class="card-value">{{ dashboardData.overdueMoreThan30Days | currency }}</p>
     </div>
 
     <!-- Pending Invoices -->

@@ -92,9 +92,9 @@ export class InvoiceService {
     });
   }
 
-  sendInvoice(invoiceId: number): Observable<SendInvoiceResponse> {
+  sendInvoice(invoiceId: number, companyId:number): Observable<SendInvoiceResponse> {
     const headers = this.getAuthHeaders();
-    return this.http.post<SendInvoiceResponse>(`${this.baseUrl}/invoice/send/${invoiceId}`, null, {
+    return this.http.post<SendInvoiceResponse>(`${this.baseUrl}/invoice/send/${companyId}/${invoiceId}`, null, {
       headers,
     });
   }

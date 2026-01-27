@@ -54,6 +54,7 @@ export class RolesDetail implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_INVOICES',
         create: 'CREATE_INVOICE',
+        approve: 'APPROVE_INVOICE'
       },
     },
     {
@@ -141,6 +142,7 @@ export class RolesDetail implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_ROLES',
         create: 'CREATE_ROLES',
+        update:'UPDATE_ROLE',
       },
     },
     {

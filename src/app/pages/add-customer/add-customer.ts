@@ -1,6 +1,12 @@
 import { Component, OnInit, ChangeDetectorRef, NgZone, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  FormsModule,
+} from '@angular/forms';
 import { Customer } from '../../services/customer';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -30,7 +36,7 @@ type GenericRecord = Record<string, unknown>;
 @Component({
   selector: 'app-add-customer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, Spinner],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, FormsModule, Spinner],
   templateUrl: './add-customer.html',
   styleUrls: ['./add-customer.css'],
 })
@@ -69,6 +75,7 @@ export class AddCustomer implements OnInit, OnDestroy {
   statementSubmitted = false;
   eftSubmitted = false;
   vatSubmitted = false;
+  showVatForm = false;
   dunningSubmitted = false;
 
   // Loading Flags
@@ -205,13 +212,12 @@ export class AddCustomer implements OnInit, OnDestroy {
       level4: ['', Validators.required],
     });
   }
-  
-  onPhoneInput() {
-  let value = this.mainForm.get('phoneNumber')?.value || '';
-  value = value.replace(/\D/g, '').slice(0, 10);
-  this.mainForm.get('phoneNumber')?.setValue(value, { emitEvent: false });
-}
 
+  onPhoneInput() {
+    let value = this.mainForm.get('phoneNumber')?.value || '';
+    value = value.replace(/\D/g, '').slice(0, 10);
+    this.mainForm.get('phoneNumber')?.setValue(value, { emitEvent: false });
+  }
 
   limitPostalCode(event: Event) {
     const input = event.target as HTMLInputElement | null;
@@ -238,7 +244,20 @@ export class AddCustomer implements OnInit, OnDestroy {
       if (data.cashApplication) this.applicationForm.patchValue(data.cashApplication);
       if (data.statement) this.statementForm.patchValue(data.statement);
       if (data.eft) this.eftForm.patchValue(data.eft);
-      if (data.vat) this.vatForm.patchValue(data.vat);
+
+      // Check if VAT data exists and set toggle accordingly
+      if (data.vat) {
+        this.vatForm.patchValue(data.vat);
+
+        // Enable toggle if any VAT field has data
+        const hasVatData =
+          data.vat.taxIdentificationNumber || data.vat.taxAgencyName || data.vat.enableVatCodes;
+
+        if (hasVatData) {
+          this.showVatForm = true;
+        }
+      }
+
       if (data.dunning) this.dunningForm.patchValue(data.dunning);
     });
   }
@@ -424,14 +443,20 @@ export class AddCustomer implements OnInit, OnDestroy {
     });
   }
 
-  // VAT → DUNNING
-  // VAT → DUNNING (Modified to allow skipping)
+  // VAT → DUNNING (Modified to allow skipping with toggle check)
   saveVatData() {
     if (this.isEditMode) return;
 
     this.vatSubmitted = true;
 
-    // Check if form has any data
+    // If VAT form is not shown (toggle is OFF), skip to next tab
+    if (!this.showVatForm) {
+      this.allowedTabs.push('dunning');
+      this.goToTab('dunning');
+      return;
+    }
+
+    // Check if form has any data when toggle is ON
     const hasVatData =
       this.vatForm.value.taxIdentificationNumber ||
       this.vatForm.value.taxAgencyName ||

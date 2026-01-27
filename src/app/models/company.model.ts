@@ -32,6 +32,7 @@ export interface CompanyAddress {
   postalCode: string | null;
   addressCountry: string | null;
   primaryContactName: string | null;
+  position: string | null;
   primaryContactEmail: string | null;
   primaryContactPhone: string | null;
   website: string | null;
@@ -89,6 +90,7 @@ export interface CompanyEntity {
   postalCode?: string | null;
   addressCountry?: string | null;
   primaryContactName?: string | null;
+  position?: string | null;
   primaryContactEmail?: string | null;
   primaryContactPhone?: string | null;
   website?: string | null;
@@ -189,17 +191,18 @@ export interface CreateCompanyResponse {
     | 'updatedAt'
   > & {
     id: number;
-    addressLine1: string | null;
-    city: string | null;
-    stateProvince: string | null;
-    postalCode: string | null;
-    addressCountry: string | null;
-    primaryContactName: string | null;
-    primaryContactEmail: string | null;
-    primaryContactPhone: string | null;
-    website: string | null;
-    primaryContactCountry: string | null;
-  };
+      addressLine1: string | null;
+      city: string | null;
+      stateProvince: string | null;
+      postalCode: string | null;
+      addressCountry: string | null;
+      primaryContactName: string | null;
+      position: string | null;
+      primaryContactEmail: string | null;
+      primaryContactPhone: string | null;
+      website: string | null;
+      primaryContactCountry: string | null;
+    };
 }
 
 export interface CreateAddressResponse {

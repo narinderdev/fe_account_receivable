@@ -12,10 +12,13 @@ import { UserContextService } from '../../services/user-context.service';
 export class Sidebar {
   setupOpen = false;
   reportsOpen = false;
+  securityOpen = false;
   mobileMenuOpen = false;
   mobileSetupOpen = false;
   mobileReportsOpen = false;
+  mobileSecurityOpen = false;
   arReportsActive = false;
+  securityActive = false;
   canViewDashboard = false;
   canViewCustomers = false;
   canViewInvoices = false;
@@ -30,13 +33,19 @@ export class Sidebar {
   canViewCreditMemo = false;
   canViewWriteOff = false;
   showSetupLinks = false;
+  showSecurityLinks = false;
 
-  constructor(private router: Router, private userContext: UserContextService) {
+  constructor(
+    private router: Router,
+    private userContext: UserContextService,
+  ) {
     this.refreshPermissions();
     this.updateArReportsState();
+    this.updateSecurityState();
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.updateArReportsState();
+        this.updateSecurityState();
       }
     });
   }
@@ -63,11 +72,13 @@ export class Sidebar {
     this.canViewGlCodes = canViewGlCodes;
     this.canViewCreditMemo = this.userContext.hasPermission('VIEW_MEMOS');
     this.canViewWriteOff = this.userContext.hasPermission('VIEW_WRITE_OFF');
+
+    // Security section visibility
+    this.showSecurityLinks = this.canViewUsers || this.canViewRoles;
+
     this.showSetupLinks =
       this.userContext.isAdmin() ||
       this.canViewCompany ||
-      this.canViewUsers ||
-      this.canViewRoles ||
       this.canViewArCodes ||
       this.canViewGlCodes;
   }
@@ -77,6 +88,7 @@ export class Sidebar {
     this.setupOpen = shouldOpen;
     if (shouldOpen) {
       this.reportsOpen = false;
+      this.securityOpen = false;
     }
   }
 
@@ -85,12 +97,23 @@ export class Sidebar {
     this.reportsOpen = shouldOpen;
     if (shouldOpen) {
       this.setupOpen = false;
+      this.securityOpen = false;
+    }
+  }
+
+  toggleSecurity() {
+    const shouldOpen = !this.securityOpen;
+    this.securityOpen = shouldOpen;
+    if (shouldOpen) {
+      this.setupOpen = false;
+      this.reportsOpen = false;
     }
   }
 
   handleNavClick() {
     this.setupOpen = false;
     this.reportsOpen = false;
+    this.securityOpen = false;
   }
 
   toggleMobileMenu() {
@@ -101,6 +124,7 @@ export class Sidebar {
     this.mobileMenuOpen = false;
     this.mobileSetupOpen = false;
     this.mobileReportsOpen = false;
+    this.mobileSecurityOpen = false;
   }
 
   toggleMobileSetup(event: Event) {
@@ -109,6 +133,7 @@ export class Sidebar {
     this.mobileSetupOpen = shouldOpen;
     if (shouldOpen) {
       this.mobileReportsOpen = false;
+      this.mobileSecurityOpen = false;
     }
   }
 
@@ -118,13 +143,34 @@ export class Sidebar {
     this.mobileReportsOpen = shouldOpen;
     if (shouldOpen) {
       this.mobileSetupOpen = false;
+      this.mobileSecurityOpen = false;
+    }
+  }
+
+  toggleMobileSecurity(event: Event) {
+    event.stopPropagation();
+    const shouldOpen = !this.mobileSecurityOpen;
+    this.mobileSecurityOpen = shouldOpen;
+    if (shouldOpen) {
+      this.mobileSetupOpen = false;
+      this.mobileReportsOpen = false;
     }
   }
 
   private updateArReportsState() {
-    this.arReportsActive = this.router.url.includes('/admin/ar-reports');
+    this.arReportsActive =
+      this.router.url.includes('/admin/ar-reports') ||
+      this.router.url.includes('/admin/invoices-reports') ||
+      this.router.url.includes('/admin/payment-reports');
     this.reportsOpen = this.arReportsActive || this.reportsOpen;
     this.mobileReportsOpen = this.arReportsActive || this.mobileReportsOpen;
+  }
+
+  private updateSecurityState() {
+    this.securityActive =
+      this.router.url.includes('/admin/users') || this.router.url.includes('/admin/roles');
+    this.securityOpen = this.securityActive || this.securityOpen;
+    this.mobileSecurityOpen = this.securityActive || this.mobileSecurityOpen;
   }
 
   signOut() {

@@ -189,6 +189,7 @@ function createCompanyStub(): CompanyEntity {
       postalCode: '123456',
       addressCountry: 'USA',
       primaryContactName: 'John',
+      position: 'AR Manager',
       primaryContactEmail: 'john@example.com',
       primaryContactPhone: '1234567890',
       website: 'https://example.com',

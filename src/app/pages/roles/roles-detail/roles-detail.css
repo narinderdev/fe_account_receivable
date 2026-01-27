@@ -148,7 +148,7 @@
 .permissions-detail-table td {
   padding: 12px;
   border-bottom: 1px solid #f3f4f6;
-  text-align: left;
+  text-align: center;
 }
 
 .permissions-detail-table th {
@@ -157,6 +157,12 @@
   color: #6b7280;
   letter-spacing: 0.05em;
   background: #f9fafb;
+}
+
+/* Keep first column (Module) left-aligned */
+.permissions-detail-table th:first-child,
+.permissions-detail-table td:first-child {
+  text-align: left;
 }
 
 .permissions-detail-table tr.sub-row td {
@@ -168,24 +174,45 @@
   color: #6b7280;
 }
 
-.perm-pill {
+.checkbox-wrapper {
   display: inline-flex;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  background: #f3f4f6;
-  color: #6b7280;
-  font-weight: 600;
+  align-items: center;
+  justify-content: center;
 }
 
-.perm-pill.active {
-  background: #dcfce7;
-  color: #15803d;
+.permission-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: not-allowed;
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid #d1d5db;
+  border-radius: 3px;
+  background: #fff;
+  outline: none;
 }
 
-.perm-pill.null {
-  background: #dcfce7;
-  color: #15803d;
+.permission-checkbox:checked {
+  background-color: #15803d;
+  border-color: #15803d;
+}
+
+.permission-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.permission-checkbox:not(:checked) {
+  opacity: 0.4;
 }
 
 .empty-card {

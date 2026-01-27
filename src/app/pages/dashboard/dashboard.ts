@@ -43,6 +43,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     pendingInvoices: 0,
     totalCustomers: 0,
     currentPromiseToPay: 0,
+    overdueMoreThan30Days:0
   };
 
   // Graph data properties
@@ -102,6 +103,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
           pendingInvoices: 0,
           totalCustomers: 0,
           currentPromiseToPay: 0,
+          overdueMoreThan30Days:0
         };
         // Show all 12 months at zero when no company selected
         this.graphLabels = this.generateMonthLabels(this.selectedYear);
@@ -164,6 +166,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
             pendingInvoices: data.pendingInvoices ?? 0,
             totalCustomers: data.totalCustomers ?? 0,
             currentPromiseToPay: data.currentPromiseToPay ?? 0,
+            overdueMoreThan30Days: data.overdueMoreThan30Days ?? 0
           };
         }
 

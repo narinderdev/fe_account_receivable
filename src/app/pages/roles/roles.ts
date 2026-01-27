@@ -42,9 +42,15 @@ export class Roles implements OnInit, OnDestroy {
   submitted = false;
   addRoleForm!: FormGroup;
   canCreateRoles = false;
+  canEditRoles = false;
   private allRoles: Role[] = [];
   pagination = this.createPagination();
   Math = Math;
+
+  // Edit mode properties
+  isEditMode = false;
+  editingRole: Role | null = null;
+  originalPermissions: string[] = [];
 
   // ✅ Add constant for the required permission
   readonly REQUIRED_VIEW_COMPANY = 'VIEW_COMPANY';
@@ -70,6 +76,7 @@ export class Roles implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_INVOICES',
         create: 'CREATE_INVOICE',
+        approve: 'APPROVE_INVOICE',
       },
     },
     {
@@ -157,6 +164,7 @@ export class Roles implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_ROLES',
         create: 'CREATE_ROLES',
+        update:'UPDATE_ROLE',
       },
     },
     {
@@ -191,6 +199,7 @@ export class Roles implements OnInit, OnDestroy {
     private router: Router,
   ) {
     this.canCreateRoles = this.userContext.hasPermission('CREATE_ROLES');
+    this.canEditRoles = this.userContext.hasPermission('UPDATE_ROLE');
   }
 
   ngOnInit() {
@@ -254,6 +263,10 @@ export class Roles implements OnInit, OnDestroy {
     if (!this.canCreateRoles) {
       return;
     }
+    this.isEditMode = false;
+    this.editingRole = null;
+    this.originalPermissions = [];
+
     // ✅ Reset form with VIEW_COMPANY already selected
     this.addRoleForm.reset({
       name: '',
@@ -266,8 +279,31 @@ export class Roles implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  openEditModal(role: Role) {
+    if (!this.canEditRoles) {
+      return;
+    }
+
+    this.isEditMode = true;
+    this.editingRole = role;
+    this.originalPermissions = [...(role.permissions || [])];
+
+    this.addRoleForm.reset({
+      name: role.name,
+      description: role.description,
+      permissions: [...(role.permissions || [])],
+    });
+
+    this.submitted = false;
+    this.isModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
   closeModal() {
     this.isModalOpen = false;
+    this.isEditMode = false;
+    this.editingRole = null;
+    this.originalPermissions = [];
     this.cdr.detectChanges();
   }
 
@@ -275,6 +311,14 @@ export class Roles implements OnInit, OnDestroy {
     this.submitted = true;
     if (this.addRoleForm.invalid) return;
 
+    if (this.isEditMode) {
+      this.updateRole();
+    } else {
+      this.createRole();
+    }
+  }
+
+  private createRole() {
     this.isSaving = true;
     const formValue = this.addRoleForm.value as {
       name?: string | null;
@@ -309,6 +353,75 @@ export class Roles implements OnInit, OnDestroy {
     });
   }
 
+  private updateRole() {
+    if (!this.editingRole || !this.activeCompanyId) return;
+
+    this.isSaving = true;
+    const formValue = this.addRoleForm.value as {
+      name?: string | null;
+      description?: string | null;
+      permissions?: string[] | null;
+    };
+
+    const currentPermissions = formValue.permissions ?? [];
+
+    // Calculate added and removed permissions
+    const addPermissions = currentPermissions.filter((p) => !this.originalPermissions.includes(p));
+    const removePermissions = this.originalPermissions.filter(
+      (p) => !currentPermissions.includes(p),
+    );
+
+    // Build payload with only changed fields
+    const payload: any = {};
+
+    if (formValue.name !== this.editingRole.name) {
+      payload.name = formValue.name;
+    }
+
+    if (formValue.description !== this.editingRole.description) {
+      payload.description = formValue.description;
+    }
+
+    if (addPermissions.length > 0) {
+      payload.addPermissions = addPermissions;
+    }
+
+    if (removePermissions.length > 0) {
+      payload.removePermissions = removePermissions;
+    }
+
+    // If nothing changed, close modal
+    if (Object.keys(payload).length === 0) {
+      this.isSaving = false;
+      this.isModalOpen = false;
+      this.toastr.info('No changes detected');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.roleService.updateRoles(this.activeCompanyId, this.editingRole.id, payload).subscribe({
+      next: (res) => {
+        this.toastr.success(res?.message || 'Role updated successfully');
+        this.isSaving = false;
+        this.isModalOpen = false;
+        this.isEditMode = false;
+        this.editingRole = null;
+        this.originalPermissions = [];
+        if (this.activeCompanyId) {
+          this.loadRoles(this.activeCompanyId);
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to update role', err);
+        const message = err?.error?.message || 'Failed to update role';
+        this.toastr.error(message);
+        this.isSaving = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   private getAllPermissionCodes(): string[] {
     const all: string[] = [];
 
@@ -328,7 +441,7 @@ export class Roles implements OnInit, OnDestroy {
     const selected = this.getSelectedPermissions();
     const allCodes = this.getAllPermissionCodes();
 
-    // “all selected” means every permission code is present
+    // "all selected" means every permission code is present
     return allCodes.every((c) => selected.includes(c));
   }
 

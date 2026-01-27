@@ -210,245 +210,6 @@
         </form>
       </div>
 
-      <!-- PROCESSING TAB -->
-      <!-- <div *ngIf="isActive('processing')">
-     
-        <h2 class="section-title">Balance Summary</h2>
-
-        <div class="summary-grid">
-          <div class="summary-item">
-            <p class="summary-title">Total Balance</p>
-            <p class="summary-value">$4,500.00</p>
-          </div>
-
-          <div class="summary-item">
-            <p class="summary-title">Amount / Balance</p>
-            <p class="summary-value">$10,000.00</p>
-          </div>
-
-          <div class="summary-item">
-            <p class="summary-title">Overdue Days</p>
-            <p class="summary-value">106</p>
-          </div>
-        </div>
-
-        <div class="subtabs">
-          <button class="subtab active">Overview</button>
-          <button class="subtab">Invoices</button>
-          <button class="subtab">Payments</button>
-          <button class="subtab">Aging</button>
-          <button class="subtab">Notes</button>
-          <button class="subtab">Documents</button>
-        </div>
-
-        <table class="processing-table">
-          <thead>
-            <tr>
-              <th>Invoice</th>
-              <th>Date / Due Date</th>
-              <th>Amount / Balance</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr>
-              <td>#INV-001</td>
-              <td>01/15/2024</td>
-              <td>$100,000</td>
-              <td>Partial</td>
-            </tr>
-
-            <tr>
-              <td>#INV-002</td>
-              <td>01/15/2024</td>
-              <td>$100,000</td>
-              <td>Past Due</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <h2 class="section-title">Timeline</h2>
-
-        <div class="timeline-wrapper">
-          <div class="timeline-item">
-            <p class="timeline-date">TODAY</p>
-            <p class="timeline-time">11:30 AM</p>
-            <p class="timeline-text">
-              John Doe recorded a call. Followed up regarding outstanding payment, Customer promised
-              to clear payment by next Friday.
-            </p>
-          </div>
-
-          <div class="timeline-item">
-            <p class="timeline-date">Apr 30</p>
-            <p class="timeline-time">9:00 AM</p>
-            <p class="timeline-text">
-              <strong>Jane Smith left a note:</strong><br />
-              Customer indicated there was an issue with invoice #INV-002.
-            </p>
-          </div>
-        </div>
-
-        <textarea class="note-input" placeholder="Add a note..."></textarea>
-      </div> -->
-
-      <!-- APPLICATION TAB -->
-      <!-- <div *ngIf="isActive('application')">
-        <h2 class="section-title">Application</h2>
-
-        <form [formGroup]="applicationForm" (ngSubmit)="(false)" (submit)="(false)">
-
-          <div class="checkbox-group">
-            <label class="checkbox-item">
-              <input type="checkbox" formControlName="applyPayments" />
-              Apply Payments
-            </label>
-
-            <label class="checkbox-item">
-              <input type="checkbox" formControlName="autoApplyPayments" />
-              Auto Apply Payments
-            </label>
-
-            <label class="checkbox-item">
-              <input type="checkbox" formControlName="shipCreditCheck" />
-              Ship Credit Check
-            </label>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Tolerance (%) <span class="color">*</span></label>
-              <input type="number" formControlName="tolerancePercentage" placeholder="0-100" />
-              <div
-                class="error"
-                *ngIf="applicationSubmitted && applicationForm.controls['tolerancePercentage'].errors"
-              >
-                <span *ngIf="applicationForm.controls['tolerancePercentage'].hasError('required')">
-                  Tolerance (%) is required.
-                </span>
-                <span *ngIf="applicationForm.controls['tolerancePercentage'].hasError('min')">
-                  Tolerance (%) must be at least 0.
-                </span>
-                <span *ngIf="applicationForm.controls['tolerancePercentage'].hasError('max')">
-                  Tolerance (%) cannot be more than 100.
-                </span>
-              </div>
-            </div>
-
-            <div class="form-field">
-              <label>Tolerance Amount <span class="color">*</span></label>
-              <input type="number" formControlName="toleranceAmount" placeholder="Enter amount" />
-              <div
-                class="error"
-                *ngIf="applicationSubmitted && applicationForm.controls['toleranceAmount'].errors"
-              >
-                <span *ngIf="applicationForm.controls['toleranceAmount'].hasError('required')">
-                  Tolerance Amount is required.
-                </span>
-                <span *ngIf="applicationForm.controls['toleranceAmount'].hasError('min')">
-                  Tolerance Amount must be at least 0.
-                </span>
-              </div>
-            </div>
-          </div>
-        </form>
-      </div> -->
-
-      <!-- STATEMENT TAB -->
-      <!-- <div *ngIf="isActive('statement')">
-        <h2 class="section-title">Statement</h2>
-
-        <form [formGroup]="statementForm" (ngSubmit)="(false)" (submit)="(false)">
-          <div class="checkbox-group">
-            <label class="checkbox-item">
-              <input type="checkbox" formControlName="sendStatements" />
-              Send Statement
-            </label>
-
-            <label class="checkbox-item">
-              <input type="checkbox" formControlName="autoApplyPayments" />
-              Asito Apply Payments
-            </label>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Tolerance (%) <span class="color">*</span></label>
-              <input type="number" formControlName="tolerancePercentage" placeholder="0-100" />
-              <div
-                class="error"
-                *ngIf="statementSubmitted && statementForm.controls['tolerancePercentage'].errors"
-              >
-                <span *ngIf="statementForm.controls['tolerancePercentage'].hasError('required')">
-                  Tolerance (%) is required.
-                </span>
-                <span *ngIf="statementForm.controls['tolerancePercentage'].hasError('min')">
-                  Tolerance (%) must be at least 0.
-                </span>
-                <span *ngIf="statementForm.controls['tolerancePercentage'].hasError('max')">
-                  Tolerance (%) cannot be more than 100.
-                </span>
-              </div>
-            </div>
-
-            <div class="form-field">
-              <label>Minimum Amount <span class="color">*</span></label>
-              <input type="number" formControlName="minimumAmount" placeholder="Enter minimum amount" />
-              <div
-                class="error"
-                *ngIf="statementSubmitted && statementForm.controls['minimumAmount'].errors"
-              >
-                <span *ngIf="statementForm.controls['minimumAmount'].hasError('required')">
-                  Minimum Amount is required.
-                </span>
-                <span *ngIf="statementForm.controls['minimumAmount'].hasError('min')">
-                  Minimum Amount must be at least 0.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <br /><br />
-
-          <h2 class="section-title">Send Statement</h2>
-
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Send Statement</label>
-              <select>
-                <option value="" disabled selected>Select method</option>
-                <option>Email</option>
-                <option>Print</option>
-              </select>
-            </div>
-
-            <div class="form-field">
-              <label>Cycle Code</label>
-              <select>
-                <option value="" disabled selected>Select cycle</option>
-                <option>Monthly</option>
-                <option>Quarterly</option>
-              </select>
-            </div>
-
-            <div class="form-field">
-              <label>Print or Email</label>
-              <select>
-                <option value="" disabled selected>Select option</option>
-                <option>Email</option>
-                <option>Print</option>
-              </select>
-            </div>
-
-            <div class="form-field">
-              <label>Minimum Amount</label>
-              <input type="text" placeholder="Enter minimum amount" />
-            </div>
-          </div>
-        </form>
-      </div> -->
-
       <div class="tab-content" *ngIf="isActive('eft')">
         <h2 class="section-title">Bank Information</h2>
 
@@ -524,85 +285,101 @@
       <div class="tab-content" *ngIf="isActive('vat')">
         <h2 class="section-title">VAT Information</h2>
 
-        <div class="optional-notice">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-          <span
-            >This section is optional. You can proceed to the next step without filling in VAT
-            information.</span
-          >
-        </div>
-
-        <form [formGroup]="vatForm" (ngSubmit)="(false)" (submit)="(false)">
-          <div class="form-grid">
-            <div class="form-field">
-              <label>Tax Identification Number <span class="color">*</span></label>
+        <!-- Only show form when toggle is ON -->
+        <div>
+          <div class="optional-notice">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span
+              >This section is optional. You can proceed to the next step without filling in VAT
+              information.</span
+            >
+            <label class="switch">
               <input
-                type="text"
-                formControlName="taxIdentificationNumber"
-                placeholder="Enter TIN"
+                type="checkbox"
+                [(ngModel)]="showVatForm"
+                [ngModelOptions]="{ standalone: true }"
               />
-              <div
-                class="error"
-                *ngIf="vatSubmitted && vatForm.controls['taxIdentificationNumber'].errors"
-              >
-                <span *ngIf="vatForm.controls['taxIdentificationNumber'].hasError('required')">
-                  Tax Identification Number is required.
-                </span>
-              </div>
-            </div>
-
-            <div class="form-field">
-              <label>Tax Agency Name <span class="color">*</span></label>
-              <input
-                type="text"
-                formControlName="taxAgencyName"
-                placeholder="Enter tax agency name"
-              />
-              <div class="error" *ngIf="vatSubmitted && vatForm.controls['taxAgencyName'].errors">
-                <span *ngIf="vatForm.controls['taxAgencyName'].hasError('required')">
-                  Tax Agency Name is required.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <br />
-
-          <h2 class="section-title">Customer VAT Codes</h2>
-
-          <div class="checkbox-group">
-            <label class="checkbox-item">
-              <input type="checkbox" formControlName="enableVatCodes" />
-              Enable VAT codes for this customer
+              <span class="slider"></span>
             </label>
           </div>
 
-          <div class="form-field vat-dropdown">
-            <label>VAT Code</label>
-            <select formControlName="vatCode">
-              <option value="" disabled selected>Select VAT code</option>
-              <option value="Standard Rate (20%)">Standard Rate (20%)</option>
-              <option value="Reduced Rate (5%)">Reduced Rate (5%)</option>
-              <option value="Zero Rate (0%)">Zero Rate (0%)</option>
-              <option value="Exempt">Exempt</option>
-              <option value="Outside Scope">Outside Scope</option>
-            </select>
-          </div>
-        </form>
+          <form [formGroup]="vatForm" (ngSubmit)="(false)" (submit)="(false)"  *ngIf="showVatForm">
+            <div class="form-grid">
+              <div class="form-field">
+                <label>Tax Identification Number <span class="color">*</span></label>
+                <input
+                  type="text"
+                  formControlName="taxIdentificationNumber"
+                  placeholder="Enter TIN"
+                />
+                <div
+                  class="error"
+                  *ngIf="vatSubmitted && vatForm.controls['taxIdentificationNumber'].errors"
+                >
+                  <span *ngIf="vatForm.controls['taxIdentificationNumber'].hasError('required')">
+                    Tax Identification Number is required.
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label>Tax Agency Name <span class="color">*</span></label>
+                <input
+                  type="text"
+                  formControlName="taxAgencyName"
+                  placeholder="Enter tax agency name"
+                />
+                <div class="error" *ngIf="vatSubmitted && vatForm.controls['taxAgencyName'].errors">
+                  <span *ngIf="vatForm.controls['taxAgencyName'].hasError('required')">
+                    Tax Agency Name is required.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <br />
+
+            <h2 class="section-title">Customer VAT Codes</h2>
+
+            <div class="checkbox-group">
+              <label class="checkbox-item">
+                <input type="checkbox" formControlName="enableVatCodes" />
+                Enable VAT codes for this customer
+              </label>
+            </div>
+
+            <div class="form-field vat-dropdown">
+              <label>VAT Code</label>
+              <select formControlName="vatCode">
+                <option value="" disabled selected>Select VAT code</option>
+                <option value="Standard Rate (20%)">Standard Rate (20%)</option>
+                <option value="Reduced Rate (5%)">Reduced Rate (5%)</option>
+                <option value="Zero Rate (0%)">Zero Rate (0%)</option>
+                <option value="Exempt">Exempt</option>
+                <option value="Outside Scope">Outside Scope</option>
+              </select>
+            </div>
+          </form>
+        </div>
+
+        <!-- Show message when toggle is OFF -->
+        <div *ngIf="!showVatForm" class="vat-disabled-message">
+          <p>VAT information is currently disabled. Enable the toggle above to add VAT details.</p>
+        </div>
       </div>
 
       <div class="tab-content" *ngIf="isActive('dunning')">

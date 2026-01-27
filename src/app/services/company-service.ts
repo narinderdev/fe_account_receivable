@@ -50,6 +50,7 @@ export class CompanyService {
     'postalCode',
     'addressCountry',
     'primaryContactName',
+    'position',
     'primaryContactEmail',
     'primaryContactPhone',
     'website',

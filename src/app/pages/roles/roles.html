@@ -21,7 +21,20 @@
           <td>{{ formatRoleName(r.name) }}</td>
           <td>{{ r.description }}</td>
           <td>
-            <button class="link-button" type="button" (click)="viewRole(r)">View</button>
+            <div class="action-buttons">
+              <button class="icon-button" type="button" (click)="viewRole(r)" title="View">
+                <img src="/eyeIcn.svg" alt="View" class="action-icon" />
+              </button>
+              <button
+                class="icon-button"
+                type="button"
+                (click)="openEditModal(r)"
+                title="Edit"
+                *ngIf="canEditRoles"
+              >
+                <img src="/editIcn.svg" alt="Edit" class="action-icon" />
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -66,12 +79,12 @@
   </p>
 </div>
 
-<!-- ADD ROLE MODAL -->
+<!-- ADD/EDIT ROLE MODAL -->
 <div class="modal-backdrop" *ngIf="isModalOpen">
   <div class="modal-card">
     <div class="modal-header">
       <div>
-        <h3>Add Role</h3>
+        <h3>{{ isEditMode ? 'Edit Role' : 'Add Role' }}</h3>
         <p class="modal-subtitle" *ngIf="getSelectedCount() > 0">
           {{ getSelectedCount() }} permission(s) selected
         </p>
@@ -187,7 +200,7 @@
         <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
         <button type="submit" class="btn-primary" [disabled]="isSaving">
           <app-spinner *ngIf="isSaving"></app-spinner>
-          <span *ngIf="!isSaving">Create Role</span>
+          <span *ngIf="!isSaving">{{ isEditMode ? 'Update Role' : 'Create Role' }}</span>
         </button>
       </div>
     </form>

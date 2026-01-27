@@ -72,7 +72,7 @@
               <th>DATE</th>
               <th>DUE DATE</th>
               <th>STATUS</th>
-              <th>ACTIONS</th>
+              <th *ngIf="canApproveInvoice">ACTIONS</th>
             </tr>
           </thead>
 
@@ -104,7 +104,7 @@
                 </span>
               </td>
 
-              <td class="actions-cell">
+              <td class="actions-cell" *ngIf="canApproveInvoice">
                 <button
                   *ngIf="isDraft(inv)"
                   class="btn-approve"
@@ -120,7 +120,9 @@
           <ng-template #noInvoices>
             <tbody>
               <tr>
-                <td colspan="6" class="no-data-row">No invoices found.</td>
+                <td [attr.colspan]="canApproveInvoice ? 6 : 5" class="no-data-row">
+                  No invoices found.
+                </td>
               </tr>
             </tbody>
           </ng-template>

@@ -44,6 +44,7 @@ export class Invoices implements OnInit, OnDestroy {
   private activeCompanyId: number | null = null;
 
   canCreateInvoice = false;
+  canApproveInvoice = false;
 
   approvingInvoiceId: number | null = null;
   approveModalOpen = false;
@@ -66,6 +67,7 @@ export class Invoices implements OnInit, OnDestroy {
     private toastr: ToastrService,
   ) {
     this.canCreateInvoice = this.userContext.hasPermission('CREATE_INVOICE');
+    this.canApproveInvoice = this.userContext.hasPermission('APPROVE_INVOICE');
   }
 
   ngOnInit() {
@@ -188,7 +190,15 @@ export class Invoices implements OnInit, OnDestroy {
 
     this.invoiceService.approveInvoice(invoiceId).subscribe({
       next: () => {
-        this.invoiceService.sendInvoice(invoiceId).subscribe({
+        const companyId = this.activeCompanyId;
+        if (!companyId) {
+          this.approvingInvoiceId = null;
+          this.toastr.error('Select a company before sending the invoice.', 'Missing Company');
+          this.cdr.detectChanges();
+          return;
+        }
+
+        this.invoiceService.sendInvoice(invoiceId, companyId).subscribe({
           next: () => {
             this.approvingInvoiceId = null;
             this.closeApproveModal();

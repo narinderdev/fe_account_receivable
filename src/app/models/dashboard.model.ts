@@ -7,6 +7,7 @@ export interface DashboardSummaryData {
   totalInvoices: number;
   pendingInvoices: number;
   currentPromiseToPay: number;
+  overdueMoreThan30Days: number
 }
 
 export interface DashboardSummaryResponse {

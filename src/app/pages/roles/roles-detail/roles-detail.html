@@ -10,22 +10,22 @@
   <ng-container *ngIf="!loading">
     <ng-container *ngIf="role; else noRole">
       <div class="summary-card">
-      <!-- <h1>Role Details</h1> -->
-      <div class="summary-title">{{ role.name }}</div>
-      <p class="summary-description">{{ role.description || 'No description provided.' }}</p>
+        <!-- <h1>Role Details</h1> -->
+        <div class="summary-title">{{ role.name }}</div>
+        <p class="summary-description">{{ role.description || 'No description provided.' }}</p>
 
-      <div class="summary-grid">
-        <div class="summary-item">
-          <label>Total Permissions</label>
-          <div class="value">{{ totalPermissions }}</div>
-        </div>
-        <div class="divider"></div>
-        <div class="summary-item">
-          <label>Accessible Tabs</label>
-          <div class="value">{{ accessibleTabs.length }}</div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <label>Total Permissions</label>
+            <div class="value">{{ totalPermissions }}</div>
+          </div>
+          <div class="divider"></div>
+          <div class="summary-item">
+            <label>Accessible Tabs</label>
+            <div class="value">{{ accessibleTabs.length }}</div>
+          </div>
         </div>
       </div>
-    </div>
 
       <div class="card">
         <div class="card-header">
@@ -63,44 +63,53 @@
               <tr *ngFor="let row of permissionRows" [class.sub-row]="row.isSubRow">
                 <td [class.sub-module]="row.isSubRow">{{ row.label }}</td>
                 <td>
-                  <span class="perm-pill" [class.active]="hasPermission(row.permissions.view)">
-                    {{ row.permissions.view ? (hasPermission(row.permissions.view) ? 'Allowed' : 'No Access') : '--' }}
+                  <span class="checkbox-wrapper">
+                    <input
+                      type="checkbox"
+                      [checked]="hasPermission(row.permissions.view)"
+                      disabled
+                      class="permission-checkbox"
+                    />
                   </span>
                 </td>
                 <td>
-                  <span class="perm-pill" [class.active]="hasPermission(row.permissions.create)">
-                    {{
-                      row.permissions.create
-                        ? (hasPermission(row.permissions.create) ? 'Allowed' : 'No Access')
-                        : '--'
-                    }}
+                  <span class="checkbox-wrapper">
+                    <input
+                      type="checkbox"
+                      [checked]="hasPermission(row.permissions.create)"
+                      disabled
+                      class="permission-checkbox"
+                    />
                   </span>
                 </td>
                 <td>
-                  <span class="perm-pill" [class.active]="hasPermission(row.permissions.update)">
-                    {{
-                      row.permissions.update
-                        ? (hasPermission(row.permissions.update) ? 'Allowed' : 'No Access')
-                        : '--'
-                    }}
+                  <span class="checkbox-wrapper">
+                    <input
+                      type="checkbox"
+                      [checked]="hasPermission(row.permissions.update)"
+                      disabled
+                      class="permission-checkbox"
+                    />
                   </span>
                 </td>
                 <td>
-                  <span class="perm-pill" [class.active]="hasPermission(row.permissions.delete)">
-                    {{
-                      row.permissions.delete
-                        ? (hasPermission(row.permissions.delete) ? 'Allowed' : 'No Access')
-                        : '--'
-                    }}
+                  <span class="checkbox-wrapper">
+                    <input
+                      type="checkbox"
+                      [checked]="hasPermission(row.permissions.delete)"
+                      disabled
+                      class="permission-checkbox"
+                    />
                   </span>
                 </td>
                 <td>
-                  <span class="perm-pill" [class.active]="hasPermission(row.permissions.approve)">
-                    {{
-                      row.permissions.approve
-                        ? (hasPermission(row.permissions.approve) ? 'Allowed' : 'No Access')
-                        : '--'
-                    }}
+                  <span class="checkbox-wrapper">
+                    <input
+                      type="checkbox"
+                      [checked]="hasPermission(row.permissions.approve)"
+                      disabled
+                      class="permission-checkbox"
+                    />
                   </span>
                 </td>
               </tr>
@@ -119,7 +128,8 @@
     <div class="empty-card">
       <p class="empty-title">Role details unavailable</p>
       <p class="empty-text">
-        We couldn't find this role for the selected company. Please go back to the Roles list and try again.
+        We couldn't find this role for the selected company. Please go back to the Roles list and
+        try again.
       </p>
       <button class="btn-secondary" routerLink="/admin/roles">Go Back</button>
     </div>
