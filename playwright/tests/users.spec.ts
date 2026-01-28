@@ -37,9 +37,9 @@ const demoUsers = [
 
 test.describe('Company users management', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
     await setupUserRoutes(page);
+    await seedAdminState(page);
   });
 
   test('lists company users and invites a new user', async ({ page }) => {

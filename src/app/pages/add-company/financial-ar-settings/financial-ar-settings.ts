@@ -110,8 +110,8 @@ export class FinancialArSettings implements OnInit, OnDestroy {
           localStorage.setItem('currentStep', 'step-4');
 
           const nextUrl = this.isEditMode
-            ? `/admin/company/edit/${this.companyId}/step-4`
-            : `/admin/company/add/step-4`;
+            ? `/admin/lender/edit/${this.companyId}/step-4`
+            : `/admin/lender/add/step-4`;
 
           this.router.navigate([nextUrl]);
         },
@@ -123,7 +123,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
 
   saveLocalEditData() {
     this.persistFinancialEdit(true);
-    this.router.navigate([`/admin/company/edit/${this.companyId}/step-4`]);
+    this.router.navigate([`/admin/lender/edit/${this.companyId}/step-4`]);
   }
 
   private persistFinancialEdit(force = false) {

@@ -18,8 +18,8 @@ const success = <T>(data: T) => ({
 
 test.describe('Credit memo board', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
+    await seedAdminState(page);
   });
 
   test('shows draft/approved tabs and approves a memo', async ({ page }) => {

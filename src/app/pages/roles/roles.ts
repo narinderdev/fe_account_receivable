@@ -164,7 +164,7 @@ export class Roles implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_ROLES',
         create: 'CREATE_ROLES',
-        update:'UPDATE_ROLE',
+        update: 'UPDATE_ROLE',
       },
     },
     {
@@ -257,6 +257,19 @@ export class Roles implements OnInit, OnDestroy {
       .replace(/_/g, ' ')
       .toLowerCase()
       .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  isSystemRole(role: Role): boolean {
+    const systemRoles = [
+      'ADMIN',
+      'AR_SPECIALIST',
+      'CASH_APPLICATION',
+      'CUSTOMER_CREATION',
+      'AR_MANAGER',
+      'CUSTOMER_MANAGER',
+    ];
+
+    return systemRoles.includes(role.name?.toUpperCase() || '');
   }
 
   openModal() {

@@ -44,9 +44,9 @@ const glCodeRows = [
 
 test.describe('GL Codes workspace', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
     await setupGlCodeRoutes(page);
+    await seedAdminState(page);
   });
 
   test('lists, creates, and edits GL codes', async ({ page }) => {

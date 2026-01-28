@@ -3,9 +3,10 @@ import { ChangeDetectorRef, NgZone } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Customer } from '../../services/customer';
 import { ToastrService } from 'ngx-toastr';
-import { CompanyService } from '../../services/company-service';
+import { CompanySelectionService } from '../../services/company-selection.service';
 
 import { AddCustomer } from './add-customer';
+import { Subject } from 'rxjs';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
 describe('AddCustomer', () => {
@@ -21,10 +22,11 @@ describe('AddCustomer', () => {
     const router = createSpyObj<Router>('Router', ['navigate']);
     const route = { snapshot: { params: {} } } as ActivatedRoute;
     const toastr = createSpyObj<ToastrService>('ToastrService', ['success', 'error', 'warning']);
-    const companyService = createSpyObj<CompanyService>('CompanyService', [
-      'getCompany',
-      'setEditingCompany',
-    ]);
+    const companySelection = {
+      getSelectedCompanyId: createSpy('getSelectedCompanyId').mockReturnValue(null),
+      selectedCompanyId$: new Subject<string | null>(),
+      setSelectedCompanyId: createSpy('setSelectedCompanyId'),
+    } as unknown as CompanySelectionService;
 
     const instance = new AddCustomer(
       fb,
@@ -34,7 +36,7 @@ describe('AddCustomer', () => {
       router,
       route,
       toastr,
-      companyService
+      companySelection
     );
     instance.initializeForms();
     return instance;

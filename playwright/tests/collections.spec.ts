@@ -20,8 +20,8 @@ const success = <T>(data: T) => ({
 
 test.describe('Collections workspace', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
+    await seedAdminState(page);
   });
 
   test('shows tabs, sends reminders, creates promises, and views disputes', async ({ page }) => {

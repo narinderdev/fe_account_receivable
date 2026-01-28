@@ -56,18 +56,18 @@ export const routes: Routes = [
     canActivateChild: [AuthGuard, CompanyGuard],
     children: [
       { path: 'dashboard', component: Dashboard },
-      { path: 'customers', component: Customers },
-      { path: 'customers/add', component: AddCustomer },
-      { path: 'customers/edit/:id', component: AddCustomer },
-      { path: 'customers/:id', component: CustomerDetail },
+      { path: 'company', component: Customers },
+      { path: 'company/add', component: AddCustomer },
+      { path: 'company/edit/:id', component: AddCustomer },
+      { path: 'company/:id', component: CustomerDetail },
       {
-        path: 'customers/:customerId/invoices/:invoiceId',
+        path: 'company/:customerId/invoices/:invoiceId',
         component: InvoiceDetail,
       },
 
-      { path: 'company', component: Company },
+      { path: 'lender', component: Company },
       {
-        path: 'company/add',
+        path: 'lender/add',
         component: AddCompany,
         children: [
           { path: '', redirectTo: 'step-1', pathMatch: 'full' },
@@ -82,7 +82,7 @@ export const routes: Routes = [
 
       // EDIT COMPANY FLOW
       {
-        path: 'company/edit/:id',
+        path: 'lender/edit/:id',
         component: AddCompany,
         children: [
           { path: '', redirectTo: 'step-1', pathMatch: 'full' },
@@ -94,7 +94,7 @@ export const routes: Routes = [
         ],
       },
 
-      { path: 'company/onboarding-complete', component: OnboardingComplete },
+      { path: 'lender/onboarding-complete', component: OnboardingComplete },
 
       // Invoices
       { path: 'invoices', component: Invoices },

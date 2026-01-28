@@ -3,8 +3,8 @@ import { mockAdminApis, seedAdminState } from './admin-helpers';
 
 test.describe('Admin workspace smoke tests', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
+    await seedAdminState(page);
   });
 
   test('renders AR Codes for the selected company', async ({ page }) => {

@@ -8,15 +8,15 @@ const sampleInvoiceNumber = 'INV-9001';
 
 test.describe('Payments workflows', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
+    await seedAdminState(page);
   });
 
   test('lists payments, filters results, and opens payment details', async ({ page }) => {
     await page.goto('/admin/payments');
     await expect(page.getByRole('button', { name: 'Receive Payments' })).toBeVisible();
 
-    const searchInput = page.getByPlaceholder('Enter customer name');
+    const searchInput = page.getByPlaceholder('Enter company name');
     await expect(searchInput).toBeVisible();
     await expect(page.getByText(sampleCustomerName)).toBeVisible();
     await expect(page.getByRole('cell', { name: 'ACH' })).toBeVisible();
@@ -40,7 +40,7 @@ test.describe('Payments workflows', () => {
     await expect(page).toHaveURL(/\/admin\/payments\/receive-payment$/);
 
     await page.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByText('Customer is required')).toBeVisible();
+    await expect(page.getByText('Company is required')).toBeVisible();
     await expect(page.getByText('Bank deposit is required and must be 0 or greater')).toBeVisible();
     await expect(page.getByText('Service fee is required and must be 0 or greater')).toBeVisible();
     await expect(page.getByText('Payment method is required')).toBeVisible();

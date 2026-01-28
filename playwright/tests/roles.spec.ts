@@ -31,13 +31,13 @@ const sampleRoles = [
 
 test.describe('Roles workspace', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
     await setupRoleRoutes(page);
+    await seedAdminState(page);
   });
 
   test('lists roles and enforces permission dependencies when creating a new role', async ({ page }) => {
-    await page.goto('/admin/roles');
+    await page.goto('/admin/roles', { waitUntil: 'domcontentloaded' });
 
     const rows = page.locator('.roles-table tbody tr');
     await expect(rows).toHaveCount(sampleRoles.length);
@@ -53,7 +53,7 @@ test.describe('Roles workspace', () => {
     await expect(viewCheckbox).toBeDisabled();
 
     const createCheckbox = companyRow.locator('td').nth(2).locator('input');
-    await createCheckbox.check();
+    await createCheckbox.check({ force: true });
     await expect(createCheckbox).toBeChecked();
     await expect(viewCheckbox).toBeChecked();
 

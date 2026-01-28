@@ -114,6 +114,7 @@ function createDunning(overrides: Partial<Dunning> = {}): Dunning {
     level3: '',
     level4: '',
     pastDue: '',
+    paymentTerms: '',
     placeOnCreditHold: false,
     ...overrides,
   };

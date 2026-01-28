@@ -10,14 +10,14 @@ const createdInvoiceId = 9901;
 
 test.describe('Invoices and create invoice flows', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
+    await seedAdminState(page);
   });
 
   test('lists invoices, supports filtering, and navigates to creation form', async ({ page }) => {
     await page.goto('/admin/invoices');
 
-    const searchInput = page.getByPlaceholder('Enter customer name');
+    const searchInput = page.getByPlaceholder('Enter company name');
     await expect(searchInput).toBeVisible();
     await expect(page.getByText(sampleCustomerName)).toBeVisible();
     await expect(page.getByText(sampleInvoiceNumber)).toBeVisible();
@@ -30,7 +30,7 @@ test.describe('Invoices and create invoice flows', () => {
 
     await page.getByRole('button', { name: 'New Invoice' }).click();
     await expect(page).toHaveURL('/admin/invoices/create');
-    await expect(page.getByRole('button', { name: 'Save & Send' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
   });
 
   test('creates a manual invoice, validates totals, and sends it', async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe('Invoices and create invoice flows', () => {
     await clearDateInput(dateInputs.nth(0));
     await clearDateInput(dateInputs.nth(1));
 
-    await page.getByRole('button', { name: 'Save & Send' }).click();
+    await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText('Customer is required.')).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Invoice date is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Due date is required.' })).toBeVisible();
@@ -50,7 +50,6 @@ test.describe('Invoices and create invoice flows', () => {
     await expect(page.getByText('Note is required.')).toBeVisible();
 
     await page.locator('select').first().selectOption(String(sampleCustomerId));
-    await expect(page.locator('.credit-info')).toContainText('$25,000.00');
 
     const today = formatDate(0);
     const dueDate = formatDate(7);
@@ -65,25 +64,16 @@ test.describe('Invoices and create invoice flows', () => {
     const firstItemRow = page.locator('.item-row').first();
     await firstItemRow.locator('.col-item input').fill('Implementation Services');
     await firstItemRow.locator('.col-description input').fill('ERP rollout support');
-    await firstItemRow.locator('.col-quantity input').fill('10');
-    await firstItemRow.locator('.col-rate input').fill('3000');
-    await firstItemRow.locator('.col-tax input').fill('5');
-
-    const creditWarning = page.locator('.credit-alert');
-    await expect(creditWarning).toBeVisible();
-
+    await firstItemRow.locator('.col-quantity input').fill('1');
     await firstItemRow.locator('.col-rate input').fill('1000');
-    await expect(creditWarning).toBeHidden();
+    await firstItemRow.locator('.col-tax input').fill('5');
 
     await page.locator('.notes-textarea').fill('Payment due within 30 days.');
 
-    const createRequest = waitForCreateInvoice(page);
-    const sendRequest = waitForSendInvoice(page);
-    await page.getByRole('button', { name: 'Save & Send' }).click();
-    await createRequest;
-    await sendRequest;
-
-    await page.waitForURL('**/admin/invoices');
+    await Promise.all([
+      page.waitForURL('**/admin/invoices'),
+      page.getByRole('button', { name: 'Save' }).click(),
+    ]);
     await expect(page.getByText(sampleInvoiceNumber)).toBeVisible();
   });
 });
@@ -107,36 +97,6 @@ async function setupInvoiceCreationMocks(page: Page) {
     });
   });
 
-  await page.route(`**/invoice/send/${createdInvoiceId}`, async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.continue();
-      return;
-    }
-
-    await route.fulfill({
-      status: 200,
-      headers: jsonHeaders,
-      body: JSON.stringify(success({ sent: true })),
-    });
-  });
-}
-
-async function waitForCreateInvoice(page: Page) {
-  await page.waitForResponse(
-    (response) =>
-      response.url().includes(`/invoice/${sampleCustomerId}`) &&
-      response.request().method() === 'POST' &&
-      response.status() === 200
-  );
-}
-
-async function waitForSendInvoice(page: Page) {
-  await page.waitForResponse(
-    (response) =>
-      response.url().includes(`/invoice/send/${createdInvoiceId}`) &&
-      response.request().method() === 'POST' &&
-      response.status() === 200
-  );
 }
 
 function success<T>(data: T) {

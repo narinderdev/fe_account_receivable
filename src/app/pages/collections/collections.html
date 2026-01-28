@@ -15,7 +15,7 @@
     </div> -->
 
     <div class="overdue-box">
-      <label>Company Overdue</label>
+      <label>Lender Overdue</label>
       <div class="amount">
         <ng-container *ngIf="!loadingCompanyOverdue; else companyOverdueLoading">
           ${{ companyOverdueAmount | number }}
@@ -87,14 +87,14 @@
 
     <ng-container *ngIf="!loadingFollowUp">
       <div *ngIf="collectionsPagination.totalItems === 0" class="empty-text">
-        No customers need follow ups.
+        No company need follow ups.
       </div>
 
       <div class="table-scroll" *ngIf="collectionsPagination.totalItems > 0">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Customer</th>
+              <th>Company</th>
               <!-- <th>Customer ID</th> -->
               <th>Overdue Amount</th>
               <!-- <th>Actions</th> -->
@@ -187,7 +187,7 @@
           <thead>
             <tr>
               <th>Invoice #</th>
-              <th>Customer</th>
+              <th>Company</th>
               <th>Invoice Date</th>
               <th>Due Date</th>
               <th>Total Amount</th>
@@ -313,7 +313,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Customer</th>
+              <th>Company</th>
               <!-- <th>Invoice #</th> -->
               <th>Amount</th>
               <th>Promise Date</th>
@@ -416,7 +416,7 @@
           <thead>
             <tr>
               <th>Dispute ID</th>
-              <th>Customer</th>
+              <th>Company</th>
               <th>Invoice</th>
               <th>Invoice Amount</th>
               <th>Disputed Amount</th>
@@ -556,14 +556,14 @@
         <div class="form-row">
           <!-- CUSTOMER -->
           <div class="form-field">
-            <label>Customer <span class="color">*</span></label>
+            <label>Company <span class="color">*</span></label>
             <select [(ngModel)]="selectedCustomerId" (change)="onCustomerChange()">
-              <option value="">Select customer</option>
+              <option value="">Select company</option>
               <option *ngFor="let c of customers" [value]="c.id">
                 {{ c.customerName }}
               </option>
             </select>
-            <p class="error" *ngIf="submitted && !selectedCustomerId">Customer is required</p>
+            <p class="error" *ngIf="submitted && !selectedCustomerId">Company is required</p>
           </div>
 
           <!-- OVERDUE AMOUNT -->
@@ -649,20 +649,20 @@
       <div class="modal-body">
         <div class="form-row">
           <div class="form-field">
-            <label>Customer <span class="color">*</span></label>
+            <label>Company <span class="color">*</span></label>
             <select
               [(ngModel)]="selectedDisputeCustomerId"
               (change)="onDisputeCustomerChange()"
               [disabled]="loadingDisputeCustomers"
             >
-              <option value="" disabled *ngIf="loadingDisputeCustomers">Loading customers...</option>
-              <option value="" *ngIf="!loadingDisputeCustomers">Select customer</option>
+              <option value="" disabled *ngIf="loadingDisputeCustomers">Loading companies...</option>
+              <option value="" *ngIf="!loadingDisputeCustomers">Select company</option>
               <option *ngFor="let customer of disputeCustomers" [value]="customer.id">
                 {{ customer.customerName }}
               </option>
             </select>
             <p class="error" *ngIf="disputeSubmitted && !selectedDisputeCustomerId">
-              Customer is required
+              Company is required
             </p>
           </div>
 
@@ -674,7 +674,7 @@
               [disabled]="loadingDisputeInvoices || !selectedDisputeCustomerId"
             >
               <option value="" disabled *ngIf="!selectedDisputeCustomerId">
-                Select a customer first
+                Select a company first
               </option>
               <option value="" disabled *ngIf="selectedDisputeCustomerId && loadingDisputeInvoices">
                 Loading invoices...

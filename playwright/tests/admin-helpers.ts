@@ -507,7 +507,7 @@ export function handlePreflight(route: Route): boolean {
 
 export async function seedAdminState(page: Page, extraStorage: Record<string, string> = {}) {
   const storage = { ...defaultStorage, ...extraStorage };
-  await page.goto('/login');
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('domcontentloaded');
   await page.evaluate((entries) => {
     Object.entries(entries).forEach(([key, value]) => {

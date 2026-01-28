@@ -30,7 +30,7 @@
                 type="button"
                 (click)="openEditModal(r)"
                 title="Edit"
-                *ngIf="canEditRoles"
+                *ngIf="canEditRoles && !isSystemRole(r)"
               >
                 <img src="/editIcn.svg" alt="Edit" class="action-icon" />
               </button>

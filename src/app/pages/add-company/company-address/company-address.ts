@@ -135,7 +135,7 @@ export class CompanyAddress implements OnInit, OnDestroy {
 
     if (this.isEditMode) {
       this.persistEditAddress(true);
-      this.router.navigate([`/admin/company/edit/${this.companyId}/step-3`]);
+      this.router.navigate([`/admin/lender/edit/${this.companyId}/step-3`]);
       return;
     }
 
@@ -159,7 +159,7 @@ export class CompanyAddress implements OnInit, OnDestroy {
           this.companyService.setEditingCompany(updated);
           this.companyData = updated;
 
-          this.router.navigate([`/admin/company/add/step-3`]);
+          this.router.navigate([`/admin/lender/add/step-3`]);
         },
         error: (err) => {
           console.error('Address API failed', err);

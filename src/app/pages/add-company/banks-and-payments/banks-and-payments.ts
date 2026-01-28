@@ -160,7 +160,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       next: () => {
         this.isSaving = false;
 
-        this.router.navigate(['/admin/company/onboarding-complete'], {
+        this.router.navigate(['/admin/lender/onboarding-complete'], {
           queryParams: { id: this.companyId },
         });
       },
@@ -189,7 +189,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
 
     if (!payload || Object.keys(payload).length === 0) {
       this.isSaving = false;
-      this.router.navigate(['/admin/company']);
+      this.router.navigate(['/admin/lender']);
       return;
     }
 
@@ -202,11 +202,11 @@ export class BanksAndPayments implements OnInit, OnDestroy {
         this.companyService.setEditingCompany(null);
         this.companyService.setOriginalCompany(null);
 
-        this.router.navigate(['/admin/company']);
+        this.router.navigate(['/admin/lender']);
       },
       error: (err) => {
         this.isSaving = false;
-        console.error('Company update failed:', err);
+        console.error('Lender update failed:', err);
       },
     });
   }
@@ -218,7 +218,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
 
     const company = this.companyService.getEditingCompanySnapshot() || this.companyData;
     if (!company) {
-      this.toastr.error('Company data is missing. Please reload and try again.');
+      this.toastr.error('Lender data is missing. Please reload and try again.');
       return false;
     }
 

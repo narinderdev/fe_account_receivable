@@ -79,7 +79,7 @@ describe('BanksAndPayments', () => {
       companyService.createBanking.mockReturnValue(of(createCompanyResponse()));
       instance.saveBankPayment();
       expect(companyService.createBanking).toHaveBeenCalledWith(3, expectedPayload);
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/company/onboarding-complete'], {
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/onboarding-complete'], {
         queryParams: { id: 3 },
       });
     });
@@ -92,12 +92,12 @@ describe('BanksAndPayments', () => {
       companyService.getEditingCompanySnapshot.mockReturnValue(null);
       instance.saveBankPayment();
       expect(toastr.error).toHaveBeenCalledWith(
-        'Company data is missing. Please reload and try again.'
+        'Lender data is missing. Please reload and try again.'
       );
       expect(companyService.updateCompany).not.toHaveBeenCalled();
     });
 
-    it('updates the company when edit mode validations pass', () => {
+    it('updates the lender when edit mode validations pass', () => {
       const { instance, companyService, router } = createComponent();
       instance.isEditMode = true;
       instance.companyId = 6;
@@ -112,7 +112,7 @@ describe('BanksAndPayments', () => {
       expect(companyService.updateCompany).toHaveBeenCalledWith(6, { legalName: 'Updated' });
       expect(companyService.setEditingCompany).toHaveBeenCalledWith(null);
       expect(companyService.setOriginalCompany).toHaveBeenCalledWith(null);
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/company']);
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender']);
     });
   });
 });

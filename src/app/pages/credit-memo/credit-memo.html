@@ -40,7 +40,7 @@
           <thead>
             <tr>
               <th>Credit Memo No.</th>
-              <th>Customer</th>
+              <th>Company</th>
               <th>Amount</th>
               <!-- <th>Applied Amount</th> -->
               <th>AR Code</th>
@@ -260,19 +260,19 @@
         <div class="modal-body">
           <div class="form-row">
             <div class="form-field">
-              <label>Customer <span class="color">*</span></label>
+              <label>Company <span class="color">*</span></label>
               <select
                 #customerSelect
                 formControlName="customerId"
                 (change)="handleCustomerSelection(customerSelect.value)"
               >
-                <option value="">Select Customer</option>
+                <option value="">Select company</option>
                 <option *ngFor="let customer of customers" [value]="customer.id">
                   {{ customer.name }}
                 </option>
               </select>
               <p class="error" *ngIf="submitted && creditMemoForm.controls['customerId'].invalid">
-                Customer is required
+                Company is required
               </p>
             </div>
 
@@ -318,7 +318,7 @@
 
           <div class="invoices-section" *ngIf="creditMemoForm.controls['applyToInvoiceNow'].value">
             <div class="section-header">
-              <h3>Customer Invoices</h3>
+              <h3>Company Invoices</h3>
               <p class="helper-text" *ngIf="invoicesLoading">
                 <app-spinner></app-spinner>
                 Loading invoices...

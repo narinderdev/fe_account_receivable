@@ -29,15 +29,15 @@
         <form [formGroup]="mainForm" (ngSubmit)="(false)" (submit)="(false)">
           <div class="form-grid">
             <div class="form-field">
-              <label>Customer Name <span class="color">*</span></label>
-              <input type="text" formControlName="customerName" placeholder="Enter customer name" />
+              <label>Company Name <span class="color">*</span></label>
+              <input type="text" formControlName="customerName" placeholder="Enter company name" />
               <div class="error" *ngIf="submitted && mainForm.controls['customerName'].errors">
                 <span *ngIf="mainForm.controls['customerName'].hasError('required')">
-                  Customer Name is required.
+                  Company Name is required.
                 </span>
 
                 <span *ngIf="mainForm.controls['customerName'].hasError('minlength')">
-                  Customer Name must be at least 2 letters.
+                  Company Name must be at least 2 letters.
                 </span>
 
                 <span *ngIf="mainForm.controls['customerName'].hasError('pattern')">
@@ -47,7 +47,7 @@
             </div>
 
             <div class="form-field">
-              <label>Customer Type <span class="color">*</span></label>
+              <label>Company Type <span class="color">*</span></label>
               <input
                 type="text"
                 formControlName="customerType"
@@ -55,7 +55,7 @@
               />
               <div class="error" *ngIf="submitted && mainForm.controls['customerType'].errors">
                 <span *ngIf="mainForm.controls['customerType'].hasError('required')">
-                  Customer Type is required.
+                  Company Type is required.
                 </span>
 
                 <span *ngIf="mainForm.controls['customerType'].hasError('pattern')">
@@ -272,7 +272,7 @@
           </div>
 
           <div class="toggle-row">
-            <span>Allow this customer to pay invoices via direct debit</span>
+            <span>Allow this COMPANY to pay invoices via direct debit</span>
 
             <label class="switch">
               <input type="checkbox" formControlName="allowDirectDebit" />
@@ -353,12 +353,12 @@
 
             <br />
 
-            <h2 class="section-title">Customer VAT Codes</h2>
+            <h2 class="section-title">VAT Codes</h2>
 
             <div class="checkbox-group">
               <label class="checkbox-item">
                 <input type="checkbox" formControlName="enableVatCodes" />
-                Enable VAT codes for this customer
+                Enable VAT codes
               </label>
             </div>
 
@@ -389,7 +389,7 @@
           <div class="checkbox-group">
             <label class="checkbox-item">
               <input type="checkbox" formControlName="placeOnCreditHold" />
-              Place this customer on credit hold
+              Place this company on credit hold
             </label>
           </div>
 
@@ -540,7 +540,7 @@
 
     <div class="tab-footer">
       <div class="actions">
-        <button class="btn-cancel" routerLink="/admin/customers">Cancel</button>
+        <button class="btn-cancel" routerLink="/admin/company">Cancel</button>
 
         <ng-container *ngIf="!isEditMode">
           <button
@@ -603,7 +603,7 @@
             [disabled]="isUpdatingCustomer"
           >
             <ng-container *ngIf="!isUpdatingCustomer; else spinUpdating">
-              Update Customer
+              Update
             </ng-container>
 
             <ng-template #spinUpdating>

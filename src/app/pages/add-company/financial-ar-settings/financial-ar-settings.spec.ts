@@ -69,7 +69,7 @@ describe('FinancialArSettings', () => {
       companyService.createFinancialSettings.mockReturnValue(of(createCompanyResponse()));
       instance.saveFinancialSettings();
       expect(companyService.createFinancialSettings).toHaveBeenCalledWith(1, payload);
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/company/add/step-4']);
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/add/step-4']);
     });
 
     it('persists edit-mode changes locally', () => {
@@ -81,7 +81,7 @@ describe('FinancialArSettings', () => {
       instance.saveFinancialSettings();
       expect(companyService.createFinancialSettings).not.toHaveBeenCalled();
       expect(companyService.setEditingCompany).toHaveBeenCalled();
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/company/edit/4/step-4']);
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/edit/4/step-4']);
     });
   });
 });

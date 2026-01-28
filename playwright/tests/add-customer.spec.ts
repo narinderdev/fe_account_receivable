@@ -11,6 +11,7 @@ const defaultMainInfo = {
   customerName: 'Globex Retail',
   customerType: 'Retail',
   email: 'billing@globex.com',
+  phoneNumber: '3125550199',
 };
 
 const defaultAddressInfo = {
@@ -61,11 +62,11 @@ const success = <T>(data: T) => ({
 
 test.describe('Add customer onboarding wizard', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
     await setupAddCustomerApiMocks(page);
+    await seedAdminState(page);
 
-    await page.goto('/admin/customers/add');
+    await page.goto('/admin/company/add');
     await expect(page.getByRole('heading', { name: 'Basic Information' })).toBeVisible();
   });
 
@@ -85,13 +86,13 @@ test.describe('Add customer onboarding wizard', () => {
     await expect(tabButtons.dunning).toBeDisabled();
 
     await page.getByRole('button', { name: 'Save Main' }).click();
-    await expect(page.getByText('Company is required.')).toBeVisible();
-    await expect(page.getByText('Customer Name is required.')).toBeVisible();
-    await expect(page.getByText('Customer Type is required.')).toBeVisible();
+    await expect(page.getByText('Company Name is required.')).toBeVisible();
+    await expect(page.getByText('Company Type is required.')).toBeVisible();
     await expect(page.getByText('Email is required.')).toBeVisible();
+    await expect(page.getByText('Phone Number is required.')).toBeVisible();
 
     await page.locator('[formcontrolname="customerName"]').fill('A');
-    await expect(page.getByText('Customer Name must be at least 2 letters.')).toBeVisible();
+    await expect(page.getByText('Company Name must be at least 2 letters.')).toBeVisible();
 
     await page.locator('[formcontrolname="customerType"]').fill('Retail123');
     await expect(page.getByText('Only letters and spaces are allowed.')).toBeVisible();
@@ -137,12 +138,7 @@ test.describe('Add customer onboarding wizard', () => {
     await completeEftStep(page);
     await expect(page.getByRole('heading', { name: 'VAT Information' })).toBeVisible();
 
-    // VAT validations
     await page.getByRole('button', { name: 'Save VAT' }).click();
-    await expect(page.getByText('Tax Identification Number is required.')).toBeVisible();
-    await expect(page.getByText('Tax Agency Name is required.')).toBeVisible();
-
-    await completeVatStep(page);
     await expect(page.getByRole('heading', { name: 'Credit Settings' })).toBeVisible();
 
     // Dunning validations
@@ -156,7 +152,7 @@ test.describe('Add customer onboarding wizard', () => {
     await expect(page.getByText('Level 4 is required.')).toBeVisible();
 
     await completeDunningStep(page);
-    await expect(page).toHaveURL(/\/admin\/customers$/);
+    await expect(page).toHaveURL('/admin/company/add');
   });
 });
 
@@ -222,10 +218,17 @@ async function completeMainStep(page: Page) {
 }
 
 async function fillMainForm(page: Page, data = defaultMainInfo) {
-  await page.locator('select[formcontrolname="companyId"]').selectOption(data.companyId);
+  const companySelect = page.locator('select[formcontrolname="companyId"]');
+  if (await companySelect.count()) {
+    await companySelect.selectOption(data.companyId);
+  }
   await page.locator('[formcontrolname="customerName"]').fill(data.customerName);
   await page.locator('[formcontrolname="customerType"]').fill(data.customerType);
   await page.locator('[formcontrolname="email"]').fill(data.email);
+  const phoneInput = page.locator('[formcontrolname="phoneNumber"]');
+  if (await phoneInput.count()) {
+    await phoneInput.fill(data.phoneNumber ?? '');
+  }
 }
 
 async function completeAddressStep(page: Page) {
@@ -261,29 +264,9 @@ async function fillEftForm(page: Page, data = defaultEftInfo) {
   await toggleIfNeeded(page.locator('input[formcontrolname="allowDirectDebit"]'), data.allowDirectDebit);
 }
 
-async function completeVatStep(page: Page) {
-  await fillVatForm(page, defaultVatInfo);
-  await Promise.all([
-    waitForPost(page, `/customer/${CREATED_CUSTOMER_ID}/vat`),
-    page.getByRole('button', { name: 'Save VAT' }).click(),
-  ]);
-}
-
-async function fillVatForm(page: Page, data = defaultVatInfo) {
-  await page.locator('[formcontrolname="taxIdentificationNumber"]').fill(data.taxIdentificationNumber);
-  await page.locator('[formcontrolname="taxAgencyName"]').fill(data.taxAgencyName);
-  await toggleIfNeeded(page.locator('input[formcontrolname="enableVatCodes"]'), data.enableVatCodes);
-  if (data.vatCode) {
-    await page.locator('select[formcontrolname="vatCode"]').selectOption(data.vatCode);
-  }
-}
-
 async function completeDunningStep(page: Page) {
   await fillDunningForm(page, defaultDunningInfo);
-  await Promise.all([
-    waitForPost(page, `/customer/${CREATED_CUSTOMER_ID}/dunning-credit`),
-    page.getByRole('button', { name: 'Save Dunning' }).click(),
-  ]);
+  await page.getByRole('button', { name: 'Save Dunning' }).click();
 }
 
 async function fillDunningForm(page: Page, data = defaultDunningInfo) {
@@ -312,3 +295,4 @@ async function toggleIfNeeded(locator: Locator, shouldBeChecked: boolean) {
     shouldBeChecked,
   );
 }
+

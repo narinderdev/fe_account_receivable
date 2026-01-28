@@ -111,7 +111,7 @@ export class BasicInfo implements OnInit, OnDestroy {
         localStorage.setItem('currentStep', 'step-2');
 
         // Navigate directly to step-2 and let parent component handle tab state
-        this.router.navigate(['/admin/company/add/step-2'], { queryParams: { id } });
+        this.router.navigate(['/admin/lender/add/step-2'], { queryParams: { id } });
       },
       error: () => (this.isSaving = false),
     });
@@ -123,7 +123,7 @@ export class BasicInfo implements OnInit, OnDestroy {
   // ---------------------------------------------------
   storeEditChanges() {
     this.persistEditChanges(true);
-    this.router.navigate([`/admin/company/edit/${this.companyId}/step-2`]);
+    this.router.navigate([`/admin/lender/edit/${this.companyId}/step-2`]);
   }
 
   private persistEditChanges(force = false) {

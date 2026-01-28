@@ -42,7 +42,7 @@ type GenericRecord = Record<string, unknown>;
 })
 export class AddCustomer implements OnInit, OnDestroy {
   activeTab: TabKey = 'main';
-  pageTitle = 'New Customer';
+  pageTitle = 'New Company';
   tabItems: Array<{ key: TabKey; label: string }> = [
     { key: 'main', label: 'Main' },
     { key: 'address', label: 'Address' },
@@ -90,7 +90,7 @@ export class AddCustomer implements OnInit, OnDestroy {
   selectedCompanyId: string | null = null;
 
   private titleMap: Record<TabKey, string> = {
-    main: 'Customer – Basic Info',
+    main: 'Company – Basic Info',
     address: 'Address',
     processing: 'Processing',
     application: 'Application',
@@ -118,7 +118,7 @@ export class AddCustomer implements OnInit, OnDestroy {
     if (idParam) {
       this.isEditMode = true;
       this.customerId = Number(idParam);
-      this.pageTitle = 'Edit Customer';
+      this.pageTitle = 'Edit Company';
     }
 
     this.initializeForms();
@@ -327,8 +327,8 @@ export class AddCustomer implements OnInit, OnDestroy {
     if (this.mainForm.invalid || this.isSavingMain) {
       if (!this.mainForm.value.companyId) {
         this.toastr.error(
-          'Please select a company from the navbar before adding a customer.',
-          'Company Required',
+          'Please select a lender from the navbar before adding a company.',
+          'Lender Required',
         );
       }
       return;
@@ -340,8 +340,8 @@ export class AddCustomer implements OnInit, OnDestroy {
     if (!Number.isFinite(companyId) || companyId <= 0) {
       this.isSavingMain = false;
       this.toastr.error(
-        'Please select a company from the navbar before adding a customer.',
-        'Company Required',
+        'Please select a lender from the navbar before adding a company.',
+        'Lender Required',
       );
       return;
     }
@@ -357,7 +357,7 @@ export class AddCustomer implements OnInit, OnDestroy {
         this.goToTab('address');
       },
       error: (err) => {
-        const message = err?.error?.message || 'Failed to create customer.';
+        const message = err?.error?.message || 'Failed to create company.';
         this.toastr.error(message, 'Error');
         this.isSavingMain = false;
         this.cdr.detectChanges();
@@ -497,8 +497,8 @@ export class AddCustomer implements OnInit, OnDestroy {
     this.customerService.saveCredit(this.createdCustomerId, this.dunningForm.value).subscribe({
       next: () => {
         this.isSavingDunning = false;
-        this.toastr.success('Customer added successfully.', 'Success');
-        this.router.navigate(['/admin/customers']);
+        this.toastr.success('Company added successfully.', 'Success');
+        this.router.navigate(['/admin/company']);
       },
       error: () => (this.isSavingDunning = false),
     });
@@ -567,19 +567,19 @@ export class AddCustomer implements OnInit, OnDestroy {
     if (!Object.keys(payload).length) {
       // No changes detected - just navigate back without showing toaster
       this.isUpdatingCustomer = false;
-      this.router.navigate(['/admin/customers']);
+      this.router.navigate(['/admin/company']);
       return;
     }
 
     this.customerService.updateCustomer(this.customerId, payload).subscribe({
       next: () => {
         this.isUpdatingCustomer = false;
-        this.toastr.success('Customer details updated successfully.', 'Success');
-        this.router.navigate(['/admin/customers']);
+        this.toastr.success('Company details updated successfully.', 'Success');
+        this.router.navigate(['/admin/company']);
       },
       error: (err) => {
         this.isUpdatingCustomer = false;
-        const message = err?.error?.message || 'Failed to update customer.';
+        const message = err?.error?.message || 'Failed to update company.';
         this.toastr.error(message, 'Error');
       },
     });
@@ -587,32 +587,33 @@ export class AddCustomer implements OnInit, OnDestroy {
 
   private initializeCompanySelection() {
     this.selectedCompanyId = this.companySelection.getSelectedCompanyId();
-    this.applySelectedCompanyId(this.selectedCompanyId);
+    this.updateCompanyOptions(this.selectedCompanyId);
 
     this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
       this.selectedCompanyId = id;
-      this.applySelectedCompanyId(id);
+      this.updateCompanyOptions(id);
     });
   }
 
-  private applySelectedCompanyId(id: string | null) {
+  private updateCompanyOptions(id: string | null) {
+    // this.companyOptions = id ? [{ id, label: `Lender ${id}` }] : [];
+
     const control = this.mainForm?.get('companyId');
-    if (!control) return;
+    if (!control) {
+      return;
+    }
 
     if (!id) {
-      control.reset('', { emitEvent: false });
+      control.setValue('', { emitEvent: false });
+      control.markAsPristine();
       return;
     }
 
-    const parsed = Number(id);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      control.reset('', { emitEvent: false });
-      return;
+    const currentValue = control.value;
+    if (currentValue !== id) {
+      control.setValue(id, { emitEvent: false });
+      control.markAsPristine();
     }
-
-    control.setValue(parsed, { emitEvent: false });
-    control.markAsPristine();
-    control.updateValueAndValidity({ emitEvent: false });
   }
 
   ngOnDestroy() {

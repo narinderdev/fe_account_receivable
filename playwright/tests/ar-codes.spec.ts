@@ -65,9 +65,9 @@ const mappingPrefill = {
 
 test.describe('AR Codes workspace', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
     await setupArCodeRoutes(page);
+    await seedAdminState(page);
   });
 
   test('lists AR codes, allows creation, and configures GL mapping', async ({ page }) => {

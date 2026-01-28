@@ -46,9 +46,9 @@ const approvedWriteOffs = [
 
 test.describe('Write-Off workspace', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page, { userContext: JSON.stringify({ isAdmin: true, permissions: [] }) });
     await mockAdminApis(page);
     await setupWriteOffRoutes(page);
+    await seedAdminState(page, { userContext: JSON.stringify({ isAdmin: true, permissions: [] }) });
   });
 
   test('creates and approves write-offs', async ({ page }) => {

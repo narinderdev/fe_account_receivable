@@ -106,7 +106,7 @@ export class AddCompany implements OnInit {
         this.allowedTabs = this.tabs.map((t) => t.key);
       },
       error: (err) => {
-        console.error('Error loading company:', err);
+        console.error('Error loading lender:', err);
       },
     });
   }
@@ -118,9 +118,9 @@ export class AddCompany implements OnInit {
     }
 
     if (this.isEditMode) {
-      this.router.navigate([`/admin/company/edit/${this.companyId}/${step}`]);
+      this.router.navigate([`/admin/lender/edit/${this.companyId}/${step}`]);
     } else {
-      this.router.navigate([`/admin/company/add/${step}`]);
+      this.router.navigate([`/admin/lender/add/${step}`]);
     }
   }
 

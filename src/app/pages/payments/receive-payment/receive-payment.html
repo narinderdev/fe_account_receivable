@@ -15,19 +15,19 @@
     <div class="grid">
       <!-- Customer -->
       <div class="form-group">
-        <label>Customer <span class="required">*</span></label>
+        <label>Company <span class="required">*</span></label>
         <select
           [(ngModel)]="selectedCustomerId"
           (change)="onCustomerChange()"
           [class.error-input]="showCustomerError"
           name="customer"
         >
-          <option [ngValue]="null">Select Customer</option>
+          <option [ngValue]="null">Select Company</option>
           <option *ngFor="let c of customers" [ngValue]="c.id">
             {{ c.customerName }}
           </option>
         </select>
-        <div *ngIf="showCustomerError" class="error-message">Customer is required</div>
+        <div *ngIf="showCustomerError" class="error-message">Company is required</div>
       </div>
 
       <!-- Bank Deposit -->
@@ -169,7 +169,7 @@
         <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
       </svg>
-      <p>Please select a customer to view their unpaid invoices.</p>
+      <p>Please select a company to view their unpaid invoices.</p>
     </div>
 
     <!-- Show error if no invoice selected -->

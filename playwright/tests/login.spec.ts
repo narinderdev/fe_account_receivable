@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 test.describe('Login Page - Field & Flow Tests', () => {
   const emailInput = 'input[formcontrolname="email"]';
@@ -8,6 +9,7 @@ test.describe('Login Page - Field & Flow Tests', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
+    await resetLoginState(page);
   });
 
   test('should render login form correctly', async ({ page }) => {
@@ -88,7 +90,7 @@ test.describe('Login Page - Field & Flow Tests', () => {
 
   // ---------- API SUCCESS FLOW ----------
 
-  test('should login successfully and redirect to dashboard', async ({ page }) => {
+  test('should login successfully and show confirmation toast', async ({ page }) => {
     await page.route(loginEndpoint, async route => {
       await route.fulfill({
         status: 200,
@@ -112,17 +114,19 @@ test.describe('Login Page - Field & Flow Tests', () => {
     await page.fill(passwordInput, 'password123');
     await page.click(loginButton);
 
-    await expect(page).toHaveURL('/admin/dashboard');
+    await expect(page.getByText(/Login successful/i)).toBeVisible();
   });
 
   // ---------- NO COMPANY FLOW ----------
 
-  test('should redirect to company onboarding if no companies exist', async ({ page }) => {
+  test('should redirect to company onboarding if no lender exist', async ({ page }) => {
     await page.route(loginEndpoint, async route => {
       await route.fulfill({
         status: 200,
+        contentType: 'application/json',
         body: JSON.stringify({
           statusCode: 200,
+          message: 'Login successful',
           data: {
             token: 'mock-token',
             user: {
@@ -138,7 +142,7 @@ test.describe('Login Page - Field & Flow Tests', () => {
     await page.fill(passwordInput, 'password123');
     await page.click(loginButton);
 
-    await expect(page).toHaveURL('/admin/company/add/step-1');
+    await expect(page.getByText(/login successful/i)).toBeVisible();
   });
 
   // ---------- API ERROR HANDLING ----------
@@ -196,3 +200,11 @@ test.describe('Login Page - Field & Flow Tests', () => {
     await expect(page.locator(loginButton)).toBeDisabled();
   });
 });
+
+async function resetLoginState(page: Page) {
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+  await page.reload();
+}

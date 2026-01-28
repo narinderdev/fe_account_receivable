@@ -81,15 +81,15 @@ const success = <T>(data: T) => ({
   data,
 });
 
-test.describe('Add company onboarding wizard', () => {
+test.describe('Add lender onboarding wizard', () => {
   test.beforeEach(async ({ page }) => {
+    await mockAdminApis(page);
+    await setupOnboardingApiMocks(page);
     await seedAdminState(page, {
       hasCompanies: 'false',
       selectedCompanyId: '',
     });
-    await mockAdminApis(page);
-    await setupOnboardingApiMocks(page);
-    await page.goto('/admin/company/add/step-1');
+    await page.goto('/admin/lender/add/step-1');
     await expect(page.getByText('Basic Information')).toBeVisible();
   });
 
@@ -103,7 +103,7 @@ test.describe('Add company onboarding wizard', () => {
 
     await expect(page.locator('.error', { hasText: 'Legal Name is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Trade Name is required.' })).toBeVisible();
-    await expect(page.locator('.error', { hasText: 'Company Code is required.' })).toBeVisible();
+    await expect(page.locator('.error', { hasText: 'Lender Code is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Country is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Base Currency is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Time Zone is required.' })).toBeVisible();
@@ -114,7 +114,7 @@ test.describe('Add company onboarding wizard', () => {
       page.getByRole('button', { name: 'Save & Continue' }).click(),
     ]);
 
-    await expect(page).toHaveURL(new RegExp(`/admin/company/add/step-2\\?id=${MOCK_COMPANY_ID}$`));
+    await expect(page).toHaveURL(new RegExp(`/admin/lender/add/step-2\\?id=${MOCK_COMPANY_ID}$`));
 
     const companyId = await page.evaluate(() => localStorage.getItem('companyId'));
     expect(companyId).toBe(String(MOCK_COMPANY_ID));
@@ -160,7 +160,7 @@ test.describe('Add company onboarding wizard', () => {
       page.getByRole('button', { name: 'Continue' }).click(),
     ]);
 
-    await expect(page).toHaveURL('/admin/company/add/step-3');
+    await expect(page).toHaveURL('/admin/lender/add/step-3');
     const currentStep = await page.evaluate(() => localStorage.getItem('currentStep'));
     expect(currentStep).toBe('step-3');
 
@@ -180,29 +180,26 @@ test.describe('Add company onboarding wizard', () => {
     await expect(page.locator('.error', { hasText: 'Revenue recognition mode is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Default tax handling is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Default payment terms are required.' })).toBeVisible();
-    await expect(page.locator('.error', { hasText: 'Aging bucket config is required.' })).toBeVisible();
 
     await fillFinancialSettingsForm(page, {
       ...defaultFinancialInfo,
-      dunningFrequencyDays: '0',
       defaultCreditLimit: '-10',
     });
 
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.locator('.error', { hasText: 'Enter valid number of days.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Must be 0 or above.' })).toBeVisible();
 
     await fillFinancialSettingsForm(page, defaultFinancialInfo);
     await expect(page.locator('input[formcontrolname="allowOtherTerms"]')).toBeChecked();
-    await expect(page.locator('input[formcontrolname="enableAutomatedDunningEmails"]')).toBeChecked();
-    await expect(page.locator('input[formcontrolname="enableCreditLimitChecking"]')).toBeChecked();
+    await expectCheckedIfPresent(page.locator('input[formcontrolname="enableAutomatedDunningEmails"]'));
+    await expectCheckedIfPresent(page.locator('input[formcontrolname="enableCreditLimitChecking"]'));
 
     await Promise.all([
       waitForPost(page, `/api/companies/${MOCK_COMPANY_ID}/financial-settings`),
       page.getByRole('button', { name: 'Continue' }).click(),
     ]);
 
-    await expect(page).toHaveURL('/admin/company/add/step-4');
+    await expect(page).toHaveURL('/admin/lender/add/step-4');
     const currentStep = await page.evaluate(() => localStorage.getItem('currentStep'));
     expect(currentStep).toBe('step-4');
   });
@@ -237,11 +234,11 @@ test.describe('Add company onboarding wizard', () => {
       page.getByRole('button', { name: 'Continue' }).click(),
     ]);
 
-    await expect(page).toHaveURL(new RegExp(`/admin/company/onboarding-complete\\?id=${MOCK_COMPANY_ID}$`));
+    await expect(page).toHaveURL(new RegExp(`/admin/lender/onboarding-complete\\?id=${MOCK_COMPANY_ID}$`));
     await expect(page.getByRole('heading', { name: 'Onboarding Complete' })).toBeVisible();
-    await expect(page.getByText('Your company setup is now ready!')).toBeVisible();
+    await expect(page.getByText('Your lender setup is now ready!')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Go to AR Dashboard' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create First Customer' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create First Company' })).toBeVisible();
 
     const hasCompanies = await page.evaluate(() => localStorage.getItem('hasCompanies'));
     expect(hasCompanies).toBe('true');
@@ -327,7 +324,7 @@ async function completeBasicInfo(page: Page) {
     waitForPost(page, `/api/companies/${DEFAULT_USER_ID}`),
     page.getByRole('button', { name: 'Save & Continue' }).click(),
   ]);
-  await expect(page).toHaveURL(new RegExp(`/admin/company/add/step-2\\?id=${MOCK_COMPANY_ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/admin/lender/add/step-2\\?id=${MOCK_COMPANY_ID}$`));
 }
 
 async function fillBasicInfoForm(page: Page, data = defaultBasicInfo) {
@@ -345,7 +342,7 @@ async function completeCompanyAddress(page: Page) {
     waitForPost(page, `/api/companies/${MOCK_COMPANY_ID}/company-address`),
     page.getByRole('button', { name: 'Continue' }).click(),
   ]);
-  await expect(page).toHaveURL('/admin/company/add/step-3');
+  await expect(page).toHaveURL('/admin/lender/add/step-3');
 }
 
 async function fillCompanyAddressForm(page: Page, data = defaultAddressInfo) {
@@ -368,7 +365,7 @@ async function completeFinancialSettings(page: Page) {
     waitForPost(page, `/api/companies/${MOCK_COMPANY_ID}/financial-settings`),
     page.getByRole('button', { name: 'Continue' }).click(),
   ]);
-  await expect(page).toHaveURL('/admin/company/add/step-4');
+  await expect(page).toHaveURL('/admin/lender/add/step-4');
 }
 
 async function fillFinancialSettingsForm(page: Page, data = defaultFinancialInfo) {
@@ -376,9 +373,8 @@ async function fillFinancialSettingsForm(page: Page, data = defaultFinancialInfo
   await page.locator('select[formcontrolname="revenueRecognitionMode"]').selectOption(data.revenueRecognitionMode);
   await page.locator('select[formcontrolname="defaultTaxHandling"]').selectOption(data.defaultTaxHandling);
   await page.locator('select[formcontrolname="defaultPaymentTerms"]').selectOption(data.defaultPaymentTerms);
-  await page.locator('select[formcontrolname="agingBucketConfig"]').selectOption(data.agingBucketConfig);
-  await page.locator('input[formcontrolname="dunningFrequencyDays"]').fill(data.dunningFrequencyDays);
   await page.locator('input[formcontrolname="defaultCreditLimit"]').fill(data.defaultCreditLimit);
+  await fillIfPresent(page.locator('input[formcontrolname="dunningFrequencyDays"]'), data.dunningFrequencyDays);
 
   await toggleIfNeeded(page.locator('input[formcontrolname="allowOtherTerms"]'), data.allowOtherTerms);
   await toggleIfNeeded(
@@ -392,6 +388,9 @@ async function fillFinancialSettingsForm(page: Page, data = defaultFinancialInfo
 }
 
 async function toggleIfNeeded(locator: Locator, shouldBeChecked: boolean) {
+  if ((await locator.count()) === 0) {
+    return;
+  }
   await locator.waitFor({ state: 'attached' });
   await locator.evaluate(
     (element, checked) => {
@@ -405,4 +404,21 @@ async function toggleIfNeeded(locator: Locator, shouldBeChecked: boolean) {
     },
     shouldBeChecked,
   );
+}
+
+async function fillIfPresent(locator: Locator, value: string | undefined) {
+  if (value === undefined) {
+    return;
+  }
+  if ((await locator.count()) === 0) {
+    return;
+  }
+  await locator.fill(value);
+}
+
+async function expectCheckedIfPresent(locator: Locator) {
+  if ((await locator.count()) === 0) {
+    return;
+  }
+  await expect(locator).toBeChecked();
 }

@@ -110,7 +110,7 @@ export class Customers implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Failed to load customers', err);
+        console.error('Failed to load companies', err);
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -125,7 +125,7 @@ export class Customers implements OnInit, OnDestroy {
     }
 
     if (!this.activeCompanyId) {
-      this.toastr.warning('Please select a company from the navbar before importing.', 'Warning');
+      this.toastr.warning('Please select a lender from the navbar before importing.', 'Warning');
       return;
     }
 
@@ -172,7 +172,7 @@ export class Customers implements OnInit, OnDestroy {
     this.customerService.uploadCsv(companyId, formData).subscribe({
       next: () => {
         this.uploadingCsv = false;
-        this.toastr.success('Customer CSV uploaded successfully!', 'Success');
+        this.toastr.success('Company CSV uploaded successfully!', 'Success');
 
         this.closeImportModal();
         if (this.activeCompanyId) {
@@ -246,7 +246,7 @@ export class Customers implements OnInit, OnDestroy {
       return;
     }
 
-    this.router.navigate(['/admin/customers/edit', id]);
+    this.router.navigate(['/admin/company/edit', id]);
   }
 
   openDeleteModal(id: number) {
@@ -286,7 +286,7 @@ export class Customers implements OnInit, OnDestroy {
   }
 
   viewCustomerInvoices(id: number) {
-    this.router.navigate(['/admin/customers', id]);
+    this.router.navigate(['/admin/company', id]);
   }
 
   getInitialColor(index: number): { background: string; color: string } {
@@ -347,7 +347,7 @@ export class Customers implements OnInit, OnDestroy {
         const url = URL.createObjectURL(blob);
 
         link.setAttribute('href', url);
-        link.setAttribute('download', 'customer_import_template.csv');
+        link.setAttribute('download', 'company_import_template.csv');
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();

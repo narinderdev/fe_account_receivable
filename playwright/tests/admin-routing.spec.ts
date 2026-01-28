@@ -3,22 +3,22 @@ import { mockAdminApis, seedAdminState } from './admin-helpers';
 
 const adminRouteCases = [
   { path: '/admin/dashboard', title: 'Dashboard' },
-  { path: '/admin/customers', title: 'Customers' },
-  { path: '/admin/customers/add', title: 'Add Customer' },
-  { path: '/admin/customers/edit/1', title: 'Edit Customer' },
-  { path: '/admin/customers/1', title: 'Customer Details' },
-  { path: '/admin/customers/1/invoices/9001', title: 'Invoice Detail' },
   { path: '/admin/company', title: 'Company' },
-  { path: '/admin/company/add/step-1', title: 'Add Company' },
-  { path: '/admin/company/add/step-2', title: 'Add Company' },
-  { path: '/admin/company/add/step-3', title: 'Add Company' },
-  { path: '/admin/company/add/step-4', title: 'Add Company' },
-  { path: '/admin/company/edit/1/step-1', title: 'Edit Company' },
-  { path: '/admin/company/edit/1/step-2', title: 'Edit Company' },
-  { path: '/admin/company/edit/1/step-3', title: 'Edit Company' },
-  { path: '/admin/company/edit/1/step-4', title: 'Edit Company' },
+  { path: '/admin/company/add', title: 'Add Company' },
+  { path: '/admin/company/edit/1', title: 'Edit Company' },
+  { path: '/admin/company/1', title: 'Company Details' },
+  { path: '/admin/company/1/invoices/9001', title: 'Invoice Detail' },
+  { path: '/admin/lender', title: 'Lender' },
+  { path: '/admin/lender/add/step-1', title: 'Add Lender' },
+  { path: '/admin/lender/add/step-2', title: 'Add Lender' },
+  { path: '/admin/lender/add/step-3', title: 'Add Lender' },
+  { path: '/admin/lender/add/step-4', title: 'Add Lender' },
+  { path: '/admin/lender/edit/1/step-1', title: 'Edit Lender' },
+  { path: '/admin/lender/edit/1/step-2', title: 'Edit Lender' },
+  { path: '/admin/lender/edit/1/step-3', title: 'Edit Lender' },
+  { path: '/admin/lender/edit/1/step-4', title: 'Edit Lender' },
   {
-    path: '/admin/company/onboarding-complete',
+    path: '/admin/lender/onboarding-complete',
     title: 'Onboarding Complete',
     locator: '.onboarding-container .page-title',
   },
@@ -43,8 +43,8 @@ const adminRouteCases = [
 
 test.describe('Admin routing smoke coverage', () => {
   test.beforeEach(async ({ page }) => {
-    await seedAdminState(page);
     await mockAdminApis(page);
+    await seedAdminState(page);
   });
 
   for (const routeCase of adminRouteCases) {

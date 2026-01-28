@@ -19,12 +19,12 @@ export class CompanyGuard implements CanActivate, CanActivateChild {
   }
 
   private isCompanySetupRoute(url: string): boolean {
-    return url.startsWith('/admin/company/add') || url.startsWith('/admin/company/onboarding-complete');
+    return url.startsWith('/admin/lender/add') || url.startsWith('/admin/lender/onboarding-complete');
   }
 
   private validate(url: string): boolean | UrlTree {
     if (!this.hasCompanies() && !this.isCompanySetupRoute(url)) {
-      return this.router.parseUrl('/admin/company/add/step-1');
+      return this.router.parseUrl('/admin/lender/add/step-1');
     }
     return true;
   }

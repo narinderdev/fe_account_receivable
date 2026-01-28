@@ -24,7 +24,7 @@ describe('CustomerInvoices', () => {
       const { instance, router } = createComponent();
       instance.customerId = 7;
       instance.openInvoiceDetail(42);
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/customers', 7, 'invoices', 42]);
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/company', 7, 'invoices', 42]);
     });
   });
 });

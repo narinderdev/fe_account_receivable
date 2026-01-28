@@ -16,14 +16,14 @@ type TitleRule = {
 const TITLE_RULES: TitleRule[] = [
   { prefix: '/admin/invoices-reports', title: 'Invoices Reports' },
   { prefix: '/admin/payment-reports', title: 'Payments Reports' },
+  { prefix: '/admin/lender/add', title: 'Add Lender' },
+  { prefix: '/admin/lender/edit', title: 'Edit Lender' },
+  { prefix: '/admin/lender/onboarding-complete', title: 'Onboarding Complete' },
+  { prefix: '/admin/lender', title: 'Lender' },
   { prefix: '/admin/company/add', title: 'Add Company' },
   { prefix: '/admin/company/edit', title: 'Edit Company' },
-  { prefix: '/admin/company/onboarding-complete', title: 'Onboarding Complete' },
+  { prefix: '/admin/company/', title: 'Company Details' },
   { prefix: '/admin/company', title: 'Company' },
-  { prefix: '/admin/customers/add', title: 'Add Customer' },
-  { prefix: '/admin/customers/edit', title: 'Edit Customer' },
-  { prefix: '/admin/customers/', title: 'Customer Details' },
-  { prefix: '/admin/customers', title: 'Customers' },
   { prefix: '/admin/invoices/create', title: 'Create Invoice' },
   { prefix: '/admin/invoices/detail', title: 'Invoice Detail' },
   { prefix: '/admin/invoices', title: 'Invoices' },
@@ -93,7 +93,7 @@ export class Navbar implements OnInit, OnDestroy {
         const nextUrl = event.urlAfterRedirects || event.url;
         this.setTitle(nextUrl);
 
-        if (nextUrl.includes('/admin/company/onboarding-complete')) {
+        if (nextUrl.includes('/admin/lender/onboarding-complete')) {
           this.loadCompanies();
         }
       });
@@ -200,11 +200,11 @@ export class Navbar implements OnInit, OnDestroy {
 
   getSelectedCompanyLabel(): string {
     if (!this.companies.length) {
-      return 'No Companies';
+      return 'No Lender';
     }
 
     if (!this.selectedCompanyId) {
-      return 'Select Company';
+      return 'Select Lender';
     }
 
     const selected = this.companies.find(
@@ -217,7 +217,7 @@ export class Navbar implements OnInit, OnDestroy {
   private setTitle(url: string) {
     const cleanUrl = url.split('?')[0];
 
-    if (cleanUrl.startsWith('/admin/customers/') && cleanUrl.includes('/invoices/')) {
+    if (cleanUrl.startsWith('/admin/company/') && cleanUrl.includes('/invoices/')) {
       this.pageTitle = 'Invoice Detail';
       return;
     }

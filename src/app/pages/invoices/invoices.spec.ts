@@ -4,6 +4,7 @@ import { InvoiceService } from '../../services/invoice-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
+import { ToastrService } from 'ngx-toastr';
 
 import { Invoices } from './invoices';
 import { Invoice } from '../../models/invoice.model';
@@ -19,7 +20,8 @@ describe('Invoices', () => {
     } as unknown as CompanySelectionService;
     const userContext = createSpyObj<UserContextService>('UserContextService', ['hasPermission']);
     userContext.hasPermission.mockReturnValue(true);
-    return new Invoices(invoiceService, cdr, router, companySelection, userContext);
+    const toastr = createSpyObj<ToastrService>('ToastrService', ['success', 'warning', 'error']);
+    return new Invoices(invoiceService, cdr, router, companySelection, userContext, toastr);
   };
 
   it('should create', () => {
@@ -30,20 +32,21 @@ describe('Invoices', () => {
   describe('filtering and helpers', () => {
     it('filters invoices when searching by customer name', () => {
       const instance = createComponent();
-      instance.allInvoices = [
+      instance.state.allInvoices = [
         createInvoice({ customer: { ...createInvoice().customer, customerName: 'Acme' } }),
         createInvoice({ customer: { ...createInvoice().customer, customerName: 'Globex' } }),
       ];
+      instance.state.invoices = [...instance.state.allInvoices];
       instance.searchName = 'acm';
       instance.onSearchChange();
-      expect(instance.invoices.length).toBe(1);
-      expect(instance.invoices[0].customer.customerName).toBe('Acme');
+      expect(instance.state.invoices.length).toBe(1);
+      expect(instance.state.invoices[0].customer.customerName).toBe('Acme');
     });
 
     it('returns readable status labels', () => {
       const instance = createComponent();
-      expect(instance.getStatus(createInvoice({ status: 'PAID' }))).toBe('Paid');
-      expect(instance.getStatus(createInvoice({ status: 'OPEN' }))).toBe('Due');
+      expect(instance.formatStatus('PAID')).toBe('Paid');
+      expect(instance.formatStatus('past_due')).toBe('Past Due');
     });
   });
 });

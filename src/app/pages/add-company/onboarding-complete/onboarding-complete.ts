@@ -61,11 +61,11 @@ export class OnboardingComplete implements OnInit {
         localStorage.removeItem('originalCompany');
         this.companyService.setEditingCompany(null);
         this.companyService.setOriginalCompany(null);
-        this.router.navigate(['/admin/company']);
+        this.router.navigate(['/admin/lender']);
       },
       error: () => {
         this.isUpdating = false;
-        this.errorMessage = 'Failed to update company. Please try again.';
+        this.errorMessage = 'Failed to update lender. Please try again.';
       },
     });
   }
