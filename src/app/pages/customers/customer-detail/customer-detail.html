@@ -115,11 +115,12 @@
     <!-- ================= TAB CONTENT ================= -->
 
     <!-- BASIC -->
+    <!-- BASIC -->
     <div class="tab-content" *ngIf="activeTab === 'basic'">
       <div class="info-card">
         <h3 class="section-title">Contact Information</h3>
         <div class="info-row">
-          <span class="info-row-label">Customer</span>
+          <span class="info-row-label">Company</span>
           <span class="info-row-value">{{ customerData?.customerName || '-' }}</span>
         </div>
         <div class="info-row">
@@ -131,7 +132,11 @@
           <span class="info-row-value">{{ customerData?.email || '-' }}</span>
         </div>
         <div class="info-row">
-          <span class="info-row-label">Customer Type</span>
+          <span class="info-row-label">Phone Number</span>
+          <span class="info-row-value">{{ customerData?.phoneNumber || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Company Type</span>
           <span class="info-row-value">{{ customerData?.customerType || '-' }}</span>
         </div>
         <div class="info-row">
@@ -140,6 +145,56 @@
             {{ formatCurrency(monthEndBalance) }}
           </span>
           <span class="info-row-value" *ngIf="loadingMonthEnd">Loading...</span>
+        </div>
+      </div>
+
+      <!-- Add Social Media Section -->
+      <div class="info-card" style="margin-top: 20px">
+        <h3 class="section-title">Social Media</h3>
+        <div class="info-row">
+          <span class="info-row-label">Facebook</span>
+          <span class="info-row-value">
+            <a
+              *ngIf="customerData?.faceBook"
+              [href]="customerData?.faceBook"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="social-link"
+            >
+              {{ customerData?.faceBook }}
+            </a>
+            <span *ngIf="!customerData?.faceBook">-</span>
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Twitter</span>
+          <span class="info-row-value">
+            <a
+              *ngIf="customerData?.twitter"
+              [href]="customerData?.twitter"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="social-link"
+            >
+              {{ customerData?.twitter }}
+            </a>
+            <span *ngIf="!customerData?.twitter">-</span>
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">LinkedIn</span>
+          <span class="info-row-value">
+            <a
+              *ngIf="customerData?.linkedin"
+              [href]="customerData?.linkedin"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="social-link"
+            >
+              {{ customerData?.linkedin }}
+            </a>
+            <span *ngIf="!customerData?.linkedin">-</span>
+          </span>
         </div>
       </div>
     </div>

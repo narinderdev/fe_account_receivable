@@ -58,6 +58,10 @@ export interface CustomerEntity {
   customerName: string;
   customerType: string;
   email: string;
+  phoneNumber: string | null;
+  faceBook?: string | null;
+  twitter?: string | null;
+  linkedin?: string | null;
   deleted: boolean;
 
   address: Address | null;
@@ -103,6 +107,10 @@ export interface CreateCustomerPayload {
   customerName: string;
   customerType: string;
   email: string;
+  phoneNumber: string;
+  faceBook?: string;
+  twitter?: string;
+  linkedin?: string;
 }
 
 export type AddressPayload = Omit<Address, 'id'>;

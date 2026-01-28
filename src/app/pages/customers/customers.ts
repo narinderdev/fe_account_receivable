@@ -26,6 +26,8 @@ import { UserContextService } from '../../services/user-context.service';
 })
 export class Customers implements OnInit, OnDestroy {
   customers: CustomerEntity[] = [];
+  filteredCustomers: CustomerEntity[] = [];
+  searchTerm = '';
   loading = true;
   downloadingTemplate = false;
   // Delete Modal
@@ -84,6 +86,7 @@ export class Customers implements OnInit, OnDestroy {
         this.loadCustomers(this.activeCompanyId);
       } else {
         this.customers = [];
+        this.filteredCustomers = [];
         this.totalPages = 0;
         this.currentPage = 0;
         this.totalItems = 0;
@@ -100,8 +103,8 @@ export class Customers implements OnInit, OnDestroy {
     this.customerService.getCustomers(companyId, page, this.pageSize).subscribe({
       next: (res) => {
         const data = res?.data as PaginatedResponse<CustomerEntity>;
-
-        this.customers = data.content;
+        this.customers = data?.content ?? [];
+        this.applySearchFilter();
         this.totalPages = data.totalPages;
         this.currentPage = data.number;
         this.totalItems = data.totalElements ?? this.customers.length;
@@ -289,6 +292,11 @@ export class Customers implements OnInit, OnDestroy {
     this.router.navigate(['/admin/company', id]);
   }
 
+  onSearchInput(term: string) {
+    this.searchTerm = term;
+    this.applySearchFilter();
+  }
+
   getInitialColor(index: number): { background: string; color: string } {
     const palette = [
       { background: '#DBEAFE', color: '#2563EB' },
@@ -376,5 +384,19 @@ export class Customers implements OnInit, OnDestroy {
     this.canCreateCustomer = this.userContext.hasPermission('CREATE_CUSTOMER');
     this.canEditCustomer = this.userContext.hasPermission('EDIT_CUSTOMER');
     this.canDeleteCustomer = this.userContext.hasPermission('DELETE_CUSTOMER');
+  }
+
+  private applySearchFilter() {
+    const term = this.searchTerm.trim().toLowerCase();
+
+    if (!term) {
+      this.filteredCustomers = [...this.customers];
+      return;
+    }
+
+    this.filteredCustomers = this.customers.filter((customer) => {
+      const name = customer.customerName?.toLowerCase() ?? '';
+      return name.includes(term);
+    });
   }
 }

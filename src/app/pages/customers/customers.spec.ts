@@ -8,6 +8,7 @@ import { UserContextService } from '../../services/user-context.service';
 
 import { Customers } from './customers';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
+import { CustomerEntity } from '../../models/customer.model';
 
 describe('Customers', () => {
   const createComponent = (canCreate = true) => {
@@ -47,6 +48,35 @@ describe('Customers', () => {
       const instance = createComponent();
       expect(instance.getInitialColor(0)).toEqual({ background: '#DBEAFE', color: '#2563EB' });
       expect(instance.getInitialColor(6)).toEqual({ background: '#DBEAFE', color: '#2563EB' });
+    });
+  });
+
+  describe('search filtering', () => {
+    let nextId = 1;
+    const buildCustomer = (name: string): CustomerEntity =>
+      ({
+        id: nextId++,
+        customerName: name,
+      } as CustomerEntity);
+
+    it('filters customers by company name', () => {
+      const instance = createComponent();
+      instance.customers = [buildCustomer('Alpha Inc'), buildCustomer('Beta LLC')];
+
+      instance.onSearchInput('beta');
+
+      expect(instance.filteredCustomers).toHaveLength(1);
+      expect(instance.filteredCustomers[0].customerName).toBe('Beta LLC');
+    });
+
+    it('resets filter when search term is cleared', () => {
+      const instance = createComponent();
+      instance.customers = [buildCustomer('Alpha Inc'), buildCustomer('Beta LLC')];
+
+      instance.onSearchInput('alp');
+      instance.onSearchInput('   ');
+
+      expect(instance.filteredCustomers).toHaveLength(2);
     });
   });
 });

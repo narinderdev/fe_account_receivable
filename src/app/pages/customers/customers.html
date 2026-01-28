@@ -8,7 +8,12 @@
         <span class="search-icon">
           <img src="/search.svg" alt="Search Icon" />
         </span>
-        <input type="text" placeholder="Enter company name" />
+        <input
+          type="text"
+          placeholder="Enter company name"
+          [value]="searchTerm"
+          (input)="onSearchInput($any($event.target).value)"
+        />
       </div>
 
       <div class="button-gap">
@@ -46,9 +51,9 @@
       </tbody>
 
       <!-- Table Data -->
-      <tbody *ngIf="!loading && customers.length">
+      <tbody *ngIf="!loading && filteredCustomers.length">
         <tr
-          *ngFor="let c of customers; let i = index"
+          *ngFor="let c of filteredCustomers; let i = index"
           class="text-data"
           (click)="viewCustomerInvoices(c.id)"
         >
@@ -99,16 +104,24 @@
         </tr>
       </tbody>
 
-      <tbody *ngIf="!loading && !customers.length">
+      <tbody *ngIf="!loading && !filteredCustomers.length">
         <tr>
-          <td colspan="5" class="no-data-row">No company added yet.</td>
+          <td colspan="5" class="no-data-row">
+            {{ searchTerm.trim() ? 'No matching companies found.' : 'No company added yet.' }}
+          </td>
         </tr>
       </tbody>
     </table>
     <div class="pagination-wrapper" *ngIf="totalPages > 1 && !loading">
       <div class="pagination-info">
-        Showing {{ currentPage * pageSize + 1 }} to
-        {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
+        <ng-container *ngIf="!searchTerm.trim(); else filteredPaginationInfo">
+          Showing {{ currentPage * pageSize + 1 }} to
+          {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
+        </ng-container>
+        <ng-template #filteredPaginationInfo>
+          Showing {{ filteredCustomers.length }} result{{ filteredCustomers.length === 1 ? '' : 's' }}
+          on this page
+        </ng-template>
       </div>
 
       <div class="pagination-controls">

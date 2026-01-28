@@ -144,7 +144,7 @@ export class AddCustomer implements OnInit, OnDestroy {
       customerType: ['', [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)]],
       email: ['', [Validators.required, Validators.email]],
       phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
-      facebook: [''],
+      faceBook: [''],
       twitter: [''],
       linkedin: [''],
     });
