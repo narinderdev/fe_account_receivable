@@ -130,10 +130,10 @@ export class ArCodes implements OnInit, OnDestroy {
     private companySelection: CompanySelectionService,
     private glCodeService: GlCodeService
   ) {
-    this.canViewArCodes = this.userContext.hasPermission('VIEW_CODE');
-    this.canCreateArCode = this.userContext.hasPermission('CREATE_CODE');
-    this.canUpdateArCode = this.userContext.hasPermission('UPDATE_CODE');
-    this.canDeleteArCode = this.userContext.hasPermission('DELETE_CODE');
+    this.canViewArCodes = this.userContext.hasPermission('VIEW_AR_CODE');
+    this.canCreateArCode = this.userContext.hasPermission('CREATE_AR_CODE');
+    this.canUpdateArCode = this.userContext.hasPermission('UPDATE_AR_CODE');
+    this.canDeleteArCode = this.userContext.hasPermission('DELETE_AR_CODE');
     this.showActionsColumn = this.canUpdateArCode || this.canDeleteArCode;
     this.userId = this.userContext.getUserId();
 

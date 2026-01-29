@@ -277,7 +277,7 @@ const sampleRoles = [
     id: 2,
     name: 'Billing Admin',
     description: 'Full receivables access',
-    permissions: ['VIEW_COMPANY', 'CREATE_CODE', 'VIEW_ROLES'],
+    permissions: ['VIEW_COMPANY', 'CREATE_AR_CODE', 'VIEW_ROLES'],
   },
 ];
 

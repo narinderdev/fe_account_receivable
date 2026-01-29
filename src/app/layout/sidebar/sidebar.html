@@ -57,19 +57,21 @@
           Payments
         </a>
 
-        <div
-          class="nav-item setup-parent"
-          *ngIf="canViewReports"
-          (click)="toggleReports()"
-        >
+        <div class="nav-item setup-parent" *ngIf="canViewReports" (click)="toggleReports()">
           <img [src]="arReportsActive ? '/reports1.svg' : '/reports.svg'" class="nav-icon" />
           Aging & Reports
           <span class="arrow" [class.open]="reportsOpen">&rsaquo;</span>
         </div>
         <div class="setup-children" *ngIf="canViewReports && reportsOpen">
-          <a routerLink="ar-reports" routerLinkActive="active" class="sub-nav-item">Aging Reports</a>
-          <a routerLink="invoices-reports" routerLinkActive="active" class="sub-nav-item">Invoices Reports</a>
-          <a routerLink="payment-reports" routerLinkActive="active" class="sub-nav-item">Payments Reports</a>
+          <a routerLink="ar-reports" routerLinkActive="active" class="sub-nav-item"
+            >Aging Reports</a
+          >
+          <a routerLink="invoices-reports" routerLinkActive="active" class="sub-nav-item"
+            >Invoices Reports</a
+          >
+          <a routerLink="payment-reports" routerLinkActive="active" class="sub-nav-item"
+            >Payments Reports</a
+          >
         </div>
 
         <a
@@ -118,16 +120,20 @@
         </div>
 
         <div class="setup-children" *ngIf="securityOpen && showSecurityLinks">
-          <a
-            *ngIf="canViewUsers"
-            routerLink="users"
-            routerLinkActive="active"
-            class="sub-nav-item"
+          <a *ngIf="canViewUsers" routerLink="users" routerLinkActive="active" class="sub-nav-item"
             >Users</a
           >
           <a *ngIf="canViewRoles" routerLink="roles" routerLinkActive="active" class="sub-nav-item"
             >Roles</a
           >
+          <a
+            *ngIf="canViewSecurityReport"
+            routerLink="security-report"
+            routerLinkActive="active"
+            class="sub-nav-item"
+          >
+            Security Report
+          </a>
         </div>
 
         <!-- SETUP/ADMIN SECTION (without Users and Roles) -->
@@ -258,9 +264,15 @@
           <span class="arrow" [class.open]="mobileReportsOpen">&rsaquo;</span>
         </button>
         <div class="mobile-setup-children" *ngIf="canViewReports && mobileReportsOpen">
-          <a routerLink="ar-reports" routerLinkActive="active" (click)="closeMobileMenu()">Aging Reports</a>
-          <a routerLink="invoices-reports" routerLinkActive="active" (click)="closeMobileMenu()">Invoices Reports</a>
-          <a routerLink="payment-reports" routerLinkActive="active" (click)="closeMobileMenu()">Payments Reports</a>
+          <a routerLink="ar-reports" routerLinkActive="active" (click)="closeMobileMenu()"
+            >Aging Reports</a
+          >
+          <a routerLink="invoices-reports" routerLinkActive="active" (click)="closeMobileMenu()"
+            >Invoices Reports</a
+          >
+          <a routerLink="payment-reports" routerLinkActive="active" (click)="closeMobileMenu()"
+            >Payments Reports</a
+          >
         </div>
 
         <a
@@ -284,7 +296,10 @@
           #mobileCreditMemoLink="routerLinkActive"
           (click)="closeMobileMenu()"
         >
-          <img [src]="mobileCreditMemoLink.isActive ? '/credit1.svg' : '/credit.svg'" class="nav-icon" />
+          <img
+            [src]="mobileCreditMemoLink.isActive ? '/credit1.svg' : '/credit.svg'"
+            class="nav-icon"
+          />
           Credit Memo
         </a>
 
@@ -295,7 +310,10 @@
           #mobileWriteOffLink="routerLinkActive"
           (click)="closeMobileMenu()"
         >
-          <img [src]="mobileWriteOffLink.isActive ? '/write1.svg' : '/write.svg'" class="nav-icon" />
+          <img
+            [src]="mobileWriteOffLink.isActive ? '/write1.svg' : '/write.svg'"
+            class="nav-icon"
+          />
           Write-Off
         </a>
 
@@ -328,6 +346,14 @@
             (click)="closeMobileMenu()"
             >Roles</a
           >
+          <a
+            *ngIf="canViewSecurityReport"
+            routerLink="security-report"
+            routerLinkActive="active"
+            (click)="closeMobileMenu()"
+          >
+            Security Report
+          </a>
         </div>
 
         <button
@@ -349,19 +375,22 @@
             routerLink="lender"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-            >Lender</a>
+            >Lender</a
+          >
           <a
             *ngIf="canViewGlCodes"
             routerLink="gl-code"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-            >GL Codes</a>
+            >GL Codes</a
+          >
           <a
             *ngIf="canViewArCodes"
             routerLink="ar-code"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-            >AR Codes</a>
+            >AR Codes</a
+          >
         </div>
       </nav>
 

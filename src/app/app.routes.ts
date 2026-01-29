@@ -41,6 +41,7 @@ import { PaymentsReports } from './pages/payments-reports/payments-reports';
 import { GlCode } from './pages/gl-code/gl-code';
 import { InvoiceReport } from './pages/invoice-report/invoice-report';
 import { PaymentReport } from './pages/payment-report/payment-report';
+import { SecurityReport } from './pages/security-report/security-report';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -114,6 +115,7 @@ export const routes: Routes = [
       { path: 'payment-reports', component: PaymentReport },
       { path: 'collections', component: Collections },
       { path: 'collections/disputes/:disputeId', component: DisputeDetails },
+      { path: 'security-report', component: SecurityReport },
 
       { path: 'ar-code', component: ArCodes },
       { path: 'gl-code', component: GlCode },

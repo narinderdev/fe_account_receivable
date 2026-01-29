@@ -1,0 +1,230 @@
+<div class="security-report-container">
+  <div class="filter-card">
+    <div class="filter-card-body">
+      <div class="filter-controls">
+        <div class="toggle filter-toggle">
+          <button
+            class="toggle-btn"
+            [class.active]="viewMode() === 'ROLE'"
+            (click)="onToggle('ROLE')"
+          >
+            View by Role
+          </button>
+          <button
+            class="toggle-btn"
+            [class.active]="viewMode() === 'OBJECT'"
+            (click)="onToggle('OBJECT')"
+          >
+            View by Object
+          </button>
+        </div>
+
+        <ng-container *ngIf="viewMode() === 'ROLE'; else objectView">
+          <label class="filter-field">
+            <span class="label">Role</span>
+            <select class="filter-select" [ngModel]="selectedRole()" (ngModelChange)="onRoleChange($event)">
+              <option value="">Select role...</option>
+              <option *ngFor="let r of roleOptions()" [value]="r">{{ formatRoleLabel(r) }}</option>
+            </select>
+          </label>
+        </ng-container>
+
+        <ng-template #objectView>
+          <label class="filter-field">
+            <span class="label">Object</span>
+            <select
+              class="filter-select"
+              [ngModel]="selectedObject()"
+              (ngModelChange)="onObjectChange($event)"
+            >
+              <option value="">Select object...</option>
+              <option *ngFor="let o of objectOptions()" [value]="o">{{ formatObjectLabel(o) }}</option>
+            </select>
+          </label>
+        </ng-template>
+      </div>
+
+      <div class="export-dropdown" (click)="onDropdownClick($event)">
+        <button type="button" class="btn-export" (click)="toggleExportMenu($event)">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export Report
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="chevron-icon"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+
+        <div class="export-menu" *ngIf="showExportMenu()">
+          <button type="button" class="export-menu-item" (click)="exportExcel()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <rect x="8" y="12" width="8" height="6"></rect>
+              <line x1="10" y1="12" x2="10" y2="18"></line>
+              <line x1="14" y1="12" x2="14" y2="18"></line>
+            </svg>
+            Export as Excel
+          </button>
+          <button type="button" class="export-menu-item" (click)="exportPdf()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Export as PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <app-loader [visible]="loading()"></app-loader>
+
+    <ng-container *ngIf="!loading()">
+      <div *ngIf="tableRows().length === 0" class="empty">
+        <ng-container *ngIf="viewMode() === 'ROLE'">
+          Select a role to view what it can do.
+        </ng-container>
+        <ng-container *ngIf="viewMode() === 'OBJECT'">
+          Select an object to view who has access to it.
+        </ng-container>
+      </div>
+
+      <div class="table-wrapper" *ngIf="paginatedRows().length > 0">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>{{ primaryHeader() }}</th>
+              <th>{{ secondaryHeader() }}</th>
+              <th *ngFor="let perm of permissionColumns()">
+                {{ formatPermissionLabel(perm) }}
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let row of paginatedRows()">
+              <td class="strong">
+                {{
+                  viewMode() === 'ROLE'
+                    ? formatRoleLabel(row.primary)
+                    : formatObjectLabel(row.primary)
+                }}
+              </td>
+              <td>
+                {{
+                  viewMode() === 'ROLE'
+                    ? formatObjectLabel(row.secondary)
+                    : formatRoleLabel(row.secondary)
+                }}
+              </td>
+              <td *ngFor="let perm of permissionColumns()" class="checkbox-cell">
+                <span class="permission-icon" [class.checked]="hasPermission(row.permissions, perm)">
+                  <span class="permission-check">✓</span>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pagination-wrapper" *ngIf="totalPages() > 1">
+          <div class="pagination-info">
+            Showing
+            {{
+              tableRows().length
+                ? currentPage() * pageSize + 1
+                : 0
+            }}
+            -
+            {{
+              tableRows().length
+                ? math.min(tableRows().length, currentPage() * pageSize + paginatedRows().length)
+                : 0
+            }}
+            of {{ tableRows().length }} entries
+          </div>
+
+          <div class="pagination-controls">
+            <button
+              type="button"
+              class="page-nav-btn"
+              (click)="prevPage()"
+              [disabled]="currentPage() === 0"
+            >
+              Prev
+            </button>
+
+            <ng-container *ngFor="let page of getPageNumbers()">
+              <button
+                *ngIf="page !== -1"
+                type="button"
+                class="page-number-btn"
+                [class.active]="currentPage() === page"
+                (click)="goToPage(page)"
+              >
+                {{ page + 1 }}
+              </button>
+              <span *ngIf="page === -1" class="page-number-btn ellipsis">...</span>
+            </ng-container>
+
+            <button
+              type="button"
+              class="page-nav-btn"
+              (click)="nextPage()"
+              [disabled]="currentPage() >= totalPages() - 1"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

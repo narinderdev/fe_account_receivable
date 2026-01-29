@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 
@@ -8,19 +8,40 @@ import { ToastrService } from 'ngx-toastr';
 export class AuthSessionService {
   private signingOut = false;
 
-  constructor(private router: Router, private toastr: ToastrService) {}
+  constructor(
+    private router: Router,
+    private toastr: ToastrService,
+    private zone: NgZone,
+  ) {}
 
   signOut(message?: string) {
     if (this.signingOut) {
       return;
     }
 
-    if (message) {
-      this.toastr.error(message);
-    }
+    const performSignOut = () => {
+      this.signingOut = true;
 
-    this.signingOut = true;
-    localStorage.clear();
-    this.router.navigateByUrl('/login', { replaceUrl: true });
+      if (message) {
+        this.toastr.error(message);
+      }
+
+      localStorage.clear();
+
+      this.router
+        .navigateByUrl('/login', { replaceUrl: true })
+        .catch(() => {
+          window.location.replace('/login');
+        })
+        .finally(() => {
+          this.signingOut = false;
+        });
+    };
+
+    if (NgZone.isInAngularZone()) {
+      performSignOut();
+    } else {
+      this.zone.run(performSignOut);
+    }
   }
 }

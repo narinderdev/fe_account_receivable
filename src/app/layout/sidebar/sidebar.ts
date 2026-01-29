@@ -34,6 +34,7 @@ export class Sidebar {
   canViewWriteOff = false;
   showSetupLinks = false;
   showSecurityLinks = false;
+  canViewSecurityReport = false;  
 
   constructor(
     private router: Router,
@@ -66,12 +67,14 @@ export class Sidebar {
     this.canViewCompany = this.userContext.hasPermission('VIEW_COMPANY');
     this.canViewUsers = this.userContext.hasPermission('VIEW_USER');
     this.canViewRoles = this.userContext.hasPermission('VIEW_ROLES');
-    const canViewArCodes = this.userContext.hasPermission('VIEW_CODE');
+    const canViewArCodes = this.userContext.hasPermission('VIEW_AR_CODE');
     const canViewGlCodes = this.userContext.hasPermission('VIEW_GL_CODE');
     this.canViewArCodes = canViewArCodes;
     this.canViewGlCodes = canViewGlCodes;
     this.canViewCreditMemo = this.userContext.hasPermission('VIEW_MEMOS');
     this.canViewWriteOff = this.userContext.hasPermission('VIEW_WRITE_OFF');
+    this.canViewSecurityReport = this.userContext.hasPermission('VIEW_SECURITY_REPORT');
+
 
     // Security section visibility
     this.showSecurityLinks = this.canViewUsers || this.canViewRoles;
