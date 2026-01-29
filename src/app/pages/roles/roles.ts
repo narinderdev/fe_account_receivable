@@ -168,6 +168,12 @@ export class Roles implements OnInit, OnDestroy {
       },
     },
     {
+      label: 'Security Report',
+      permissions: {
+        view: 'VIEW_SECURITY_REPORT',
+      },
+    },
+    {
       label: 'GL Code',
       permissions: {
         view: 'VIEW_GL_CODE',

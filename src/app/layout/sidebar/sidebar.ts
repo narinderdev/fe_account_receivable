@@ -77,7 +77,7 @@ export class Sidebar {
 
 
     // Security section visibility
-    this.showSecurityLinks = this.canViewUsers || this.canViewRoles;
+    this.showSecurityLinks = this.canViewUsers || this.canViewRoles || this.canViewSecurityReport;
 
     this.showSetupLinks =
       this.userContext.isAdmin() ||
@@ -171,7 +171,9 @@ export class Sidebar {
 
   private updateSecurityState() {
     this.securityActive =
-      this.router.url.includes('/admin/users') || this.router.url.includes('/admin/roles');
+      this.router.url.includes('/admin/users') ||
+      this.router.url.includes('/admin/roles') ||
+      this.router.url.includes('/admin/security-report');
     this.securityOpen = this.securityActive || this.securityOpen;
     this.mobileSecurityOpen = this.securityActive || this.mobileSecurityOpen;
   }
