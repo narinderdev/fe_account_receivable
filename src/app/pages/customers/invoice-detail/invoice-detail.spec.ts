@@ -63,6 +63,7 @@ function createInvoice(overrides: Partial<InvoiceWithItems> = {}): InvoiceWithIt
       customerName: 'Acme',
       customerType: 'Business',
       email: 'acme@example.com',
+      phoneNumber: null,
       deleted: false,
       address: null,
       cashApplication: null,

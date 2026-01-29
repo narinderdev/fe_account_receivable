@@ -240,61 +240,62 @@ export class InvoiceReport implements OnInit, OnDestroy {
   }
 
   loadStatusBreakdown(companyId: number, months: number) {
-    this.pieChartLoading = true;
-    this.cdr.detectChanges();
+  this.pieChartLoading = true;
+  this.cdr.detectChanges();
 
-    this.invoiceReportService.getInvoiceStatus(companyId, months).subscribe({
-      next: (response) => {
-        if (response.statusCode === 200 && response.data) {
-          const data = response.data;
+  this.invoiceReportService.getInvoiceStatus(companyId, months).subscribe({
+    next: (response) => {
+      if (response.statusCode === 200 && response.data) {
+        const data = response.data;
 
-          this.totalInvoices = data.total || 0;
-          this.statusCounts = [
-            {
-              status: 'Open',
-              count: data.open || 0,
-              percentage:
-                this.totalInvoices > 0 ? ((data.open || 0) / this.totalInvoices) * 100 : 0,
-            },
-            {
-              status: 'Partial',
-              count: data.partial || 0,
-              percentage:
-                this.totalInvoices > 0 ? ((data.partial || 0) / this.totalInvoices) * 100 : 0,
-            },
-            {
-              status: 'Paid',
-              count: data.paid || 0,
-              percentage:
-                this.totalInvoices > 0 ? ((data.paid || 0) / this.totalInvoices) * 100 : 0,
-            },
-            {
-              status: 'Written Off',
-              count: data.writtenOff || 0,
-              percentage:
-                this.totalInvoices > 0 ? ((data.writtenOff || 0) / this.totalInvoices) * 100 : 0,
-            },
-          ];
+        this.totalInvoices = data.total || 0;
+        this.statusCounts = [
+          {
+            status: 'Open',
+            count: data.open || 0,
+            percentage:
+              this.totalInvoices > 0 ? ((data.open || 0) / this.totalInvoices) * 100 : 0,
+          },
+          {
+            status: 'Partial',
+            count: data.partial || 0,
+            percentage:
+              this.totalInvoices > 0 ? ((data.partial || 0) / this.totalInvoices) * 100 : 0,
+          },
+          {
+            status: 'Paid',
+            count: data.paid || 0,
+            percentage:
+              this.totalInvoices > 0 ? ((data.paid || 0) / this.totalInvoices) * 100 : 0,
+          },
+          {
+            status: 'Written Off',
+            count: data.writtenOff || 0,
+            percentage:
+              this.totalInvoices > 0 ? ((data.writtenOff || 0) / this.totalInvoices) * 100 : 0,
+          },
+        ];
 
-          this.statusCounts = this.statusCounts.filter((s) => s.count > 0);
+        // Remove this line to show all statuses including zeros:
+        // this.statusCounts = this.statusCounts.filter((s) => s.count > 0);
 
-          this.pieChartData.labels = this.statusCounts.map((s) => s.status);
-          this.pieChartData.datasets[0].data = this.statusCounts.map((s) => s.count);
+        this.pieChartData.labels = this.statusCounts.map((s) => s.status);
+        this.pieChartData.datasets[0].data = this.statusCounts.map((s) => s.count);
 
-          this.cdr.detectChanges();
-        }
-      },
-      error: (error) => {
-        console.error('Error loading status breakdown:', error);
-        this.pieChartLoading = false;
         this.cdr.detectChanges();
-      },
-      complete: () => {
-        this.pieChartLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
+      }
+    },
+    error: (error) => {
+      console.error('Error loading status breakdown:', error);
+      this.pieChartLoading = false;
+      this.cdr.detectChanges();
+    },
+    complete: () => {
+      this.pieChartLoading = false;
+      this.cdr.detectChanges();
+    },
+  });
+}
 
   handleMonthsChange(months: number) {
     this.selectedMonths = months;

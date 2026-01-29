@@ -97,6 +97,7 @@ function createInvoice(overrides: Partial<TestSelectableInvoice> = {}): TestSele
       customerName: 'Acme',
       customerType: 'Business',
       email: 'acme@example.com',
+      phoneNumber: null,
       deleted: false,
       address: null,
       cashApplication: null,
