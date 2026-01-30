@@ -96,7 +96,10 @@
 
           <div class="form-field">
             <label>Position <span class="color">*</span></label>
-            <input type="text" formControlName="position" placeholder="e.g. AR Manager" />
+            <select formControlName="position">
+              <option value="">Select Role</option>
+              <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+            </select>
             <div class="error" *ngIf="submitted && addressForm.get('position')?.errors">
               <small *ngIf="addressForm.get('position')?.hasError('required')"
                 >Position is required</small
@@ -127,8 +130,11 @@
               <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('pattern')"
                 >Only digits allowed</small
               >
+              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('minlength')"
+                >Must be at least 10 digits</small
+              >
               <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('maxlength')"
-                >Max 10 digits allowed</small
+                >Max 15 digits allowed</small
               >
             </div>
           </div>

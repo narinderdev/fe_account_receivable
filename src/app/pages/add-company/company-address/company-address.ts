@@ -13,6 +13,7 @@ import { CompanyService } from '../../../services/company-service';
 import { Spinner } from '../../../shared/spinner/spinner';
 import { CompanyEntity } from '../../../models/company.model';
 import { finalize } from 'rxjs';
+import { RoleService } from '../../../services/role-service';
 
 @Component({
   selector: 'app-company-address',
@@ -29,12 +30,15 @@ export class CompanyAddress implements OnInit, OnDestroy {
   isEditMode = false;
   companyData: CompanyEntity | null = null;
   isSaving = false;
+  roleOptions: string[] = [];
+  loadingRoles = false;
 
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private companyService: CompanyService
+    private companyService: CompanyService,
+    private roleService: RoleService
   ) {}
 
   ngOnInit() {
@@ -51,6 +55,10 @@ export class CompanyAddress implements OnInit, OnDestroy {
       this.addressForm.patchValue(this.companyData.companyAddress);
     } else if (this.companyData) {
       this.addressForm.patchValue(this.companyData);
+    }
+
+    if (this.companyId) {
+      this.loadRoles(this.companyId);
     }
   }
 
@@ -86,7 +94,12 @@ export class CompanyAddress implements OnInit, OnDestroy {
       ],
       primaryContactPhone: [
         '',
-        [Validators.required, Validators.pattern(/^[0-9]*$/), Validators.maxLength(10)],
+        [
+          Validators.required,
+          Validators.pattern(/^[0-9]*$/),
+          Validators.minLength(10),
+          Validators.maxLength(15),
+        ],
       ],
       website: [''],
       primaryContactCountry: ['', Validators.required],
@@ -113,7 +126,7 @@ export class CompanyAddress implements OnInit, OnDestroy {
 
   onPhoneInput() {
     let value = this.addressForm.get('primaryContactPhone')?.value || '';
-    value = value.replace(/\D/g, '').slice(0, 10);
+    value = value.replace(/\D/g, '').slice(0, 15);
     this.addressForm.get('primaryContactPhone')?.setValue(value, { emitEvent: false });
   }
 
@@ -201,6 +214,32 @@ export class CompanyAddress implements OnInit, OnDestroy {
       return JSON.parse(value) as CompanyEntity;
     } catch {
       return null;
+    }
+  }
+
+  private loadRoles(companyId: number) {
+    this.loadingRoles = true;
+    this.roleService.getRoles(companyId).subscribe({
+      next: (response) => {
+        const roles = Array.isArray(response?.data) ? response.data : [];
+        const names = roles
+          .map((role) => role?.name)
+          .filter((name): name is string => !!name && typeof name === 'string');
+        this.roleOptions = Array.from(new Set(names));
+        this.appendExistingPosition();
+        this.loadingRoles = false;
+      },
+      error: () => {
+        this.appendExistingPosition();
+        this.loadingRoles = false;
+      },
+    });
+  }
+
+  private appendExistingPosition() {
+    const existing = this.addressForm?.get('position')?.value;
+    if (existing && !this.roleOptions.includes(existing)) {
+      this.roleOptions = [...this.roleOptions, existing];
     }
   }
 }

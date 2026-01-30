@@ -41,18 +41,6 @@ const defaultFinancialInfo = {
   enableAutomatedDunningEmails: true,
 };
 
-const defaultPaymentInfo = {
-  bankName: 'First National Bank',
-  accountNumber: '9988776655',
-  remittanceInstructions: 'Include invoice numbers in the remittance advice.',
-  methods: {
-    acceptCheck: true,
-    acceptCreditCard: true,
-    acceptBankTransfer: true,
-    acceptCash: false,
-  },
-};
-
 const jsonHeaders = {
   ...apiCorsHeaders,
   'content-type': 'application/json',
@@ -97,7 +85,7 @@ test.describe('Add lender onboarding wizard', () => {
     await expect(page.getByRole('button', { name: 'Basic Info' })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Address Info' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Financial AR Settings' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Banks & Payment' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Banks & Payment' })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Save & Continue' }).click();
 
@@ -199,52 +187,13 @@ test.describe('Add lender onboarding wizard', () => {
       page.getByRole('button', { name: 'Continue' }).click(),
     ]);
 
-    await expect(page).toHaveURL('/admin/lender/add/step-4');
-    const currentStep = await page.evaluate(() => localStorage.getItem('currentStep'));
-    expect(currentStep).toBe('step-4');
-  });
-
-  test('banks & payments step validates inputs and completes onboarding', async ({ page }) => {
-    await completeBasicInfo(page);
-    await completeCompanyAddress(page);
-    await completeFinancialSettings(page);
-
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.locator('.error', { hasText: 'Bank name is required.' })).toBeVisible();
-    await expect(page.locator('.error', { hasText: 'Account number is required.' })).toBeVisible();
-    await expect(page.locator('.error', { hasText: 'Remittance instructions are required.' })).toBeVisible();
-    await expect(page.locator('.error', { hasText: 'Please select at least one payment method.' })).toBeVisible();
-
-    await page.locator('[formcontrolname="bankName"]').fill(defaultPaymentInfo.bankName);
-    await page.locator('[formcontrolname="accountNumber"]').fill(defaultPaymentInfo.accountNumber);
-    await page.locator('textarea[formcontrolname="remittanceInstructions"]').fill(
-      defaultPaymentInfo.remittanceInstructions
-    );
-
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.locator('.error', { hasText: 'Please select at least one payment method.' })).toBeVisible();
-
-    const bankTransfer = page.locator('input[formcontrolname="acceptBankTransfer"]');
-    await bankTransfer.check();
-    const creditCard = page.locator('input[formcontrolname="acceptCreditCard"]');
-    await creditCard.check();
-
-    await Promise.all([
-      waitForPost(page, `/api/companies/${MOCK_COMPANY_ID}/banking`),
-      page.getByRole('button', { name: 'Continue' }).click(),
-    ]);
-
     await expect(page).toHaveURL(new RegExp(`/admin/lender/onboarding-complete\\?id=${MOCK_COMPANY_ID}$`));
+    const currentStep = await page.evaluate(() => localStorage.getItem('currentStep'));
+    expect(currentStep).toBe('step-3');
     await expect(page.getByRole('heading', { name: 'Onboarding Complete' })).toBeVisible();
-    await expect(page.getByText('Your lender setup is now ready!')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Go to AR Dashboard' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create First Company' })).toBeVisible();
-
-    const hasCompanies = await page.evaluate(() => localStorage.getItem('hasCompanies'));
-    expect(hasCompanies).toBe('true');
-    const selectedCompanyId = await page.evaluate(() => localStorage.getItem('selectedCompanyId'));
-    expect(selectedCompanyId).toBe(String(MOCK_COMPANY_ID));
   });
+
+  // No dedicated banks & payments step anymore; onboarding completes after financial settings.
 });
 
 async function setupOnboardingApiMocks(page: Page) {
@@ -293,7 +242,6 @@ async function setupOnboardingApiMocks(page: Page) {
   const downstreamEndpoints = [
     `**/api/companies/${MOCK_COMPANY_ID}/company-address`,
     `**/api/companies/${MOCK_COMPANY_ID}/financial-settings`,
-    `**/api/companies/${MOCK_COMPANY_ID}/banking`,
   ];
 
   for (const endpoint of downstreamEndpoints) {
@@ -357,15 +305,6 @@ async function fillCompanyAddressForm(page: Page, data = defaultAddressInfo) {
   await page.locator('[formcontrolname="primaryContactPhone"]').fill(data.primaryContactPhone);
   await page.locator('[formcontrolname="website"]').fill(data.website);
   await page.locator('select[formcontrolname="primaryContactCountry"]').selectOption(data.primaryContactCountry);
-}
-
-async function completeFinancialSettings(page: Page) {
-  await fillFinancialSettingsForm(page, defaultFinancialInfo);
-  await Promise.all([
-    waitForPost(page, `/api/companies/${MOCK_COMPANY_ID}/financial-settings`),
-    page.getByRole('button', { name: 'Continue' }).click(),
-  ]);
-  await expect(page).toHaveURL('/admin/lender/add/step-4');
 }
 
 async function fillFinancialSettingsForm(page: Page, data = defaultFinancialInfo) {

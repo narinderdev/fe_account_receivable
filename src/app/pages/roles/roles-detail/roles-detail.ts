@@ -160,6 +160,14 @@ export class RolesDetail implements OnInit, OnDestroy {
       },
     },
     {
+      label: 'Accounts',
+      permissions: {
+        view: 'VIEW_BANK_ACCOUNT',
+        create: 'CREATE_BANK_ACCOUNT',
+        update: 'UPDATE_BANK_ACCOUNT',
+      },
+    },
+    {
       label: 'Ar-Code',
       permissions: {
         view: 'VIEW_AR_CODE',

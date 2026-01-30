@@ -4,12 +4,12 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { Customers } from './pages/customers/customers';
 import { AddCustomer } from './pages/add-customer/add-customer';
 import { Company } from './pages/company/company';
+import { CompanyDetail } from './pages/company/company-detail/company-detail';
 import { AddCompany } from './pages/add-company/add-company';
 
 import { BasicInfo } from './pages/add-company/basic-info/basic-info';
 import { CompanyAddress } from './pages/add-company/company-address/company-address';
 import { FinancialArSettings } from './pages/add-company/financial-ar-settings/financial-ar-settings';
-import { BanksAndPayments } from './pages/add-company/banks-and-payments/banks-and-payments';
 // import { UserAndRoles } from './pages/add-company/user-and-roles/user-and-roles';
 import { OnboardingComplete } from './pages/add-company/onboarding-complete/onboarding-complete';
 
@@ -42,6 +42,7 @@ import { GlCode } from './pages/gl-code/gl-code';
 import { InvoiceReport } from './pages/invoice-report/invoice-report';
 import { PaymentReport } from './pages/payment-report/payment-report';
 import { SecurityReport } from './pages/security-report/security-report';
+import { Accounts } from './pages/accounts/accounts';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -67,6 +68,7 @@ export const routes: Routes = [
       },
 
       { path: 'lender', component: Company },
+      { path: 'lender/details/:id', component: CompanyDetail },
       {
         path: 'lender/add',
         component: AddCompany,
@@ -75,7 +77,6 @@ export const routes: Routes = [
           { path: 'step-1', component: BasicInfo },
           { path: 'step-2', component: CompanyAddress },
           { path: 'step-3', component: FinancialArSettings },
-          { path: 'step-4', component: BanksAndPayments },
           // { path: 'step-5', component: UserAndRoles },
           // { path: 'step-6', component: OpeningBalances },
         ],
@@ -90,7 +91,6 @@ export const routes: Routes = [
           { path: 'step-1', component: BasicInfo },
           { path: 'step-2', component: CompanyAddress },
           { path: 'step-3', component: FinancialArSettings },
-          { path: 'step-4', component: BanksAndPayments },
           // { path: 'step-5', component: UserAndRoles },
         ],
       },
@@ -119,6 +119,7 @@ export const routes: Routes = [
 
       { path: 'ar-code', component: ArCodes },
       { path: 'gl-code', component: GlCode },
+      { path: 'accounts', component: Accounts },
       { path: 'credit-memo', component: CreditMemo },
       { path: 'write-off', component: WriteOff },
     ],

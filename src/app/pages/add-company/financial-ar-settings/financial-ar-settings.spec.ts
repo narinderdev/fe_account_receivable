@@ -7,6 +7,7 @@ import { CompanyEntity, CompanyResponse } from '../../../models/company.model';
 
 import { FinancialArSettings } from './financial-ar-settings';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
+import { ToastrService } from 'ngx-toastr';
 
 describe('FinancialArSettings', () => {
   const createComponent = () => {
@@ -14,10 +15,18 @@ describe('FinancialArSettings', () => {
     const companyService = createSpyObj<CompanyService>('CompanyService', [
       'createFinancialSettings',
       'setEditingCompany',
+      'setOriginalCompany',
+      'getChangedCompanyPayload',
+      'updateCompany',
+      'getEditingCompanySnapshot',
     ]);
     const router = createSpyObj<Router>('Router', ['navigate']);
     const route = { parent: { snapshot: { params: {} } }, snapshot: { params: {} } } as ActivatedRoute;
-    const instance = new FinancialArSettings(fb, companyService, router, route);
+    const toastr = createSpyObj<ToastrService>('ToastrService', ['error']);
+    companyService.updateCompany.mockReturnValue(of({}));
+    companyService.getChangedCompanyPayload.mockReturnValue({ legalName: 'Updated' });
+    companyService.getEditingCompanySnapshot.mockReturnValue(createCompanyStub());
+    const instance = new FinancialArSettings(fb, companyService, router, route, toastr);
     instance.buildForm();
     instance.companyId = 1;
     return { instance, companyService, router };
@@ -62,17 +71,22 @@ describe('FinancialArSettings', () => {
   });
 
   describe('form submission', () => {
-    it('calls the API and navigates forward in add mode', () => {
+    it('calls the API and navigates to onboarding complete in add mode', () => {
       const { instance, companyService, router } = createComponent();
-      instance.financialForm.patchValue(createValidFinancials());
-      const payload = instance.financialForm.value;
+      const formValue = createValidFinancials();
+      instance.financialForm.patchValue(formValue);
       companyService.createFinancialSettings.mockReturnValue(of(createCompanyResponse()));
       instance.saveFinancialSettings();
-      expect(companyService.createFinancialSettings).toHaveBeenCalledWith(1, payload);
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/add/step-4']);
+      expect(companyService.createFinancialSettings).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ defaultCreditLimit: 1000 })
+      );
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/onboarding-complete'], {
+        queryParams: { id: 1 },
+      });
     });
 
-    it('persists edit-mode changes locally', () => {
+    it('persists edit-mode changes locally and updates the company', () => {
       const { instance, companyService, router } = createComponent();
       instance.isEditMode = true;
       instance.companyId = 4;
@@ -81,7 +95,8 @@ describe('FinancialArSettings', () => {
       instance.saveFinancialSettings();
       expect(companyService.createFinancialSettings).not.toHaveBeenCalled();
       expect(companyService.setEditingCompany).toHaveBeenCalled();
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/edit/4/step-4']);
+      expect(companyService.updateCompany).toHaveBeenCalledWith(4, { legalName: 'Updated' });
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender']);
     });
   });
 });
@@ -97,7 +112,7 @@ function createValidFinancials() {
     agingBucketConfig: 'Standard',
     dunningFrequencyDays: 5,
     enableAutomatedDunningEmails: true,
-    defaultCreditLimit: 1000,
+    defaultCreditLimit: '1000',
   };
 }
 

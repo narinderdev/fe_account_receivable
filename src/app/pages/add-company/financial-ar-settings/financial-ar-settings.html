@@ -105,12 +105,17 @@
           <!-- Default Credit Limit (moved here without heading) -->
           <div class="form-field">
             <label>Default Credit Limit <span class="color">*</span></label>
-            <input type="number" formControlName="defaultCreditLimit" />
+            <input
+              type="text"
+              formControlName="defaultCreditLimit"
+              (input)="onCreditLimitInput()"
+              inputmode="numeric"
+            />
             <div
               class="error"
               *ngIf="submitted && financialForm.controls['defaultCreditLimit'].errors"
             >
-              Must be 0 or above.
+              Enter a number greater than zero.
             </div>
           </div>
         </div>
@@ -185,7 +190,7 @@
           <button class="btn-save" type="submit" [disabled]="isSaving">
             <app-spinner *ngIf="isSaving"></app-spinner>
 
-            <span *ngIf="!isSaving">Continue</span>
+            <span *ngIf="!isSaving">{{ isEditMode ? 'Update' : 'Continue' }}</span>
           </button>
         </div>
       </div>

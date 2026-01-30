@@ -159,6 +159,13 @@
             >GL Codes</a
           >
           <a
+            *ngIf="canViewAccounts"
+            routerLink="accounts"
+            routerLinkActive="active"
+            class="sub-nav-item"
+            >Accounts</a
+          >
+          <a
             *ngIf="canViewArCodes"
             routerLink="ar-code"
             routerLinkActive="active"
@@ -383,6 +390,13 @@
             routerLinkActive="active"
             (click)="closeMobileMenu()"
             >GL Codes</a
+          >
+          <a
+            *ngIf="canViewAccounts"
+            routerLink="accounts"
+            routerLinkActive="active"
+            (click)="closeMobileMenu()"
+            >Accounts</a
           >
           <a
             *ngIf="canViewArCodes"

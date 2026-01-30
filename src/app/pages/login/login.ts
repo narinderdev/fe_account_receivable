@@ -142,6 +142,7 @@ export class Login {
       { permission: 'VIEW_AGING_REPORTS', path: '/admin/ar-reports' },
       { permission: 'VIEW_PROMISE_TO_PAY', path: '/admin/collections' },
       { permission: 'VIEW_COMPANY', path: '/admin/lender' },
+      { permission: 'VIEW_BANK_ACCOUNT', path: '/admin/accounts' },
       { permission: 'VIEW_USER', path: '/admin/users' },
       { permission: 'VIEW_ROLES', path: '/admin/roles' },
     ];

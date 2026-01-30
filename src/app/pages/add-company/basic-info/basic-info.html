@@ -49,7 +49,11 @@
           <!-- Base Currency -->
           <div class="form-field">
             <label>Base Currency <span class="color">*</span></label>
-            <input type="text" formControlName="baseCurrency" />
+            <select formControlName="baseCurrency">
+              <option value="">Choose</option>
+              <option value="USD">USD</option>
+              <option value="GBP">GBP</option>
+            </select>
             <div class="error" *ngIf="submitted && basicForm.controls['baseCurrency'].errors">
               Base Currency is required.
             </div>

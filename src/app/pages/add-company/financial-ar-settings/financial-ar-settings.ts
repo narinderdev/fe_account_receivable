@@ -1,12 +1,20 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  AbstractControl,
+  ValidatorFn,
+} from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CompanyService } from '../../../services/company-service';
 import { Subject, takeUntil } from 'rxjs';
 import { Spinner } from '../../../shared/spinner/spinner';
-import { CompanyEntity } from '../../../models/company.model';
+import { CompanyAddress, CompanyEntity, FinancialSettings } from '../../../models/company.model';
 import { finalize } from 'rxjs';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-financial-ar-settings',
@@ -29,6 +37,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     private companyService: CompanyService,
     private router: Router,
     private route: ActivatedRoute,
+    private toastr: ToastrService,
   ) {}
 
   ngOnInit() {
@@ -53,6 +62,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
 
       if (existingFinancial) {
         this.financialForm.patchValue(existingFinancial);
+        this.syncCreditLimitField();
       }
 
       this.companyService.editingCompany$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
@@ -62,6 +72,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
           const src = data.financialSettings || data.financial;
           if (src) {
             this.financialForm.patchValue(src);
+            this.syncCreditLimitField();
           }
         }
       });
@@ -80,7 +91,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       agingBucketConfig: [''], // Made optional - field is hidden
       dunningFrequencyDays: ['', [Validators.min(1)]], // Made optional - field is hidden
       enableAutomatedDunningEmails: [false],
-      defaultCreditLimit: ['', [Validators.required, Validators.min(0)]],
+      defaultCreditLimit: ['', [Validators.required, this.positiveNumberValidator()]],
     });
   }
 
@@ -89,7 +100,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     if (this.financialForm.invalid) return;
 
     if (this.isEditMode) {
-      this.saveLocalEditData();
+      this.saveEditMode();
     } else {
       this.saveAddMode();
     }
@@ -98,8 +109,10 @@ export class FinancialArSettings implements OnInit, OnDestroy {
   saveAddMode() {
     this.isSaving = true;
 
+    const payload = this.buildFinancialPayload();
+
     this.companyService
-      .createFinancialSettings(this.companyId, this.financialForm.value)
+      .createFinancialSettings(this.companyId, payload)
       .pipe(
         finalize(() => {
           this.isSaving = false;
@@ -107,13 +120,10 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       )
       .subscribe({
         next: () => {
-          localStorage.setItem('currentStep', 'step-4');
-
-          const nextUrl = this.isEditMode
-            ? `/admin/lender/edit/${this.companyId}/step-4`
-            : `/admin/lender/add/step-4`;
-
-          this.router.navigate([nextUrl]);
+          localStorage.setItem('currentStep', 'step-3');
+          this.router.navigate(['/admin/lender/onboarding-complete'], {
+            queryParams: { id: this.companyId },
+          });
         },
         error: () => {
           // Error already handled in finalize
@@ -121,9 +131,9 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       });
   }
 
-  saveLocalEditData() {
+  private saveEditMode() {
     this.persistFinancialEdit(true);
-    this.router.navigate([`/admin/lender/edit/${this.companyId}/step-4`]);
+    this.finalUpdateEditMode();
   }
 
   private persistFinancialEdit(force = false) {
@@ -137,13 +147,144 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     const updated: CompanyEntity = {
       ...this.companyData,
       financial: {
-        ...this.financialForm.value,
+        ...this.buildFinancialPayload(),
       },
     } as CompanyEntity;
 
     localStorage.setItem('editingCompany', JSON.stringify(updated));
     this.companyService.setEditingCompany(updated);
     this.companyData = updated;
+  }
+
+  private finalUpdateEditMode() {
+    if (!this.validateEditFlow()) {
+      return;
+    }
+
+    this.isSaving = true;
+
+    const payload = this.companyService.getChangedCompanyPayload();
+
+    if (!payload || Object.keys(payload).length === 0) {
+      this.isSaving = false;
+      this.router.navigate(['/admin/lender']);
+      return;
+    }
+
+    this.companyService
+      .updateCompany(this.companyId, payload)
+      .pipe(
+        finalize(() => {
+          this.isSaving = false;
+        }),
+      )
+      .subscribe({
+        next: () => {
+          localStorage.removeItem('editingCompany');
+          this.companyService.setEditingCompany(null);
+          this.companyService.setOriginalCompany(null);
+          this.router.navigate(['/admin/lender']);
+        },
+        error: (err) => {
+          console.error('Lender update failed:', err);
+          this.toastr.error('Failed to update lender. Please try again.', 'Error');
+        },
+      });
+  }
+
+  private validateEditFlow(): boolean {
+    if (!this.isEditMode) {
+      return true;
+    }
+
+    const company = this.companyService.getEditingCompanySnapshot() || this.companyData;
+    if (!company) {
+      this.toastr.error('Lender data is missing. Please reload and try again.', 'Error');
+      return false;
+    }
+
+    const basicFields: Array<keyof CompanyEntity> = [
+      'legalName',
+      'tradeName',
+      'companyCode',
+      'country',
+      'baseCurrency',
+      'timeZone',
+    ];
+    if (!this.hasValues(company, basicFields)) {
+      this.toastr.error('Please fill all required fields in the Basic Info tab.', 'Missing fields');
+      return false;
+    }
+
+    const addressSource: Partial<CompanyAddress> | null = company.companyAddress ?? company;
+    const addressFields: Array<keyof CompanyAddress> = [
+      'addressLine1',
+      'city',
+      'stateProvince',
+      'postalCode',
+      'addressCountry',
+      'primaryContactName',
+      'position',
+      'primaryContactEmail',
+      'primaryContactPhone',
+      'primaryContactCountry',
+    ];
+    if (!this.hasValues(addressSource, addressFields)) {
+      this.toastr.error('Please fill all required fields in the Address Info tab.', 'Missing fields');
+      return false;
+    }
+
+    const financialSource: Partial<FinancialSettings> =
+      company.financial ?? company.financialSettings;
+    const financialFields: Array<keyof FinancialSettings> = [
+      'fiscalYearStartMonth',
+      'revenueRecognitionMode',
+      'defaultTaxHandling',
+      'defaultPaymentTerms',
+      'defaultCreditLimit',
+    ];
+    if (!this.hasValues(financialSource, financialFields)) {
+      this.toastr.error(
+        'Please fill all required fields in the Financial & AR Settings tab.',
+        'Missing fields',
+      );
+      return false;
+    }
+
+    if (!this.hasMinValue(financialSource?.defaultCreditLimit, 1)) {
+      this.toastr.error('Financial & AR Settings requires a valid credit limit (> 0).', 'Invalid value');
+      return false;
+    }
+
+    return true;
+  }
+
+  private hasValues<T extends object>(source: Partial<T> | null | undefined, fields: (keyof T)[]) {
+    if (!source) {
+      return false;
+    }
+    return fields.every((field) => this.isFilled(source[field]));
+  }
+
+  private isFilled(value: unknown): boolean {
+    if (value === null || value === undefined) {
+      return false;
+    }
+    if (typeof value === 'string') {
+      return value.trim().length > 0;
+    }
+    return true;
+  }
+
+  private hasMinValue(value: unknown, min: number): boolean {
+    if (value === null || value === undefined) {
+      return false;
+    }
+    const numericValue = typeof value === 'number' ? value : Number(value);
+    if (Number.isNaN(numericValue)) {
+      return false;
+    }
+    return numericValue >= min;
   }
 
   ngOnDestroy() {
@@ -161,5 +302,56 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     } catch {
       return null;
     }
+  }
+
+  onCreditLimitInput() {
+    const control = this.financialForm.get('defaultCreditLimit');
+    if (!control) {
+      return;
+    }
+    const raw = control.value ?? '';
+    const sanitized = String(raw).replace(/\D/g, '');
+    control.setValue(sanitized, { emitEvent: false });
+  }
+
+  private syncCreditLimitField() {
+    const control = this.financialForm.get('defaultCreditLimit');
+    if (!control) {
+      return;
+    }
+    const value = control.value;
+    if (value === null || value === undefined || value === '') {
+      return;
+    }
+    if (typeof value === 'number') {
+      control.setValue(String(value), { emitEvent: false });
+    }
+  }
+
+  private buildFinancialPayload() {
+    const raw = this.financialForm.getRawValue();
+    return {
+      ...raw,
+      defaultCreditLimit: this.parseCreditLimit(raw.defaultCreditLimit),
+    };
+  }
+
+  private parseCreditLimit(value: unknown): number {
+    const numericValue = Number(String(value ?? '').replace(/\D/g, ''));
+    return Number.isFinite(numericValue) ? numericValue : 0;
+  }
+
+  private positiveNumberValidator(): ValidatorFn {
+    return (control: AbstractControl) => {
+      const value = control.value;
+      if (value === null || value === undefined || value === '') {
+        return null;
+      }
+      const numericValue = Number(String(value).replace(/\D/g, ''));
+      if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        return { positiveNumber: true };
+      }
+      return null;
+    };
   }
 }

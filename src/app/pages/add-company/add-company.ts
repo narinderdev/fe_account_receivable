@@ -21,7 +21,6 @@ export class AddCompany implements OnInit {
     { key: 'step-1', label: 'Basic Info' },
     { key: 'step-2', label: 'Address Info' },
     { key: 'step-3', label: 'Financial AR Settings' },
-    { key: 'step-4', label: 'Banks & Payment' },
   ];
 
   allowedTabs: string[] = ['step-1'];

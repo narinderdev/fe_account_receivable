@@ -1,0 +1,227 @@
+<app-loader [visible]="loading"></app-loader>
+
+<div class="company-detail-page" *ngIf="!loading && companyData; else companyDetailFallback">
+  <section class="company-hero">
+    <div class="company-identity">
+      
+      <h1 class="company-name">
+        {{ companyData.legalName || 'Unnamed Lender' }}
+      </h1>
+      <div class="company-tags">
+        <span class="tag" *ngIf="companyData.companyCode">
+          <span class="tag-icon">🏢</span>
+          {{ companyData.companyCode }}
+        </span>
+        <span class="tag" *ngIf="companyData.country">
+          <span class="tag-icon">🌍</span>
+          {{ companyData.country }}
+        </span>
+      </div>
+    </div>
+
+    <!-- <div class="company-stats">
+      <div class="stat-card">
+        <p class="stat-label">Base Currency</p>
+        <p class="stat-value">{{ companyData.baseCurrency || '—' }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Time Zone</p>
+        <p class="stat-value">{{ companyData.timeZone || '—' }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Customers</p>
+        <p class="stat-value">{{ getCustomerCount() }}</p>
+        <span class="stat-hint">linked</span>
+      </div>
+    </div> -->
+  </section>
+
+  <div class="tabs-container">
+    <div class="tabs-dropdown">
+      <select [(ngModel)]="activeTab">
+        <option value="basic">Basic Information</option>
+        <option value="address">Address</option>
+        <option value="financial">Financial Settings</option>
+        <option value="payment">Payment Preferences</option>
+      </select>
+    </div>
+
+    <div class="tabs-header">
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'basic'"
+        (click)="activeTab = 'basic'"
+      >
+        Basic Information
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'address'"
+        (click)="activeTab = 'address'"
+      >
+        Address
+      </button>
+      <button
+        class="tab-button"
+        [class.active]="activeTab === 'financial'"
+        (click)="activeTab = 'financial'"
+      >
+        Financial Settings
+      </button>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'basic'">
+      <div class="info-card">
+        <h3 class="section-title">Company Overview</h3>
+        <div class="info-row">
+          <span class="info-row-label">Legal Name</span>
+          <span class="info-row-value">{{ companyData.legalName || '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Trade Name</span>
+          <span class="info-row-value">{{ companyData.tradeName || '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Company Code</span>
+          <span class="info-row-value">{{ companyData.companyCode || '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Base Currency</span>
+          <span class="info-row-value">{{ companyData.baseCurrency || '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Time Zone</span>
+          <span class="info-row-value">{{ companyData.timeZone || '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Created</span>
+          <span class="info-row-value">{{ companyData.createdAt | date: 'MMM d, y, h:mm a' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Last Updated</span>
+          <span class="info-row-value">{{ companyData.updatedAt | date: 'MMM d, y, h:mm a' }}</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3 class="section-title">Primary Contact</h3>
+        <div class="info-row">
+          <span class="info-row-label">Name</span>
+          <span class="info-row-value">{{ getPrimaryContact('primaryContactName') }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Position</span>
+          <span class="info-row-value">{{ getPrimaryContact('position') }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Email</span>
+          <span class="info-row-value">{{ getPrimaryContact('primaryContactEmail') }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Phone</span>
+          <span class="info-row-value">{{ getPrimaryContact('primaryContactPhone') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'address'">
+      <ng-container *ngIf="companyData.companyAddress; else noAddressData">
+        <div class="info-card">
+          <h3 class="section-title">Address Information</h3>
+          <div class="info-row">
+            <span class="info-row-label">Address Line 1</span>
+            <span class="info-row-value">{{ companyData.companyAddress.addressLine1 || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">City</span>
+            <span class="info-row-value">{{ companyData.companyAddress.city || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">State / Province</span>
+            <span class="info-row-value">{{
+              companyData.companyAddress.stateProvince || '—'
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Postal Code</span>
+            <span class="info-row-value">{{ companyData.companyAddress.postalCode || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Country</span>
+            <span class="info-row-value">{{
+              companyData.companyAddress.addressCountry || '—'
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Website</span>
+            <span class="info-row-value">{{ companyData.companyAddress.website || '—' }}</span>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noAddressData>
+        <div class="info-card">
+          <p class="placeholder-text">No address information available.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'financial'">
+      <ng-container *ngIf="getFinancialSettings() as financial; else noFinancialData">
+        <div class="info-card">
+          <h3 class="section-title">Financial Settings</h3>
+          <div class="info-row">
+            <span class="info-row-label">Fiscal Year Start</span>
+            <span class="info-row-value">{{
+              formatFiscalMonth(financial.fiscalYearStartMonth)
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Revenue Recognition</span>
+            <span class="info-row-value">{{ financial.revenueRecognitionMode || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Tax Handling</span>
+            <span class="info-row-value">{{ financial.defaultTaxHandling || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Payment Terms</span>
+            <span class="info-row-value">{{ financial.defaultPaymentTerms || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Allow Other Terms</span>
+            <span class="info-row-value">{{ formatBoolean(financial.allowOtherTerms) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Credit Limit</span>
+            <span class="info-row-value">{{
+              formatCurrencyValue(financial.defaultCreditLimit)
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Credit Limit Checking</span>
+            <span class="info-row-value">{{
+              formatBoolean(financial.enableCreditLimitChecking)
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Automated Dunning Emails</span>
+            <span class="info-row-value">{{
+              formatBoolean(financial.enableAutomatedDunningEmails)
+            }}</span>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noFinancialData>
+        <div class="info-card">
+          <p class="placeholder-text">No financial settings recorded.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<ng-template #companyDetailFallback>
+  <div class="empty-state" *ngIf="!loading">
+    {{ errorMessage || 'Lender details not found.' }}
+  </div>
+</ng-template>

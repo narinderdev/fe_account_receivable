@@ -42,7 +42,16 @@
 
 .customers-table tbody tr:hover {
   background: #f9fafb;
+}
+
+.company-row {
   cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.company-row:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
 }
 
 .company-info {

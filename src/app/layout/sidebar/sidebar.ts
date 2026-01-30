@@ -26,6 +26,7 @@ export class Sidebar {
   canViewReports = false;
   canViewCollections = false;
   canViewCompany = false;
+  canViewAccounts = false;
   canViewUsers = false;
   canViewRoles = false;
   canViewArCodes = false;
@@ -65,6 +66,8 @@ export class Sidebar {
     ];
     this.canViewCollections = collectionsPerms.some((perm) => this.userContext.hasPermission(perm));
     this.canViewCompany = this.userContext.hasPermission('VIEW_COMPANY');
+    this.canViewAccounts =
+      this.userContext.hasPermission('VIEW_BANK_ACCOUNT') || this.canViewCompany;
     this.canViewUsers = this.userContext.hasPermission('VIEW_USER');
     this.canViewRoles = this.userContext.hasPermission('VIEW_ROLES');
     const canViewArCodes = this.userContext.hasPermission('VIEW_AR_CODE');
@@ -83,7 +86,8 @@ export class Sidebar {
       this.userContext.isAdmin() ||
       this.canViewCompany ||
       this.canViewArCodes ||
-      this.canViewGlCodes;
+      this.canViewGlCodes ||
+      this.canViewAccounts;
   }
 
   toggleSetup() {

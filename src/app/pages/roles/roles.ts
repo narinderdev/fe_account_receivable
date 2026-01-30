@@ -182,6 +182,14 @@ export class Roles implements OnInit, OnDestroy {
       },
     },
     {
+      label: 'Accounts',
+      permissions: {
+        view: 'VIEW_BANK_ACCOUNT',
+        create: 'CREATE_BANK_ACCOUNT',
+        update: 'UPDATE_BANK_ACCOUNT',
+      },
+    },
+    {
       label: 'AR Code',
       permissions: {
         view: 'VIEW_AR_CODE',

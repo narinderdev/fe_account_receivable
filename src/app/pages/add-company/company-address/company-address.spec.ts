@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { CompanyService } from '../../../services/company-service';
+import { RoleService } from '../../../services/role-service';
 import { CompanyEntity, CreateAddressResponse } from '../../../models/company.model';
 
 import { CompanyAddress } from './company-address';
@@ -17,9 +18,18 @@ describe('CompanyAddress', () => {
       'createAddress',
       'setEditingCompany',
     ]);
-    const instance = new CompanyAddress(fb, route, router, companyService);
+    const roleService = createSpyObj<RoleService>('RoleService', ['getRoles']);
+    roleService.getRoles.mockReturnValue(
+      of({
+        statusCode: 200,
+        status: 'success',
+        message: 'ok',
+        data: [],
+      })
+    );
+    const instance = new CompanyAddress(fb, route, router, companyService, roleService);
     instance.buildForm();
-    return { instance, companyService, router };
+    return { instance, companyService, router, roleService };
   };
 
   beforeEach(() => {

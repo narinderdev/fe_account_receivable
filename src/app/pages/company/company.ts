@@ -122,6 +122,13 @@ export class Company implements OnInit {
     this.router.navigate(['/admin/lender/edit', id, 'step-1']);
   }
 
+  viewCompany(id: number) {
+    if (!id) {
+      return;
+    }
+    this.router.navigate(['/admin/lender/details', id]);
+  }
+
   openDeleteModal(id: number) {
     if (!this.canDeleteCompany) {
       return;

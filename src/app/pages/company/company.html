@@ -35,7 +35,11 @@
         </tbody>
 
         <tbody *ngIf="!loading" class="text-data">
-          <tr *ngFor="let c of companies; let i = index">
+          <tr
+            *ngFor="let c of companies; let i = index"
+            class="company-row"
+            (click)="viewCompany(c.id)"
+          >
             <td>
               <div class="company-info">
                 <div
@@ -70,13 +74,16 @@
 
             <td class="actions" *ngIf="showActionsColumn">
               <span class="btn-right" *ngIf="canUpdateCompany"
-                ><img src="/editIcn.svg" class="action-icon" (click)="editCompany(c.id)"
+                ><img
+                  src="/editIcn.svg"
+                  class="action-icon"
+                  (click)="editCompany(c.id); $event.stopPropagation()"
               /></span>
               <span *ngIf="canDeleteCompany"
                 ><img
                   src="/deleteIcn.svg"
                   class="action-icon delete"
-                  (click)="openDeleteModal(c.id)"
+                  (click)="openDeleteModal(c.id); $event.stopPropagation()"
               /></span>
             </td>
           </tr>

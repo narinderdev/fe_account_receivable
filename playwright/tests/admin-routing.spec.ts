@@ -12,11 +12,9 @@ const adminRouteCases = [
   { path: '/admin/lender/add/step-1', title: 'Add Lender' },
   { path: '/admin/lender/add/step-2', title: 'Add Lender' },
   { path: '/admin/lender/add/step-3', title: 'Add Lender' },
-  { path: '/admin/lender/add/step-4', title: 'Add Lender' },
   { path: '/admin/lender/edit/1/step-1', title: 'Edit Lender' },
   { path: '/admin/lender/edit/1/step-2', title: 'Edit Lender' },
   { path: '/admin/lender/edit/1/step-3', title: 'Edit Lender' },
-  { path: '/admin/lender/edit/1/step-4', title: 'Edit Lender' },
   {
     path: '/admin/lender/onboarding-complete',
     title: 'Onboarding Complete',
