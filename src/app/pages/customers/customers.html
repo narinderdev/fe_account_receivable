@@ -33,8 +33,9 @@
     <table class="customers-table">
       <thead>
         <tr>
-          <th>Company Name</th>
-          <th>Company ID</th>
+          <th>Customer Name</th>
+          <th>Customer ID</th>
+          <th>Customer Type</th>
           <th>Email</th>
           <th>Address</th>
           <th>Actions</th>
@@ -44,7 +45,7 @@
       <!-- Loader while data is fetching -->
       <tbody *ngIf="loading">
         <tr>
-          <td colspan="5" style="text-align: center; padding: 40px">
+          <td colspan="6" style="text-align: center; padding: 40px">
             <app-loader [visible]="loading"></app-loader>
           </td>
         </tr>
@@ -73,6 +74,7 @@
           </td>
 
           <td>{{ c.customerId }}</td>
+           <td>{{ c.customerType }}</td>
 
           <td>{{ c.email }}</td>
 
