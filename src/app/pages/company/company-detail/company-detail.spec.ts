@@ -4,11 +4,12 @@ import { CompanyService } from '../../../services/company-service';
 import { CompanyEntity, CompanyResponse } from '../../../models/company.model';
 import { ActivatedRoute } from '@angular/router';
 import { CompanyDetail } from './company-detail';
+import { createSpyObj, SpyObject } from 'src/testing/spy-helpers';
 
 describe('CompanyDetail', () => {
   let component: CompanyDetail;
   let fixture: ComponentFixture<CompanyDetail>;
-  let companyService: jasmine.SpyObj<CompanyService>;
+  let companyService: SpyObject<CompanyService>;
 
   const createCompany = (): CompanyEntity => ({
     id: 10,
@@ -23,18 +24,25 @@ describe('CompanyDetail', () => {
     financialSettings: {
       id: 1,
       fiscalYearStartMonth: 1,
-      defaultArAccountCode: null,
+      defaultArAccountCode: '',
       revenueRecognitionMode: 'On Invoice',
       defaultTaxHandling: 'Line Item Level',
       defaultPaymentTerms: 'Net 30',
       allowOtherTerms: false,
       enableCreditLimitChecking: true,
-      agingBucketConfig: null,
-      dunningFrequencyDays: null,
+      agingBucketConfig: '',
+      dunningFrequencyDays: 0,
       enableAutomatedDunningEmails: false,
       defaultCreditLimit: 5000,
     },
-    paymentSettings: null,
+    paymentSettings: {
+      id: 1,
+      acceptCheck: true,
+      acceptCreditCard: true,
+      acceptBankTransfer: true,
+      acceptCash: false,
+      remittanceInstructions: 'Send via ACH',
+    },
     companyAddress: {
       id: 1,
       addressLine1: '123 Main',
@@ -57,14 +65,14 @@ describe('CompanyDetail', () => {
   });
 
   beforeEach(async () => {
-    companyService = jasmine.createSpyObj('CompanyService', ['getCompanyById']);
+    companyService = createSpyObj<CompanyService>('CompanyService', ['getCompanyById']);
     const response: CompanyResponse = {
       statusCode: 200,
       status: 'success',
       message: 'ok',
       data: createCompany(),
     };
-    companyService.getCompanyById.and.returnValue(of(response));
+    companyService.getCompanyById.mockReturnValue(of(response));
 
     await TestBed.configureTestingModule({
       imports: [CompanyDetail],

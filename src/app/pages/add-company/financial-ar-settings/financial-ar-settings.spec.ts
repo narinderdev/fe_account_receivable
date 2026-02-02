@@ -20,15 +20,28 @@ describe('FinancialArSettings', () => {
       'updateCompany',
       'getEditingCompanySnapshot',
     ]);
+
+    // ✅ Keep a local snapshot that mimics the real service behavior
+    let snapshot: CompanyEntity | null = createCompanyStub();
+    companyService.getEditingCompanySnapshot.mockImplementation(() => snapshot);
+    companyService.setEditingCompany.mockImplementation((c) => {
+      snapshot = c as CompanyEntity | null;
+    });
+
     const router = createSpyObj<Router>('Router', ['navigate']);
-    const route = { parent: { snapshot: { params: {} } }, snapshot: { params: {} } } as ActivatedRoute;
+    const route = {
+      parent: { snapshot: { params: {} } },
+      snapshot: { params: {} },
+    } as ActivatedRoute;
     const toastr = createSpyObj<ToastrService>('ToastrService', ['error']);
-    companyService.updateCompany.mockReturnValue(of({}));
+
+    companyService.updateCompany.mockReturnValue(of(createCompanyResponse()));
     companyService.getChangedCompanyPayload.mockReturnValue({ legalName: 'Updated' });
-    companyService.getEditingCompanySnapshot.mockReturnValue(createCompanyStub());
+
     const instance = new FinancialArSettings(fb, companyService, router, route, toastr);
     instance.buildForm();
     instance.companyId = 1;
+
     return { instance, companyService, router };
   };
 
@@ -79,7 +92,7 @@ describe('FinancialArSettings', () => {
       instance.saveFinancialSettings();
       expect(companyService.createFinancialSettings).toHaveBeenCalledWith(
         1,
-        expect.objectContaining({ defaultCreditLimit: 1000 })
+        expect.objectContaining({ defaultCreditLimit: 1000 }),
       );
       expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/onboarding-complete'], {
         queryParams: { id: 1 },
@@ -118,58 +131,37 @@ function createValidFinancials() {
 
 function createCompanyStub(): CompanyEntity {
   return {
-    id: 1,
+    id: 4,
     legalName: 'Acme',
     tradeName: 'Acme',
     companyCode: 'AC',
     country: 'USA',
     baseCurrency: 'USD',
     timeZone: 'UTC',
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    financialSettings: {
-      id: 1,
-      fiscalYearStartMonth: 1,
-      defaultArAccountCode: '',
-      revenueRecognitionMode: '',
-      defaultTaxHandling: '',
-      defaultPaymentTerms: '',
-      allowOtherTerms: false,
-      enableCreditLimitChecking: false,
-      agingBucketConfig: '',
-      dunningFrequencyDays: 1,
-      enableAutomatedDunningEmails: false,
-      defaultCreditLimit: 0,
-    },
-    paymentSettings: {
-      id: 1,
-      acceptCheck: false,
-      acceptCreditCard: false,
-      acceptBankTransfer: false,
-      acceptCash: false,
-      remittanceInstructions: '',
-    },
+
     companyAddress: {
-      id: 1,
-      addressLine1: '',
-      city: '',
-      stateProvince: '',
-      postalCode: '',
-      addressCountry: '',
-      primaryContactName: '',
-      position: '',
-      primaryContactEmail: '',
-      primaryContactPhone: '',
-      website: '',
-      primaryContactCountry: '',
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
+      addressLine1: '123 Main St',
+      city: 'New York',
+      stateProvince: 'NY',
+      postalCode: '10001',
+      addressCountry: 'USA',
+      primaryContactName: 'John Doe',
+      position: 'Manager',
+      primaryContactEmail: 'john@acme.com',
+      primaryContactPhone: '1234567890',
+      primaryContactCountry: 'USA',
     },
-    bankAccounts: [],
-    users: [],
-    companyCustomers: [],
-  };
+
+    financialSettings: {
+      fiscalYearStartMonth: 1,
+      revenueRecognitionMode: 'Accrual',
+      defaultTaxHandling: 'Standard',
+      defaultPaymentTerms: 'Net30',
+      defaultCreditLimit: 1000,
+    },
+  } as CompanyEntity;
 }
+
 
 function createCompanyResponse(overrides?: Partial<CompanyResponse['data']>): CompanyResponse {
   return {
