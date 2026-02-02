@@ -29,7 +29,7 @@
         <form [formGroup]="mainForm" (ngSubmit)="(false)" (submit)="(false)">
           <div class="form-grid">
             <div class="form-field">
-              <label>Company Name <span class="color">*</span></label>
+              <label>Customer Name <span class="color">*</span></label>
               <input type="text" formControlName="customerName" placeholder="Enter company name" />
               <div class="error" *ngIf="submitted && mainForm.controls['customerName'].errors">
                 <span *ngIf="mainForm.controls['customerName'].hasError('required')">
@@ -47,19 +47,16 @@
             </div>
 
             <div class="form-field">
-              <label>Company Type <span class="color">*</span></label>
-              <input
-                type="text"
-                formControlName="customerType"
-                placeholder="e.g., Retail, Wholesale"
-              />
+              <label>Customer Type <span class="color">*</span></label>
+              <select formControlName="customerType">
+                <option value="" disabled selected>Select company type</option>
+                <option value="Individual">Individual</option>
+                <option value="Company">Company</option>
+              </select>
+
               <div class="error" *ngIf="submitted && mainForm.controls['customerType'].errors">
                 <span *ngIf="mainForm.controls['customerType'].hasError('required')">
                   Company Type is required.
-                </span>
-
-                <span *ngIf="mainForm.controls['customerType'].hasError('pattern')">
-                  Only letters and spaces are allowed.
                 </span>
               </div>
             </div>
@@ -317,7 +314,7 @@
             </label>
           </div>
 
-          <form [formGroup]="vatForm" (ngSubmit)="(false)" (submit)="(false)"  *ngIf="showVatForm">
+          <form [formGroup]="vatForm" (ngSubmit)="(false)" (submit)="(false)" *ngIf="showVatForm">
             <div class="form-grid">
               <div class="form-field">
                 <label>Tax Identification Number <span class="color">*</span></label>
@@ -602,9 +599,7 @@
             (click)="updateCustomer()"
             [disabled]="isUpdatingCustomer"
           >
-            <ng-container *ngIf="!isUpdatingCustomer; else spinUpdating">
-              Update
-            </ng-container>
+            <ng-container *ngIf="!isUpdatingCustomer; else spinUpdating"> Update </ng-container>
 
             <ng-template #spinUpdating>
               <app-spinner></app-spinner>
