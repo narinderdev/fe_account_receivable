@@ -5,12 +5,20 @@
 .sidebar {
   height: 100vh;
   width: 256px;
-  background: #F1F5F9;
+  background: #f1f5f9;
   color: #111827;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   padding: 32px 0;
+}
+
+/* Add flex and overflow constraint to the first child (wrapper containing header + nav) */
+.sidebar > div:first-child {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Important: allows flex item to shrink below content size */
+  overflow: hidden; /* Prevent this container from overflowing */
 }
 
 .sidebar-header {
@@ -20,6 +28,7 @@
   gap: 12px;
   padding: 0 32px;
   margin-bottom: 20px;
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .sidebar-title {
@@ -32,6 +41,28 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 8px; /* Add padding for scrollbar */
+}
+
+/* Custom scrollbar styling (optional but looks better) */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .nav-item {
@@ -45,10 +76,11 @@
   font-size: 15px;
   cursor: pointer;
   transition: background 0.2s ease;
+  flex-shrink: 0; /* Prevent nav items from shrinking */
 }
 
 .nav-item:hover {
-  background: #E0EDFF;
+  background: #e0edff;
 }
 
 .nav-icon {
@@ -58,13 +90,15 @@
 }
 
 .active {
-  background: #E0EDFF !important;
+  background: #e0edff !important;
   font-weight: 500 !important;
-  color: #3B82F6;
+  color: #3b82f6;
 }
 
 .sidebar-footer {
   padding: 0 24px;
+  flex-shrink: 0; /* Keep footer fixed, don't allow it to shrink */
+  margin-top: 16px; /* Add some spacing from scrollable content */
 }
 
 .logout-btn {
@@ -81,7 +115,7 @@
 }
 
 .logout-btn:hover {
-  background: #E0EDFF;
+  background: #e0edff;
 }
 
 .setup-parent {
@@ -89,17 +123,17 @@
   align-items: center;
   gap: 16px;
   border-radius: 8px;
-  color: #64748B;
+  color: #64748b;
   cursor: pointer;
   transition: background 0.2s ease;
-  position: relative; /* allow arrow to align correctly */
+  position: relative;
+  flex-shrink: 0; /* Prevent parent from shrinking */
 }
 
 .setup-parent:hover {
-  background: #E0EDFF;
+  background: #e0edff;
 }
 
-/* Arrow right-aligned */
 .arrow {
   margin-left: auto;
   font-size: 18px;
@@ -113,30 +147,28 @@
 .setup-children {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0; /* Prevent children container from shrinking */
 }
 
-/* Submenu items */
 .sub-nav-item {
   display: block;
-  width: 100%;              /* full width background */
-  padding: 10px 32px 10px 56px;  
-  /* top/right/bottom/left -> left 56px gives indent */
+  width: 100%;
+  padding: 10px 32px 10px 56px;
   font-size: 15px;
-  color: #64748B;
+  color: #64748b;
   text-decoration: none;
   border-radius: 8px;
   transition: background 0.2s ease;
+  flex-shrink: 0; /* Prevent submenu items from shrinking */
 }
 
-/* Hover */
 .sub-nav-item:hover {
-  background: #E0EDFF;
+  background: #e0edff;
 }
 
-/* ACTIVE submenu */
 .sub-nav-item.active {
-  background: #E0EDFF !important;
-  color: #3B82F6 !important;
+  background: #e0edff !important;
+  color: #3b82f6 !important;
   font-weight: 500;
 }
 
@@ -292,12 +324,12 @@
 .mobile-setup-children a {
   padding: 10px 12px 10px 44px;
   font-size: 14px;
-  color: #3B82F6;
+  color: #3b82f6;
   border-radius: 8px;
 }
 
 .mobile-setup-children a:hover {
-  background: #E0EDFF;
+  background: #e0edff;
 }
 
 .logout-btn.mobile {
@@ -311,7 +343,7 @@
 }
 
 .logout-btn.mobile:hover {
-  background: #E0EDFF;
+  background: #e0edff;
 }
 
 @media (max-width: 1024px) {
