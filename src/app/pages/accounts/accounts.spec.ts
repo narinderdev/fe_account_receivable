@@ -6,6 +6,7 @@ import { GlCodeService } from '../../services/gl-code-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { ToastrService } from 'ngx-toastr';
 import { UserContextService } from '../../services/user-context.service';
+import { createSpyObj } from 'src/testing/spy-helpers';
 
 describe('Accounts', () => {
   let component: Accounts;
@@ -14,17 +15,17 @@ describe('Accounts', () => {
   let companySelectionSubject: Subject<string | null>;
 
   beforeEach(async () => {
-    const bankAccountServiceMock = jasmine.createSpyObj<BankAccountService>('BankAccountService', [
+    const bankAccountServiceMock = createSpyObj<BankAccountService>('BankAccountService', [
       'getBankAccounts',
       'createBankAccount',
       'createBankGlMapping',
       'getBankAccountGlMapping',
       'updateBankGlMapping',
     ]);
-    bankAccountServiceMock.getBankAccounts.and.returnValue(
+    bankAccountServiceMock.getBankAccounts.mockReturnValue(
       of({ statusCode: 200, status: 'success', message: '', data: [] })
     );
-    bankAccountServiceMock.createBankAccount.and.returnValue(
+    bankAccountServiceMock.createBankAccount.mockReturnValue(
       of({
         statusCode: 200,
         status: 'success',
@@ -39,18 +40,27 @@ describe('Accounts', () => {
         },
       })
     );
-    bankAccountServiceMock.createBankGlMapping.and.returnValue(
-      of({ statusCode: 200, status: 'success', message: 'ok', data: null })
-    );
-    bankAccountServiceMock.getBankAccountGlMapping.and.returnValue(
-      of({ statusCode: 200, status: 'success', message: 'ok', data: null })
-    );
-    bankAccountServiceMock.updateBankGlMapping.and.returnValue(
-      of({ statusCode: 200, status: 'success', message: 'ok', data: null })
-    );
+    const mappingResponse = {
+      statusCode: 200,
+      status: 'success',
+      message: 'ok',
+      data: {
+        bankAccountId: 1,
+        bankName: 'Test',
+        bankNumber: '1111',
+        glCode: 'BANK-001',
+        glCodeId: 5,
+        glDescription: 'Bank Code',
+        mappingId: 9,
+        status: 'ACTIVE' as const,
+      },
+    };
+    bankAccountServiceMock.createBankGlMapping.mockReturnValue(of(mappingResponse));
+    bankAccountServiceMock.getBankAccountGlMapping.mockReturnValue(of(mappingResponse));
+    bankAccountServiceMock.updateBankGlMapping.mockReturnValue(of(mappingResponse));
 
-    const glCodeServiceMock = jasmine.createSpyObj<GlCodeService>('GlCodeService', ['getGlCode']);
-    glCodeServiceMock.getGlCode.and.returnValue(
+    const glCodeServiceMock = createSpyObj<GlCodeService>('GlCodeService', ['getGlCode']);
+    glCodeServiceMock.getGlCode.mockReturnValue(
       of({ statusCode: 200, status: 'success', message: 'ok', data: [] })
     );
 
@@ -59,19 +69,19 @@ describe('Accounts', () => {
       selectedCompanyId$: companySelectionSubject.asObservable(),
     } as CompanySelectionService;
 
-    const toastrMock = jasmine.createSpyObj<ToastrService>('ToastrService', [
+    const toastrMock = createSpyObj<ToastrService>('ToastrService', [
       'success',
       'error',
       'warning',
       'info',
     ]);
 
-    const userContextMock = jasmine.createSpyObj<UserContextService>('UserContextService', [
+    const userContextMock = createSpyObj<UserContextService>('UserContextService', [
       'hasPermission',
       'isAdmin',
     ]);
-    userContextMock.hasPermission.and.returnValue(true);
-    userContextMock.isAdmin.and.returnValue(true);
+    userContextMock.hasPermission.mockReturnValue(true);
+    userContextMock.isAdmin.mockReturnValue(true);
 
     await TestBed.configureTestingModule({
       imports: [Accounts],

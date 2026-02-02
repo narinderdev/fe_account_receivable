@@ -7,7 +7,6 @@ export interface CompanyBankAccountEntity {
   currency: string | null;
   isDefault: boolean | null;
   mappingStatus: string | null;
-  ifscCode?: string | null;
   ifscSwift?: string | null;
 }
 
@@ -37,6 +36,7 @@ export interface CreateBankAccountPayload {
   bankName: string;
   accountNumber: string;
   currency?: string | null;
+  ifscSwift?: string | null;
 }
 
 export interface BankGlMappingRequest {
