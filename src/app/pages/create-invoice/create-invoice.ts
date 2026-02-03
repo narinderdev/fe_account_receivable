@@ -365,15 +365,15 @@ export class CreateInvoice implements OnInit, OnDestroy {
     }
 
     // Check credit limit
-    if (this.exceedsCreditLimit) {
-      this.toastr.error(
-        `Invoice total ($${this.totalAmount.toFixed(
-          2,
-        )}) exceeds customer's credit limit ($${this.customerCreditLimit.toFixed(2)})`,
-        'Credit Limit Exceeded',
-      );
-      return;
-    }
+    // if (this.exceedsCreditLimit) {
+    //   this.toastr.error(
+    //     `Invoice total ($${this.totalAmount.toFixed(
+    //       2,
+    //     )}) exceeds customer's credit limit ($${this.customerCreditLimit.toFixed(2)})`,
+    //     'Credit Limit Exceeded',
+    //   );
+    //   return;
+    // }
 
     // Validate manual invoice number
     if (!this.invoice.isGenerated) {
