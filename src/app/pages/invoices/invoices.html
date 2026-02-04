@@ -46,10 +46,14 @@
         />
       </div>
 
-      <button class="btn-new" routerLink="create" *ngIf="canCreateInvoice">
-        <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
-        New Invoice
-      </button>
+      <div class="import-actions" *ngIf="canCreateInvoice">
+        <button class="import-invoice-btn" (click)="openImportModal()">Import Invoice</button>
+
+        <button class="btn-new" routerLink="create">
+          <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
+          New Invoice
+        </button>
+      </div>
     </div>
   </div>
 
@@ -168,6 +172,116 @@
         </div>
       </div>
     </ng-container>
+  </div>
+
+  <!-- Import Invoice Modal -->
+  <div class="modal-overlay" *ngIf="isImportModalOpen">
+    <div class="approve-modal import-modal">
+      <div class="modal-header">
+        <h2>Import Invoices</h2>
+        <button
+          class="btn-close"
+          (click)="closeImportModal()"
+          aria-label="Close"
+          [disabled]="uploadingFile"
+        >
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="template-section">
+          <p class="template-info">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Download the template first to see the required format
+          </p>
+
+          <button
+            class="download-template-btn"
+            (click)="downloadInvoiceTemplate()"
+            [disabled]="downloadingTemplate"
+          >
+            <ng-container *ngIf="!downloadingTemplate">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Excel Template
+            </ng-container>
+            <ng-container *ngIf="downloadingTemplate">
+              <app-spinner></app-spinner>
+            </ng-container>
+          </button>
+        </div>
+
+        <input
+          type="file"
+          #invoiceFileInput
+          accept=".csv,.xlsx,.xls"
+          style="display: none"
+          (change)="handleInvoiceFileUpload($event)"
+        />
+
+        <button class="upload-btn" (click)="invoiceFileInput.click()" [disabled]="uploadingFile">
+          <ng-container *ngIf="!uploadingFile">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Upload File (CSV or Excel)
+          </ng-container>
+          <ng-container *ngIf="uploadingFile">
+            <app-spinner></app-spinner>
+          </ng-container>
+        </button>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeImportModal()"
+          [disabled]="uploadingFile"
+        >
+          Close
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Approve Invoice Confirmation Modal -->

@@ -1,9 +1,17 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ChangeDetectorRef,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
+import * as XLSX from 'xlsx';
 
 import { InvoiceService } from '../../services/invoice-service';
 import { Loader } from '../../shared/loader/loader';
@@ -37,11 +45,16 @@ export class Invoices implements OnInit, OnDestroy {
   isCustomPeriod = false;
   fromDate: string | null = null;
   toDate: string | null = null;
+  isImportModalOpen = false;
+  downloadingTemplate = false;
+  uploadingFile = false;
 
   state: InvoiceState = this.buildInitialState();
 
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
+
+  @ViewChild('invoiceFileInput') invoiceFileInput!: ElementRef<HTMLInputElement>;
 
   canCreateInvoice = false;
   canApproveInvoice = false;
@@ -68,6 +81,264 @@ export class Invoices implements OnInit, OnDestroy {
   ) {
     this.canCreateInvoice = this.userContext.hasPermission('CREATE_INVOICE');
     this.canApproveInvoice = this.userContext.hasPermission('APPROVE_INVOICE');
+  }
+
+  openImportModal() {
+    if (!this.canCreateInvoice) {
+      return;
+    }
+
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select a AR Company from the navbar before importing.', 'Warning');
+      return;
+    }
+
+    this.isImportModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeImportModal() {
+    if (this.uploadingFile) {
+      return;
+    }
+
+    this.isImportModalOpen = false;
+
+    if (this.invoiceFileInput) {
+      this.invoiceFileInput.nativeElement.value = '';
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  downloadInvoiceTemplate() {
+    if (!this.canCreateInvoice) return;
+
+    this.downloadingTemplate = true;
+    this.cdr.detectChanges();
+
+    this.invoiceService.getInvoiceTemplate().subscribe({
+      next: (res) => {
+        const metadata = res?.data;
+        const headers: string[] = [];
+        const exampleRow: string[] = [];
+
+        // Collect all fields from all tabs
+        metadata?.tabs?.forEach((tab: any) => {
+          tab.fields?.forEach((field: any) => {
+            // Add field name instead of label
+            headers.push(field.name);
+
+            // Add example value
+            const example = field.rules?.example || '';
+            exampleRow.push(example);
+          });
+        });
+
+        const wb = XLSX.utils.book_new();
+        const wsData: any[][] = [];
+
+        if (headers.length) {
+          // Add headers row
+          wsData.push(headers);
+          // Add example data row
+          wsData.push(exampleRow);
+        } else {
+          wsData.push(['No metadata available']);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Set column widths for better readability
+        ws['!cols'] = headers.map(() => ({ wch: 25 }));
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Invoice Template');
+        XLSX.writeFile(wb, 'invoice_import_template.xlsx');
+
+        this.toastr.success('Template downloaded successfully!', 'Success');
+        this.downloadingTemplate = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Invoice template download failed:', err);
+        this.toastr.error('Failed to download template!', 'Error');
+        this.downloadingTemplate = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  handleInvoiceFileUpload(event: Event) {
+    if (!this.canCreateInvoice) {
+      return;
+    }
+
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const validExtensions = ['.csv', '.xlsx', '.xls'];
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+    if (!validExtensions.includes(fileExtension)) {
+      this.toastr.warning(
+        'Please upload a valid CSV or Excel file (.csv, .xlsx, .xls).',
+        'Warning',
+      );
+      input.value = '';
+      return;
+    }
+
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select a AR Company from the navbar before importing.', 'Warning');
+      input.value = '';
+      return;
+    }
+
+    this.uploadingFile = true;
+    this.cdr.detectChanges();
+
+    // Check if file is Excel or CSV
+    const isExcel = fileExtension === '.xlsx' || fileExtension === '.xls';
+
+    if (isExcel) {
+      // Convert Excel to CSV
+      this.convertExcelToCsvAndUpload(file, input);
+    } else {
+      // Upload CSV directly
+      this.uploadCsvFile(file, input);
+    }
+  }
+
+  private convertExcelToCsvAndUpload(file: File, input: HTMLInputElement) {
+    const reader = new FileReader();
+
+    reader.onload = (e: any) => {
+      try {
+        const data = e.target.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+
+        // Get first sheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+
+        // Convert to CSV string
+        const csvString = XLSX.utils.sheet_to_csv(worksheet);
+
+        // Create a Blob from CSV string
+        const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+
+        // Create a File object from Blob with .csv extension
+        const csvFile = new File([csvBlob], file.name.replace(/\.(xlsx|xls)$/i, '.csv'), {
+          type: 'text/csv',
+        });
+
+        // Upload the CSV file
+        this.uploadCsvFile(csvFile, input);
+      } catch (error) {
+        console.error('Error converting Excel to CSV:', error);
+        this.toastr.error('Failed to convert Excel file to CSV format.', 'Conversion Error');
+        this.uploadingFile = false;
+        input.value = '';
+        this.cdr.detectChanges();
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error('Error reading Excel file:', error);
+      this.toastr.error('Failed to read Excel file.', 'Read Error');
+      this.uploadingFile = false;
+      input.value = '';
+      this.cdr.detectChanges();
+    };
+
+    reader.readAsBinaryString(file);
+  }
+
+  private uploadCsvFile(file: File, input: HTMLInputElement) {
+    const companyId = this.activeCompanyId;
+
+    if (!companyId) {
+      this.toastr.warning('Please select a company first!', 'Warning');
+      this.uploadingFile = false;
+      input.value = '';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.invoiceService.uploadInvoiceCsv(companyId, formData).subscribe({
+      next: (response) => {
+        this.uploadingFile = false;
+
+        const data = response?.data;
+        const totalRows = data?.totalRows || 0;
+        const successCount = data?.successCount || 0;
+        const failureCount = data?.failureCount || 0;
+        const errors = data?.errors || [];
+
+        // Show detailed success/failure message
+        if (failureCount === 0) {
+          this.toastr.success(
+            `Successfully imported ${successCount} of ${totalRows} invoice(s)!`,
+            'Import Successful',
+            { timeOut: 5000 },
+          );
+        } else if (successCount > 0) {
+          this.toastr.warning(
+            `Imported ${successCount} invoice(s) successfully. ${failureCount} failed.${
+              errors.length > 0 ? ' Check console for details.' : ''
+            }`,
+            'Partial Success',
+            { timeOut: 7000 },
+          );
+
+          if (errors.length > 0) {
+            console.error('Import errors:', errors);
+          }
+        } else {
+          this.toastr.error(
+            `Failed to import all ${totalRows} invoice(s).${
+              errors.length > 0 ? ' Check console for details.' : ''
+            }`,
+            'Import Failed',
+            { timeOut: 7000 },
+          );
+
+          if (errors.length > 0) {
+            console.error('Import errors:', errors);
+          }
+        }
+
+        this.closeImportModal();
+
+        // Reload invoices if any were successfully imported
+        if (successCount > 0 && this.activeCompanyId) {
+          this.loadInvoices(this.activeCompanyId, this.state.currentPage);
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.uploadingFile = false;
+        console.error('Invoice file upload failed:', err);
+
+        const backendMessage = err?.error?.message;
+        if (backendMessage) {
+          this.toastr.error(backendMessage, 'Upload Error');
+        } else {
+          this.toastr.error('Invoice file upload failed!', 'Error');
+        }
+
+        input.value = '';
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   ngOnInit() {
@@ -355,6 +626,7 @@ export class Invoices implements OnInit, OnDestroy {
       case 'draft':
         return 'status-draft';
       case 'sent':
+      case 'open':
       case 'approved':
         return 'status-sent';
       case 'paid':

@@ -92,11 +92,15 @@ export class InvoiceService {
     });
   }
 
-  sendInvoice(invoiceId: number, companyId:number): Observable<SendInvoiceResponse> {
+  sendInvoice(invoiceId: number, companyId: number): Observable<SendInvoiceResponse> {
     const headers = this.getAuthHeaders();
-    return this.http.post<SendInvoiceResponse>(`${this.baseUrl}/invoice/send/${companyId}/${invoiceId}`, null, {
-      headers,
-    });
+    return this.http.post<SendInvoiceResponse>(
+      `${this.baseUrl}/invoice/send/${companyId}/${invoiceId}`,
+      null,
+      {
+        headers,
+      },
+    );
   }
 
   getUnpaidInvoices(customerId: number): Observable<InvoiceListResponse> {
@@ -156,5 +160,19 @@ export class InvoiceService {
       `${this.baseUrl}/invoice/company/${companyId}?${queryParams.join('&')}`,
       { headers },
     );
+  }
+
+  getInvoiceTemplate(): Observable<any> {
+    const headers = this.getAuthHeadersWithNgrok();
+    return this.http.get<any>(`${this.baseUrl}/invoice/import/template-metadata`, {
+      headers,
+    });
+  }
+
+  uploadInvoiceCsv(companyId: number, formData: FormData): Observable<any> {
+    const headers = this.getAuthHeaders();
+    return this.http.post<any>(`${this.baseUrl}/invoice/import/${companyId}`, formData, {
+      headers,
+    });
   }
 }
