@@ -1,7 +1,7 @@
 <div class="customers-container">
   <div class="search-card">
     <div class="search-card-header">
-      <label class="search-card-label">Company Name</label>
+      <label class="search-card-label">Customer Name</label>
     </div>
     <div class="search-card-body">
       <div class="search-input">
@@ -10,7 +10,7 @@
         </span>
         <input
           type="text"
-          placeholder="Enter company name"
+          placeholder="Enter customer name"
           [value]="searchTerm"
           (input)="onSearchInput($any($event.target).value)"
         />
@@ -18,12 +18,12 @@
 
       <div class="button-gap">
         <button class="import-customer-btn" (click)="openImportModal()" *ngIf="canCreateCustomer">
-          Import Company List
+          Import Customer
         </button>
 
         <button class="add-customer-btn" routerLink="add" *ngIf="canCreateCustomer">
           <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
-          Add Company
+          Add Customer
         </button>
       </div>
     </div>
@@ -64,7 +64,7 @@
                 class="customer-initial"
                 [ngStyle]="{
                   backgroundColor: getInitialColor(i).background,
-                  color: getInitialColor(i).color
+                  color: getInitialColor(i).color,
                 }"
               >
                 {{ c?.customerName?.[0] || '?' }}
@@ -74,7 +74,7 @@
           </td>
 
           <td>{{ c.customerId }}</td>
-           <td>{{ c.customerType }}</td>
+          <td>{{ c.customerType }}</td>
 
           <td>{{ c.email }}</td>
 
@@ -108,8 +108,8 @@
 
       <tbody *ngIf="!loading && !filteredCustomers.length">
         <tr>
-          <td colspan="5" class="no-data-row">
-            {{ searchTerm.trim() ? 'No matching companies found.' : 'No company added yet.' }}
+          <td colspan="6" class="no-data-row">
+            {{ searchTerm.trim() ? 'No matching customer found.' : 'No customer added yet.' }}
           </td>
         </tr>
       </tbody>
@@ -121,7 +121,9 @@
           {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
         </ng-container>
         <ng-template #filteredPaginationInfo>
-          Showing {{ filteredCustomers.length }} result{{ filteredCustomers.length === 1 ? '' : 's' }}
+          Showing {{ filteredCustomers.length }} result{{
+            filteredCustomers.length === 1 ? '' : 's'
+          }}
           on this page
         </ng-template>
       </div>
@@ -157,8 +159,8 @@
 <!-- Delete Modal -->
 <div class="modal-overlay" *ngIf="isDeleteModalOpen">
   <div class="modal">
-    <h3>Delete Company</h3>
-    <p>Are you sure you want to delete this company?</p>
+    <h3>Delete Customer</h3>
+    <p>Are you sure you want to delete this customer?</p>
 
     <div class="modal-actions">
       <button class="cancelBtn" (click)="closeDeleteModal()">Cancel</button>
@@ -174,34 +176,54 @@
   </div>
 </div>
 
-<!-- Import CSV Modal -->
+<!-- Import Modal -->
 <div class="modal-overlay" *ngIf="isImportModalOpen">
   <div class="modal import-modal">
-    <h3>Import Company List</h3>
+    <h3>Import Customer</h3>
 
     <div class="modal-body">
       <!-- Download Template Section -->
       <div class="template-section">
         <p class="template-info">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
           Download the template first to see the required format
         </p>
-        <button 
-          class="download-template-btn" 
+        <button
+          class="download-template-btn"
           (click)="downloadTemplate()"
           [disabled]="downloadingTemplate"
         >
           <ng-container *ngIf="!downloadingTemplate">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            Download Template
+            Excel Template
           </ng-container>
           <ng-container *ngIf="downloadingTemplate">
             <app-spinner></app-spinner>
@@ -209,41 +231,39 @@
         </button>
       </div>
 
-      <!-- <div class="divider"></div> -->
-
-      <!-- <div class="form-group">
-        <label>Company</label>
-        <p class="loading-text" *ngIf="activeCompanyId; else noCompany">
-          Using company ID {{ activeCompanyId }} selected from the navbar.
-        </p>
-        <ng-template #noCompany>
-          <p class="loading-text">Select a company from the navbar to enable importing.</p>
-        </ng-template>
-      </div> -->
-
       <!-- Hidden file input -->
       <input
         type="file"
-        #csvInput
-        accept=".csv"
+        #fileInput
+        accept=".csv,.xlsx,.xls"
         style="display: none"
-        (change)="handleCsvUpload($event)"
+        (change)="handleFileUpload($event)"
       />
 
       <button
         class="upload-btn"
-        (click)="csvInput.click()"
-        [disabled]="!activeCompanyId || uploadingCsv"
+        (click)="fileInput.click()"
+        [disabled]="!activeCompanyId || uploadingFile"
       >
-        <ng-container *ngIf="!uploadingCsv">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <ng-container *ngIf="!uploadingFile">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
-          Upload CSV
+          Upload File (CSV or Excel)
         </ng-container>
-        <ng-container *ngIf="uploadingCsv">
+        <ng-container *ngIf="uploadingFile">
           <app-spinner></app-spinner>
         </ng-container>
       </button>
@@ -254,4 +274,3 @@
     </div>
   </div>
 </div>
-

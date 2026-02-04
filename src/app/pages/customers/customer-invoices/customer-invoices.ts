@@ -49,10 +49,10 @@ export class CustomerInvoices implements OnInit {
   }
 
   openInvoiceDetail(invoiceId: number) {
-    const url = `/admin/company/${this.customerId}/invoices/${invoiceId}`;
+    const url = `/admin/customer/${this.customerId}/invoices/${invoiceId}`;
 
     console.log('Navigating to:', url);
 
-    this.router.navigate(['/admin/company', this.customerId, 'invoices', invoiceId]);
+    this.router.navigate(['/admin/customer', this.customerId, 'invoices', invoiceId]);
   }
 }

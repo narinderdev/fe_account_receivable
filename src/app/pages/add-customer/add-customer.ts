@@ -327,8 +327,8 @@ export class AddCustomer implements OnInit, OnDestroy {
     if (this.mainForm.invalid || this.isSavingMain) {
       if (!this.mainForm.value.companyId) {
         this.toastr.error(
-          'Please select a lender from the navbar before adding a company.',
-          'Lender Required',
+          'Please select an AR Company from the navbar before adding a customer.',
+          'AR Company Required',
         );
       }
       return;
@@ -340,8 +340,8 @@ export class AddCustomer implements OnInit, OnDestroy {
     if (!Number.isFinite(companyId) || companyId <= 0) {
       this.isSavingMain = false;
       this.toastr.error(
-        'Please select a lender from the navbar before adding a company.',
-        'Lender Required',
+        'Please select an AR Company from the navbar before adding a customer.',
+        'AR Company Required',
       );
       return;
     }
@@ -357,7 +357,7 @@ export class AddCustomer implements OnInit, OnDestroy {
         this.goToTab('address');
       },
       error: (err) => {
-        const message = err?.error?.message || 'Failed to create company.';
+        const message = err?.error?.message || 'Failed to create customer.';
         this.toastr.error(message, 'Error');
         this.isSavingMain = false;
         this.cdr.detectChanges();
@@ -497,8 +497,8 @@ export class AddCustomer implements OnInit, OnDestroy {
     this.customerService.saveCredit(this.createdCustomerId, this.dunningForm.value).subscribe({
       next: () => {
         this.isSavingDunning = false;
-        this.toastr.success('Company added successfully.', 'Success');
-        this.router.navigate(['/admin/company']);
+        this.toastr.success('Customer added successfully.', 'Success');
+        this.router.navigate(['/admin/customer']);
       },
       error: () => (this.isSavingDunning = false),
     });
@@ -567,19 +567,19 @@ export class AddCustomer implements OnInit, OnDestroy {
     if (!Object.keys(payload).length) {
       // No changes detected - just navigate back without showing toaster
       this.isUpdatingCustomer = false;
-      this.router.navigate(['/admin/company']);
+      this.router.navigate(['/admin/customer']);
       return;
     }
 
     this.customerService.updateCustomer(this.customerId, payload).subscribe({
       next: () => {
         this.isUpdatingCustomer = false;
-        this.toastr.success('Company details updated successfully.', 'Success');
-        this.router.navigate(['/admin/company']);
+        this.toastr.success('Customer details updated successfully.', 'Success');
+        this.router.navigate(['/admin/customer']);
       },
       error: (err) => {
         this.isUpdatingCustomer = false;
-        const message = err?.error?.message || 'Failed to update company.';
+        const message = err?.error?.message || 'Failed to update customer.';
         this.toastr.error(message, 'Error');
       },
     });

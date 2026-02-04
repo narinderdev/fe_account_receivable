@@ -531,3 +531,24 @@
     max-width: 448px;
   }
 }
+
+.template-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.download-template-btn {
+  flex: 1;
+  min-width: 150px;
+}
+
+@media (max-width: 600px) {
+  .template-buttons {
+    flex-direction: column;
+  }
+  
+  .download-template-btn {
+    width: 100%;
+  }
+}
