@@ -12,7 +12,10 @@ import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
 describe('Invoices', () => {
   const createComponent = () => {
-    const invoiceService = createSpyObj<InvoiceService>('InvoiceService', ['getInvoices']);
+    const invoiceService = createSpyObj<InvoiceService>('InvoiceService', [
+      'getInvoices',
+      'getInvoiceTemplate',
+    ]);
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
     const router = createSpyObj<Router>('Router', ['navigate']);
     const companySelection = {

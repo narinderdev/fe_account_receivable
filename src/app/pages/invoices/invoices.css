@@ -5,7 +5,16 @@
 }
 
 /* Primary button */
-.btn-new {
+.import-actions {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-new,
+.import-invoice-btn {
   background: #3b82f6;
   color: white;
   padding: 8px 20px;
@@ -16,14 +25,21 @@
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
-  margin-left: auto;
   white-space: nowrap;
   height: 46px;
   transition: background 0.2s;
 }
 
+.import-invoice-btn {
+  background: #10b981;
+}
+
 .btn-new:hover {
   background: #2563eb;
+}
+
+.import-invoice-btn:hover {
+  background: #059669;
 }
 
 .btn-icon {
@@ -183,6 +199,94 @@
 .search-icon img {
   width: 22px;
   height: 22px;
+}
+
+/* .template-section {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+} */
+
+.template-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.template-info svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #3b82f6;
+}
+
+.download-template-btn,
+.upload-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.download-template-btn {
+  background-color: #10b981;
+  color: white;
+}
+
+.download-template-btn:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.download-template-btn:disabled {
+  background-color: #a7f3d0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.upload-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.upload-btn:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.download-template-btn svg,
+.upload-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.import-modal {
+  max-width: 460px;
+}
+
+.import-modal .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 @media (min-width: 1024px) {
@@ -515,7 +619,13 @@
     align-items: stretch !important;
   }
 
-  .btn-new {
+  .import-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .btn-new,
+  .import-invoice-btn {
     width: 100%;
     margin-left: 0;
     justify-content: center;
@@ -713,6 +823,10 @@
 
 @media (max-width: 768px) {
   .approve-modal {
+    max-width: 95%;
+  }
+
+  .import-modal {
     max-width: 95%;
   }
 
