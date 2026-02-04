@@ -51,20 +51,20 @@
 
       <!-- Service Fee -->
       <div class="form-group">
-        <label>Service Fee <span class="required">*</span></label>
+        <label>Service Fee</label>
         <input
           type="number"
           [(ngModel)]="serviceFee"
           (ngModelChange)="onAmountFieldChange()"
           placeholder="0.00"
           [class.error-input]="showServiceFeeError"
-          (blur)="showServiceFeeError = submitted && (!serviceFee || serviceFee < 0)"
+          (blur)="showServiceFeeError = submitted && serviceFee != null && serviceFee < 0"
           name="serviceFee"
           min="0"
           step="0.01"
         />
         <div *ngIf="showServiceFeeError" class="error-message">
-          Service fee is required and must be 0 or greater
+          Service fee must be 0 or greater
         </div>
       </div>
 
@@ -200,9 +200,9 @@
             <span>Bank Deposit</span>
             <strong>{{ bankDeposit || 0 | currency }}</strong>
           </div>
-          <div class="summary-row">
+          <div class="summary-row" *ngIf="serviceFee != null && serviceFee > 0">
             <span>Service Fee</span>
-            <strong>{{ serviceFee || 0 | currency }}</strong>
+            <strong>{{ serviceFee | currency }}</strong>
           </div>
           <div class="summary-row total-row">
             <span>Total Payment Amount</span>
@@ -245,9 +245,9 @@
             <span>Bank Deposit</span>
             <strong>{{ bankDeposit || 0 | currency }}</strong>
           </div>
-          <div class="summary-row">
+          <div class="summary-row" *ngIf="serviceFee != null && serviceFee > 0">
             <span>Service Fee</span>
-            <strong>{{ serviceFee || 0 | currency }}</strong>
+            <strong>{{ serviceFee | currency }}</strong>
           </div>
           <div class="summary-row total-row">
             <span>Total Payment Amount</span>
