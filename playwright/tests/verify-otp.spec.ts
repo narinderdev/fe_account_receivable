@@ -228,7 +228,7 @@ test.describe('Verify OTP Page - Field & Flow Tests', () => {
     await firstInput.focus();
     await page.keyboard.type('123456');
 
-    await expect(page.locator(errorText)).toHaveText('Failed to fetch');
+    await expect(page.locator(errorText)).toHaveText('Invalid code. Please try again.');
   });
 
   // ---------- NAVIGATION ----------

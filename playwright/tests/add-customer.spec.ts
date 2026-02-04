@@ -9,7 +9,7 @@ const CREATED_CUSTOMER_ID = 8801;
 const defaultMainInfo = {
   companyId: String(DEFAULT_COMPANY_ID),
   customerName: 'Globex Retail',
-  customerType: 'Retail',
+  customerType: 'Company',
   email: 'billing@globex.com',
   phoneNumber: '3125550199',
 };
@@ -66,7 +66,7 @@ test.describe('Add customer onboarding wizard', () => {
     await setupAddCustomerApiMocks(page);
     await seedAdminState(page);
 
-    await page.goto('/admin/company/add');
+    await page.goto('/admin/customer/add');
     await expect(page.getByRole('heading', { name: 'Basic Information' })).toBeVisible();
   });
 
@@ -86,16 +86,17 @@ test.describe('Add customer onboarding wizard', () => {
     await expect(tabButtons.dunning).toBeDisabled();
 
     await page.getByRole('button', { name: 'Save Main' }).click();
-    await expect(page.getByText('Company Name is required.')).toBeVisible();
-    await expect(page.getByText('Company Type is required.')).toBeVisible();
+    await expect(page.getByText('Customer Name is required.')).toBeVisible();
+    await expect(page.getByText('Customer Type is required.')).toBeVisible();
     await expect(page.getByText('Email is required.')).toBeVisible();
     await expect(page.getByText('Phone Number is required.')).toBeVisible();
 
     await page.locator('[formcontrolname="customerName"]').fill('A');
-    await expect(page.getByText('Company Name must be at least 2 letters.')).toBeVisible();
+    await expect(page.getByText('Customer Name must be at least 2 letters.')).toBeVisible();
 
-    await page.locator('[formcontrolname="customerType"]').fill('Retail123');
-    await expect(page.getByText('Only letters and spaces are allowed.')).toBeVisible();
+    const customerTypeSelect = page.locator('select[formcontrolname="customerType"]');
+    await customerTypeSelect.selectOption('Company');
+    await expect(page.getByText('Customer Type is required.')).toHaveCount(0);
 
     await page.locator('[formcontrolname="email"]').fill('not-an-email');
     await expect(page.locator('.error', { hasText: 'Invalid email format.' })).toBeVisible();
@@ -152,7 +153,7 @@ test.describe('Add customer onboarding wizard', () => {
     await expect(page.getByText('Level 4 is required.')).toBeVisible();
 
     await completeDunningStep(page);
-    await expect(page).toHaveURL('/admin/company/add');
+    await expect(page).toHaveURL('/admin/customer/add');
   });
 });
 
@@ -223,7 +224,7 @@ async function fillMainForm(page: Page, data = defaultMainInfo) {
     await companySelect.selectOption(data.companyId);
   }
   await page.locator('[formcontrolname="customerName"]').fill(data.customerName);
-  await page.locator('[formcontrolname="customerType"]').fill(data.customerType);
+  await page.locator('select[formcontrolname="customerType"]').selectOption(data.customerType);
   await page.locator('[formcontrolname="email"]').fill(data.email);
   const phoneInput = page.locator('[formcontrolname="phoneNumber"]');
   if (await phoneInput.count()) {

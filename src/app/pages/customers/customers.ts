@@ -16,6 +16,7 @@ import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-customers',
@@ -30,6 +31,7 @@ export class Customers implements OnInit, OnDestroy {
   searchTerm = '';
   loading = true;
   downloadingTemplate = false;
+  
   // Delete Modal
   isDeleteModalOpen = false;
   deleteId: number | null = null;
@@ -38,9 +40,9 @@ export class Customers implements OnInit, OnDestroy {
   // Import Modal
   isImportModalOpen = false;
 
-  // CSV Upload
-  @ViewChild('csvInput') csvInput!: ElementRef;
-  uploadingCsv = false;
+  // File Upload
+  @ViewChild('fileInput') fileInput!: ElementRef;
+  uploadingFile = false;
 
   // Pagination
   currentPage = 0;
@@ -113,7 +115,7 @@ export class Customers implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Failed to load companies', err);
+        console.error('Failed to load customers', err);
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -128,7 +130,7 @@ export class Customers implements OnInit, OnDestroy {
     }
 
     if (!this.activeCompanyId) {
-      this.toastr.warning('Please select a lender from the navbar before importing.', 'Warning');
+      this.toastr.warning('Please select a AR company from the navbar before importing.', 'Warning');
       return;
     }
 
@@ -137,14 +139,77 @@ export class Customers implements OnInit, OnDestroy {
   }
 
   closeImportModal() {
+    if (this.uploadingFile) {
+      return;
+    }
+
     this.isImportModalOpen = false;
 
-    if (this.csvInput) {
-      this.csvInput.nativeElement.value = '';
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
     }
+
+    this.cdr.detectChanges();
   }
 
-  handleCsvUpload(event: Event) {
+  downloadTemplate() {
+    if (!this.canCreateCustomer) return;
+
+    this.downloadingTemplate = true;
+    this.cdr.detectChanges();
+
+    this.customerService.downloadTemplate().subscribe({
+      next: (res) => {
+        const metadata = res?.data;
+        const headers: string[] = [];
+        const exampleRow: any[] = [];
+
+        // Collect all fields from all tabs
+        metadata?.tabs?.forEach((tab: any) => {
+          tab.fields?.forEach((field: any) => {
+            // Add field name instead of label
+            headers.push(field.name);
+
+            // Add example value
+            const example = field.rules?.example !== undefined ? field.rules.example : '';
+            exampleRow.push(example);
+          });
+        });
+
+        const wb = XLSX.utils.book_new();
+        const wsData: any[][] = [];
+
+        if (headers.length) {
+          // Add headers row
+          wsData.push(headers);
+          // Add example data row
+          wsData.push(exampleRow);
+        } else {
+          wsData.push(['No metadata available']);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Set column widths for better readability
+        ws['!cols'] = headers.map(() => ({ wch: 25 }));
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Customer Template');
+        XLSX.writeFile(wb, 'customer_import_template.xlsx');
+
+        this.toastr.success('Template downloaded successfully!', 'Success');
+        this.downloadingTemplate = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Customer template download failed:', err);
+        this.toastr.error('Failed to download template!', 'Error');
+        this.downloadingTemplate = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  handleFileUpload(event: Event) {
     if (!this.canCreateCustomer) {
       return;
     }
@@ -152,48 +217,166 @@ export class Customers implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
-    if (!file) return;
-
-    if (!file.name.endsWith('.csv')) {
-      this.toastr.warning('Please upload a valid CSV file.', 'Warning');
+    if (!file) {
       return;
     }
 
+    const validExtensions = ['.csv', '.xlsx', '.xls'];
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+    if (!validExtensions.includes(fileExtension)) {
+      this.toastr.warning(
+        'Please upload a valid CSV or Excel file (.csv, .xlsx, .xls).',
+        'Warning',
+      );
+      input.value = '';
+      return;
+    }
+
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select a AR Company from the navbar before importing.', 'Warning');
+      input.value = '';
+      return;
+    }
+
+    this.uploadingFile = true;
+    this.cdr.detectChanges();
+
+    // Check if file is Excel or CSV
+    const isExcel = fileExtension === '.xlsx' || fileExtension === '.xls';
+
+    if (isExcel) {
+      // Convert Excel to CSV
+      this.convertExcelToCsvAndUpload(file, input);
+    } else {
+      // Upload CSV directly
+      this.uploadCsvFile(file, input);
+    }
+  }
+
+  private convertExcelToCsvAndUpload(file: File, input: HTMLInputElement) {
+    const reader = new FileReader();
+
+    reader.onload = (e: any) => {
+      try {
+        const data = e.target.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+
+        // Get first sheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+
+        // Convert to CSV string
+        const csvString = XLSX.utils.sheet_to_csv(worksheet);
+
+        // Create a Blob from CSV string
+        const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+
+        // Create a File object from Blob with .csv extension
+        const csvFile = new File([csvBlob], file.name.replace(/\.(xlsx|xls)$/i, '.csv'), {
+          type: 'text/csv',
+        });
+
+        // Upload the CSV file
+        this.uploadCsvFile(csvFile, input);
+      } catch (error) {
+        console.error('Error converting Excel to CSV:', error);
+        this.toastr.error('Failed to convert Excel file to CSV format.', 'Conversion Error');
+        this.uploadingFile = false;
+        input.value = '';
+        this.cdr.detectChanges();
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error('Error reading Excel file:', error);
+      this.toastr.error('Failed to read Excel file.', 'Read Error');
+      this.uploadingFile = false;
+      input.value = '';
+      this.cdr.detectChanges();
+    };
+
+    reader.readAsBinaryString(file);
+  }
+
+  private uploadCsvFile(file: File, input: HTMLInputElement) {
     const companyId = this.activeCompanyId;
 
     if (!companyId) {
       this.toastr.warning('Please select a company first!', 'Warning');
+      this.uploadingFile = false;
+      input.value = '';
+      this.cdr.detectChanges();
       return;
     }
 
     const formData = new FormData();
     formData.append('file', file);
 
-    this.uploadingCsv = true;
-    this.cdr.detectChanges();
-
     this.customerService.uploadCsv(companyId, formData).subscribe({
-      next: () => {
-        this.uploadingCsv = false;
-        this.toastr.success('Company CSV uploaded successfully!', 'Success');
+      next: (response) => {
+        this.uploadingFile = false;
+
+        const data = response?.data;
+        const totalRows = data?.totalRows || 0;
+        const successCount = data?.successCount || 0;
+        const failureCount = data?.failureCount || 0;
+        const errors = data?.errors || [];
+
+        // Show detailed success/failure message
+        if (failureCount === 0) {
+          this.toastr.success(
+            `Successfully imported ${successCount} of ${totalRows} customer(s)!`,
+            'Import Successful',
+            { timeOut: 5000 },
+          );
+        } else if (successCount > 0) {
+          this.toastr.warning(
+            `Imported ${successCount} customer(s) successfully. ${failureCount} failed.${
+              errors.length > 0 ? ' Check console for details.' : ''
+            }`,
+            'Partial Success',
+            { timeOut: 7000 },
+          );
+
+          if (errors.length > 0) {
+            console.error('Import errors:', errors);
+          }
+        } else {
+          this.toastr.error(
+            `Failed to import all ${totalRows} customer(s).${
+              errors.length > 0 ? ' Check console for details.' : ''
+            }`,
+            'Import Failed',
+            { timeOut: 7000 },
+          );
+
+          if (errors.length > 0) {
+            console.error('Import errors:', errors);
+          }
+        }
 
         this.closeImportModal();
-        if (this.activeCompanyId) {
+
+        // Reload customers if any were successfully imported
+        if (successCount > 0 && this.activeCompanyId) {
           this.loadCustomers(this.activeCompanyId, this.currentPage);
         }
+
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.uploadingCsv = false;
-        console.error('CSV upload failed:', err);
+        this.uploadingFile = false;
+        console.error('Customer file upload failed:', err);
 
         const backendMessage = err?.error?.message;
         if (backendMessage) {
-          this.toastr.error(backendMessage, 'Error');
+          this.toastr.error(backendMessage, 'Upload Error');
         } else {
-          this.toastr.error('CSV upload failed!', 'Error');
+          this.toastr.error('Customer file upload failed!', 'Error');
         }
 
+        input.value = '';
         this.cdr.detectChanges();
       },
     });
@@ -249,7 +432,7 @@ export class Customers implements OnInit, OnDestroy {
       return;
     }
 
-    this.router.navigate(['/admin/company/edit', id]);
+    this.router.navigate(['/admin/customer/edit', id]);
   }
 
   openDeleteModal(id: number) {
@@ -289,7 +472,7 @@ export class Customers implements OnInit, OnDestroy {
   }
 
   viewCustomerInvoices(id: number) {
-    this.router.navigate(['/admin/company', id]);
+    this.router.navigate(['/admin/customer', id]);
   }
 
   onSearchInput(term: string) {
@@ -310,68 +493,6 @@ export class Customers implements OnInit, OnDestroy {
     // Use modulo to cycle through colors
     const colorIndex = index % palette.length;
     return palette[colorIndex];
-  }
-
-  downloadTemplate() {
-    this.downloadingTemplate = true;
-    this.cdr.detectChanges();
-
-    this.customerService.downloadTemplate().subscribe({
-      next: (res) => {
-        const metadata = res.data;
-
-        // Generate CSV with two rows: headers and required indicators
-        const headers: string[] = [];
-        const requiredIndicators: string[] = [];
-
-        metadata.tabs.forEach((tab: any) => {
-          tab.fields.forEach((field: any) => {
-            // Add field label with asterisk if required
-            if (field.required) {
-              headers.push(`${field.label} *`);
-            } else if (field.requiredIf) {
-              headers.push(`${field.label} (Conditional)`);
-            } else {
-              headers.push(field.label);
-            }
-
-            // Add indicator in second row
-            if (field.required) {
-              requiredIndicators.push('Required');
-            } else if (field.requiredIf) {
-              requiredIndicators.push(`Required if ${field.requiredIf}`);
-            } else {
-              requiredIndicators.push('Optional');
-            }
-          });
-        });
-
-        // Create CSV content with headers and requirement info
-        const csvContent = headers.join(',') + '\n' + requiredIndicators.join(',') + '\n';
-
-        // Create blob and download
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'company_import_template.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        this.downloadingTemplate = false;
-        this.toastr.success('Template downloaded successfully!', 'Success');
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.downloadingTemplate = false;
-        console.error('Template download failed:', err);
-        this.toastr.error('Failed to download template!', 'Error');
-        this.cdr.detectChanges();
-      },
-    });
   }
 
   ngOnDestroy() {
