@@ -19,6 +19,8 @@ import {
   SecurityReportByRoleResponse,
 } from '../../services/role-service';
 import { Loader } from '../../shared/loader/loader';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 
 /** ===== Models ===== */
 type Permission = string;
@@ -69,8 +71,8 @@ export class SecurityReport implements OnInit, OnDestroy {
   ];
 
   viewMode = signal<ViewMode>('ROLE');
-  selectedRole = signal<string>('');    
-  selectedObject = signal<string>('');  
+  selectedRole = signal<string>('');
+  selectedObject = signal<string>('');
   currentPage = signal(0);
 
   loading = signal<boolean>(false);
@@ -111,7 +113,20 @@ export class SecurityReport implements OnInit, OnDestroy {
 
     if (mode === 'ROLE') {
       const role = this.selectedRole();
-      if (!role) return [];
+      // If empty string or "ALL", show all rows
+      if (!role || role === 'ALL') {
+        return rows
+          .sort((a, b) => {
+            const roleCompare = a.roleName.localeCompare(b.roleName);
+            return roleCompare !== 0 ? roleCompare : a.objectName.localeCompare(b.objectName);
+          })
+          .map((r) => ({
+            primary: r.roleName,
+            secondary: r.objectName,
+            permissions: r.permissions,
+          }));
+      }
+      // Filter by specific role
       return rows
         .filter((r) => r.roleName === role)
         .sort((a, b) => a.objectName.localeCompare(b.objectName))
@@ -121,8 +136,23 @@ export class SecurityReport implements OnInit, OnDestroy {
           permissions: r.permissions,
         }));
     }
+
+    // Object mode
     const obj = this.selectedObject();
-    if (!obj) return [];
+    // If empty string or "ALL", show all rows
+    if (!obj || obj === 'ALL') {
+      return rows
+        .sort((a, b) => {
+          const objectCompare = a.objectName.localeCompare(b.objectName);
+          return objectCompare !== 0 ? objectCompare : a.roleName.localeCompare(b.roleName);
+        })
+        .map((r) => ({
+          primary: r.objectName,
+          secondary: r.roleName,
+          permissions: r.permissions,
+        }));
+    }
+    // Filter by specific object
     return rows
       .filter((r) => r.objectName === obj)
       .sort((a, b) => a.roleName.localeCompare(b.roleName))
@@ -218,31 +248,298 @@ export class SecurityReport implements OnInit, OnDestroy {
     this.showExportMenu.set(false);
   }
 
+  exportCsv() {
+    this.closeExportMenu();
+    const rows = this.tableRows();
+    if (rows.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    const permissions = this.permissionColumns();
+    const headers = [this.primaryHeader(), this.secondaryHeader(), ...permissions.map(p => this.formatPermissionLabel(p))];
+
+    // Build CSV content
+    const csvRows: string[] = [];
+    csvRows.push(headers.join(','));
+
+    rows.forEach((row) => {
+      const primary = this.viewMode() === 'ROLE' 
+        ? this.formatRoleLabel(row.primary) 
+        : this.formatObjectLabel(row.primary);
+      const secondary = this.viewMode() === 'ROLE'
+        ? this.formatObjectLabel(row.secondary)
+        : this.formatRoleLabel(row.secondary);
+
+      const permissionValues = permissions.map(perm => 
+        this.hasPermission(row.permissions, perm) ? 'Yes' : 'No'
+      );
+
+      const rowData = [
+        this.escapeCsvValue(primary),
+        this.escapeCsvValue(secondary),
+        ...permissionValues
+      ];
+
+      csvRows.push(rowData.join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    this.downloadBlob(blob, this.getExportFileName('csv'));
+  }
+
   exportExcel() {
     this.closeExportMenu();
-    // TODO: wire to backend or client-side export lib
-    // For now we just show what would be exported
-    const payload = this.buildExportPayload();
-    console.log('EXPORT EXCEL payload:', payload);
-    alert('Excel export (stub). Check console for payload.');
+    const rows = this.tableRows();
+    if (rows.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    const permissions = this.permissionColumns();
+    const headers = [this.primaryHeader(), this.secondaryHeader(), ...permissions.map(p => this.formatPermissionLabel(p))];
+
+    // Build data array
+    const data: any[][] = [];
+    data.push(headers);
+
+    rows.forEach((row) => {
+      const primary = this.viewMode() === 'ROLE'
+        ? this.formatRoleLabel(row.primary)
+        : this.formatObjectLabel(row.primary);
+      const secondary = this.viewMode() === 'ROLE'
+        ? this.formatObjectLabel(row.secondary)
+        : this.formatRoleLabel(row.secondary);
+
+      const permissionValues = permissions.map(perm =>
+        this.hasPermission(row.permissions, perm) ? 'Yes' : 'No'
+      );
+
+      data.push([primary, secondary, ...permissionValues]);
+    });
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Set column widths
+    const colWidths = [
+      { wch: 25 }, // Primary column
+      { wch: 25 }, // Secondary column
+      ...permissions.map(() => ({ wch: 12 })) // Permission columns
+    ];
+    ws['!cols'] = colWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Security Report');
+
+    // Generate and download
+    XLSX.writeFile(wb, this.getExportFileName('xlsx'));
   }
 
   exportPdf() {
     this.closeExportMenu();
-    // TODO: wire to backend or client-side export lib (jspdf, pdfmake, etc.)
-    const payload = this.buildExportPayload();
-    console.log('EXPORT PDF payload:', payload);
-    alert('PDF export (stub). Check console for payload.');
+    const rows = this.tableRows();
+    if (rows.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    const permissions = this.permissionColumns();
+    const headers = [this.primaryHeader(), this.secondaryHeader(), ...permissions.map(p => this.formatPermissionLabel(p))];
+
+    // Determine orientation based on number of columns
+    const orientation = permissions.length > 5 ? 'landscape' : 'portrait';
+    const doc = new jsPDF({
+      orientation: orientation as any,
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Get page dimensions
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const usableWidth = pageWidth - (margin * 2);
+
+    // Title
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Security Report', margin, 15);
+
+    // Subtitle
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const subtitle = this.viewMode() === 'ROLE'
+      ? `Role: ${this.formatRoleLabel(this.selectedRole()) || 'All Roles'}`
+      : `Object: ${this.formatObjectLabel(this.selectedObject()) || 'All Objects'}`;
+    doc.text(subtitle, margin, 22);
+
+    // Table settings
+    const startY = 30;
+    const rowHeight = 8;
+    const headerHeight = 10;
+    const fontSize = 8;
+    const cellPadding = 2;
+
+    // Calculate column widths
+    const totalColumns = headers.length;
+    const primaryColWidth = usableWidth * 0.25;
+    const secondaryColWidth = usableWidth * 0.25;
+    const remainingWidth = usableWidth - primaryColWidth - secondaryColWidth;
+    const permColWidth = remainingWidth / permissions.length;
+
+    const columnWidths = [primaryColWidth, secondaryColWidth, ...permissions.map(() => permColWidth)];
+
+    let currentY = startY;
+
+    // Draw header
+    doc.setFillColor(59, 130, 246); // Blue header
+    doc.setTextColor(255, 255, 255); // White text
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(fontSize);
+
+    let currentX = margin;
+    headers.forEach((header, index) => {
+      const colWidth = columnWidths[index];
+      doc.rect(currentX, currentY, colWidth, headerHeight, 'F');
+      
+      // Center text in cell
+      const textWidth = doc.getTextWidth(header);
+      const textX = currentX + (colWidth - textWidth) / 2;
+      const textY = currentY + headerHeight / 2 + 2;
+      doc.text(header, textX, textY);
+      
+      currentX += colWidth;
+    });
+
+    currentY += headerHeight;
+
+    // Draw data rows
+    doc.setTextColor(0, 0, 0); // Black text
+    doc.setFont('helvetica', 'normal');
+
+    rows.forEach((row, rowIndex) => {
+      // Check if we need a new page
+      if (currentY + rowHeight > pageHeight - margin) {
+        doc.addPage();
+        currentY = margin;
+
+        // Redraw header on new page
+        doc.setFillColor(59, 130, 246);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        
+        currentX = margin;
+        headers.forEach((header, index) => {
+          const colWidth = columnWidths[index];
+          doc.rect(currentX, currentY, colWidth, headerHeight, 'F');
+          const textWidth = doc.getTextWidth(header);
+          const textX = currentX + (colWidth - textWidth) / 2;
+          const textY = currentY + headerHeight / 2 + 2;
+          doc.text(header, textX, textY);
+          currentX += colWidth;
+        });
+
+        currentY += headerHeight;
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+      }
+
+      // Alternate row colors
+      if (rowIndex % 2 === 0) {
+        doc.setFillColor(249, 250, 251); // Light gray
+        currentX = margin;
+        columnWidths.forEach(colWidth => {
+          doc.rect(currentX, currentY, colWidth, rowHeight, 'F');
+          currentX += colWidth;
+        });
+      }
+
+      // Draw cell borders
+      currentX = margin;
+      columnWidths.forEach(colWidth => {
+        doc.rect(currentX, currentY, colWidth, rowHeight, 'S');
+        currentX += colWidth;
+      });
+
+      // Draw cell content
+      currentX = margin;
+      
+      // Primary column (bold)
+      doc.setFont('helvetica', 'bold');
+      const primary = this.viewMode() === 'ROLE'
+        ? this.formatRoleLabel(row.primary)
+        : this.formatObjectLabel(row.primary);
+      const primaryTruncated = this.truncateText(doc, primary, columnWidths[0] - cellPadding * 2);
+      doc.text(primaryTruncated, currentX + cellPadding, currentY + rowHeight / 2 + 2);
+      currentX += columnWidths[0];
+
+      // Secondary column (normal)
+      doc.setFont('helvetica', 'normal');
+      const secondary = this.viewMode() === 'ROLE'
+        ? this.formatObjectLabel(row.secondary)
+        : this.formatRoleLabel(row.secondary);
+      const secondaryTruncated = this.truncateText(doc, secondary, columnWidths[1] - cellPadding * 2);
+      doc.text(secondaryTruncated, currentX + cellPadding, currentY + rowHeight / 2 + 2);
+      currentX += columnWidths[1];
+
+      // Permission columns (centered)
+      permissions.forEach((perm, permIndex) => {
+        const hasPermission = this.hasPermission(row.permissions, perm);
+        const value = hasPermission ? 'Yes' : 'No';
+        const textWidth = doc.getTextWidth(value);
+        const textX = currentX + (permColWidth - textWidth) / 2;
+        doc.text(value, textX, currentY + rowHeight / 2 + 2);
+        currentX += permColWidth;
+      });
+
+      currentY += rowHeight;
+    });
+
+    // Save PDF
+    doc.save(this.getExportFileName('pdf'));
   }
 
-  private buildExportPayload() {
-    return {
-      viewMode: this.viewMode(),
-      selectedRole: this.selectedRole(),
-      selectedObject: this.selectedObject(),
-      rows: this.tableRows(),
-      generatedAt: new Date().toISOString(),
-    };
+  private truncateText(doc: jsPDF, text: string, maxWidth: number): string {
+    if (doc.getTextWidth(text) <= maxWidth) {
+      return text;
+    }
+
+    let truncated = text;
+    while (doc.getTextWidth(truncated + '...') > maxWidth && truncated.length > 0) {
+      truncated = truncated.slice(0, -1);
+    }
+
+    return truncated + '...';
+  }
+
+  private getExportFileName(extension: string): string {
+    const date = new Date().toISOString().split('T')[0];
+    const mode = this.viewMode() === 'ROLE' ? 'by-role' : 'by-object';
+    return `security-report-${mode}-${date}.${extension}`;
+  }
+
+  private escapeCsvValue(value: string): string {
+    if (!value) return '';
+    // Escape quotes and wrap in quotes if contains comma, quote, or newline
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  }
+
+  private downloadBlob(blob: Blob, filename: string) {
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   private fetchRoleView(companyId: number) {
@@ -330,8 +627,9 @@ export class SecurityReport implements OnInit, OnDestroy {
         this.resetPagination();
         return;
       }
-      if (!options.includes(this.selectedRole())) {
-        this.selectedRole.set(options[0]);
+      // Default to "All Roles" (empty string) to show all data
+      if (!this.selectedRole() || !options.includes(this.selectedRole())) {
+        this.selectedRole.set('');
       }
     } else {
       const options = this.objectOptions();
@@ -340,8 +638,9 @@ export class SecurityReport implements OnInit, OnDestroy {
         this.resetPagination();
         return;
       }
-      if (!options.includes(this.selectedObject())) {
-        this.selectedObject.set(options[0]);
+      // Default to "All Objects" (empty string) to show all data
+      if (!this.selectedObject() || !options.includes(this.selectedObject())) {
+        this.selectedObject.set('');
       }
     }
     this.resetPagination();

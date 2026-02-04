@@ -23,7 +23,7 @@
           <label class="filter-field">
             <span class="label">Role</span>
             <select class="filter-select" [ngModel]="selectedRole()" (ngModelChange)="onRoleChange($event)">
-              <option value="">Select role...</option>
+              <option value="">All Roles</option>
               <option *ngFor="let r of roleOptions()" [value]="r">{{ formatRoleLabel(r) }}</option>
             </select>
           </label>
@@ -37,7 +37,7 @@
               [ngModel]="selectedObject()"
               (ngModelChange)="onObjectChange($event)"
             >
-              <option value="">Select object...</option>
+              <option value="">All Objects</option>
               <option *ngFor="let o of objectOptions()" [value]="o">{{ formatObjectLabel(o) }}</option>
             </select>
           </label>
@@ -79,6 +79,25 @@
         </button>
 
         <div class="export-menu" *ngIf="showExportMenu()">
+          <button type="button" class="export-menu-item" (click)="exportCsv()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+              <line x1="8" y1="16" x2="16" y2="16"></line>
+            </svg>
+            Export as CSV
+          </button>
           <button type="button" class="export-menu-item" (click)="exportExcel()">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -130,10 +149,10 @@
     <ng-container *ngIf="!loading()">
       <div *ngIf="tableRows().length === 0" class="empty">
         <ng-container *ngIf="viewMode() === 'ROLE'">
-          Select a role to view what it can do.
+          No role data available.
         </ng-container>
         <ng-container *ngIf="viewMode() === 'OBJECT'">
-          Select an object to view who has access to it.
+          No object data available.
         </ng-container>
       </div>
 
