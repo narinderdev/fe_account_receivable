@@ -95,7 +95,7 @@ describe('OnboardingComplete', () => {
     companyService.getChangedCompanyPayload.mockReturnValue({ legalName: 'Updated' });
     companyService.updateCompany.mockReturnValue(throwError(() => new Error('fail')));
     instance.submitUpdates();
-    expect(instance.errorMessage).toContain('Failed to update lender');
+    expect(instance.errorMessage).toBe('Failed to update AR company. Please try again.');
   });
 
   it('hydrates cached state from localStorage when missing snapshots', () => {

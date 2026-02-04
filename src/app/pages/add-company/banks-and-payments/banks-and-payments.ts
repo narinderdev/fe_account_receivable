@@ -160,7 +160,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       next: () => {
         this.isSaving = false;
 
-        this.router.navigate(['/admin/lender/onboarding-complete'], {
+        this.router.navigate(['/admin/ar-company/onboarding-complete'], {
           queryParams: { id: this.companyId },
         });
       },
@@ -189,7 +189,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
 
     if (!payload || Object.keys(payload).length === 0) {
       this.isSaving = false;
-      this.router.navigate(['/admin/lender']);
+      this.router.navigate(['/admin/ar-company']);
       return;
     }
 
@@ -202,11 +202,11 @@ export class BanksAndPayments implements OnInit, OnDestroy {
         this.companyService.setEditingCompany(null);
         this.companyService.setOriginalCompany(null);
 
-        this.router.navigate(['/admin/lender']);
+        this.router.navigate(['/admin/ar-company']);
       },
       error: (err) => {
         this.isSaving = false;
-        console.error('Lender update failed:', err);
+        console.error('AR company update failed:', err);
       },
     });
   }
@@ -218,7 +218,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
 
     const company = this.companyService.getEditingCompanySnapshot() || this.companyData;
     if (!company) {
-      this.toastr.error('Lender data is missing. Please reload and try again.');
+      this.toastr.error('AR company data is missing. Please reload and try again.');
       return false;
     }
 

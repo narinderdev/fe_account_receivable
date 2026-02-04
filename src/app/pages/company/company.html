@@ -5,7 +5,7 @@
   <div class="customers-actions">
     <!-- <h1 class="customers-title">Company</h1> -->
     <button class="add-customer-btn" routerLink="add" *ngIf="canCreateCompany">
-      + Add Lender
+      + Add AR Company
     </button>
   </div>
 
@@ -15,7 +15,7 @@
         <thead>
           <tr>
             <th>Legal Name</th>
-            <th>Lender Code</th>
+            <th>AR Company Code</th>
             <th>Email</th>
             <th>Address</th>
             <th>Created At</th>
@@ -136,8 +136,8 @@
 <!-- DELETE CONFIRM MODAL -->
 <div class="modal-overlay" *ngIf="isDeleteModalOpen">
   <div class="modal">
-    <h3>Delete Lender</h3>
-    <p>Are you sure you want to delete this Lender?</p>
+    <h3>Delete AR Company</h3>
+    <p>Are you sure you want to delete this AR Company?</p>
 
     <div class="modal-actions">
       <button class="cancelBtn" (click)="closeDeleteModal()">Cancel</button>

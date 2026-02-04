@@ -5,7 +5,7 @@
     <div class="company-identity">
       
       <h1 class="company-name">
-        {{ companyData.legalName || 'Unnamed Lender' }}
+        {{ companyData.legalName || 'Unnamed AR Company' }}
       </h1>
       <div class="company-tags">
         <span class="tag" *ngIf="companyData.companyCode">
@@ -222,6 +222,6 @@
 
 <ng-template #companyDetailFallback>
   <div class="empty-state" *ngIf="!loading">
-    {{ errorMessage || 'Lender details not found.' }}
+    {{ errorMessage || 'AR Company details not found.' }}
   </div>
 </ng-template>

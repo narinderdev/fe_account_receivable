@@ -94,7 +94,7 @@ describe('FinancialArSettings', () => {
         1,
         expect.objectContaining({ defaultCreditLimit: 1000 }),
       );
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/onboarding-complete'], {
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/ar-company/onboarding-complete'], {
         queryParams: { id: 1 },
       });
     });
@@ -109,7 +109,7 @@ describe('FinancialArSettings', () => {
       expect(companyService.createFinancialSettings).not.toHaveBeenCalled();
       expect(companyService.setEditingCompany).toHaveBeenCalled();
       expect(companyService.updateCompany).toHaveBeenCalledWith(4, { legalName: 'Updated' });
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender']);
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/ar-company']);
     });
   });
 });

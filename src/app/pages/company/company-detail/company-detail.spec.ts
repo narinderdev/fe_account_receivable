@@ -13,7 +13,7 @@ describe('CompanyDetail', () => {
 
   const createCompany = (): CompanyEntity => ({
     id: 10,
-    legalName: 'Acme Lender',
+    legalName: 'Acme AR Company',
     tradeName: 'Acme',
     companyCode: 'ACM01',
     country: 'USA',
@@ -99,6 +99,6 @@ describe('CompanyDetail', () => {
   it('should create and load company detail', () => {
     expect(component).toBeTruthy();
     expect(companyService.getCompanyById).toHaveBeenCalledWith(10);
-    expect(component.companyData?.legalName).toBe('Acme Lender');
+    expect(component.companyData?.legalName).toBe('Acme AR Company');
   });
 });

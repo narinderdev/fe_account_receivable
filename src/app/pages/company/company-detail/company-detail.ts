@@ -32,7 +32,7 @@ export class CompanyDetail implements OnInit {
     const idParam = this.route.snapshot.paramMap.get('id');
     const parsed = Number(idParam);
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      this.errorMessage = 'Invalid lender id.';
+      this.errorMessage = 'Invalid AR Company id.';
       this.loading = false;
       return;
     }
@@ -50,7 +50,7 @@ export class CompanyDetail implements OnInit {
       },
       error: () => {
         this.companyData = null;
-        this.errorMessage = 'Unable to load lender detail. Please try again later.';
+        this.errorMessage = 'Unable to load AR company detail. Please try again later.';
         this.loading = false;
         this.cdr.detectChanges();
       },

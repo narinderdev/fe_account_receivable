@@ -58,19 +58,19 @@ export const routes: Routes = [
     canActivateChild: [AuthGuard, CompanyGuard],
     children: [
       { path: 'dashboard', component: Dashboard },
-      { path: 'company', component: Customers },
-      { path: 'company/add', component: AddCustomer },
-      { path: 'company/edit/:id', component: AddCustomer },
-      { path: 'company/:id', component: CustomerDetail },
+      { path: 'customer', component: Customers },
+      { path: 'customer/add', component: AddCustomer },
+      { path: 'customer/edit/:id', component: AddCustomer },
+      { path: 'customer/:id', component: CustomerDetail },
       {
-        path: 'company/:customerId/invoices/:invoiceId',
+        path: 'customer/:customerId/invoices/:invoiceId',
         component: InvoiceDetail,
       },
 
-      { path: 'lender', component: Company },
-      { path: 'lender/details/:id', component: CompanyDetail },
+      { path: 'ar-company', component: Company },
+      { path: 'ar-company/details/:id', component: CompanyDetail },
       {
-        path: 'lender/add',
+        path: 'ar-company/add',
         component: AddCompany,
         children: [
           { path: '', redirectTo: 'step-1', pathMatch: 'full' },
@@ -84,7 +84,7 @@ export const routes: Routes = [
 
       // EDIT COMPANY FLOW
       {
-        path: 'lender/edit/:id',
+        path: 'ar-company/edit/:id',
         component: AddCompany,
         children: [
           { path: '', redirectTo: 'step-1', pathMatch: 'full' },
@@ -95,7 +95,7 @@ export const routes: Routes = [
         ],
       },
 
-      { path: 'lender/onboarding-complete', component: OnboardingComplete },
+      { path: 'ar-company/onboarding-complete', component: OnboardingComplete },
 
       // Invoices
       { path: 'invoices', component: Invoices },

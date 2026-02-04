@@ -101,7 +101,7 @@ describe('CompanyAddress', () => {
       companyService.createAddress.mockReturnValue(of(createAddressResponse()));
       instance.saveAddress();
       expect(companyService.createAddress).toHaveBeenCalledWith(5, createValidAddress());
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/add/step-3']);
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/ar-company/add/step-3']);
     });
 
     it('persists edit data locally and routes forward', () => {
@@ -113,7 +113,7 @@ describe('CompanyAddress', () => {
       instance.saveAddress();
       expect(companyService.createAddress).not.toHaveBeenCalled();
       expect(companyService.setEditingCompany).toHaveBeenCalled();
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/edit/9/step-3']);
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/ar-company/edit/9/step-3']);
     });
   });
 });

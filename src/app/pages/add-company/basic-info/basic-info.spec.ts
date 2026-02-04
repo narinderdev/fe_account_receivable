@@ -80,7 +80,7 @@ describe('BasicInfo', () => {
       companyService.createCompany.mockReturnValue(of(createCreateCompanyResponse({ id: 7 })));
       instance.saveAndContinue();
       expect(companyService.createCompany).toHaveBeenCalledWith(instance.basicForm.value);
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/add/step-2'], {
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/ar-company/add/step-2'], {
         queryParams: { id: 7 },
       });
     });
@@ -92,7 +92,7 @@ describe('BasicInfo', () => {
       instance.saveAndContinue();
       expect(companyService.createCompany).not.toHaveBeenCalled();
       expect(companyService.setEditingCompany).toHaveBeenCalled();
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/edit/12/step-2']);
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/ar-company/edit/12/step-2']);
     });
   });
 });
