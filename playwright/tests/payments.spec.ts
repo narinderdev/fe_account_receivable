@@ -42,10 +42,16 @@ test.describe('Payments workflows', () => {
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText('Company is required')).toBeVisible();
     await expect(page.getByText('Bank deposit is required and must be 0 or greater')).toBeVisible();
-    await expect(page.getByText('Service fee is required and must be 0 or greater')).toBeVisible();
+    await expect(page.getByText('Service fee must be 0 or greater')).toHaveCount(0);
     await expect(page.getByText('Payment method is required')).toBeVisible();
     await expect(page.getByText('Please select at least one invoice to apply the payment')).toBeVisible();
     await expect(page.getByText('Notes are required')).toBeVisible();
+
+    const serviceFeeInput = page.locator('input[name="serviceFee"]');
+    await serviceFeeInput.fill('-5');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Service fee must be 0 or greater')).toBeVisible();
+    await serviceFeeInput.fill('');
 
     await page.locator('select[name="customer"]').selectOption({ label: sampleCustomerName });
     await expect(page.getByText(sampleInvoiceNumber)).toBeVisible();
@@ -57,7 +63,7 @@ test.describe('Payments workflows', () => {
     await page.locator('#invoice-9001').check();
 
     const appliedRow = page.locator('.summary-row').filter({ hasText: 'Applied to Invoices' });
-    await expect(appliedRow.locator('strong').first()).toHaveText('$1,300.00');
+    await expect(appliedRow.locator('strong').first()).toHaveText('$1,000.00');
     const unappliedRow = page.locator('.summary-row').filter({ hasText: 'Unapplied Amount' });
     await expect(unappliedRow.locator('strong').first()).toHaveText('$0.00');
 

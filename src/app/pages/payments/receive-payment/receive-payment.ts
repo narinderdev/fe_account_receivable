@@ -83,11 +83,10 @@ export class ReceivePayment implements OnInit, OnDestroy {
     });
   }
 
-  /** Calculate total amount from bank deposit and service fee */
+  /** Calculate total amount from bank deposit only */
   get totalAmount(): number {
     const deposit = this.bankDeposit || 0;
-    const fee = this.serviceFee || 0;
-    return deposit + fee;
+    return deposit;
   }
 
   /** Load customers */
@@ -192,7 +191,7 @@ export class ReceivePayment implements OnInit, OnDestroy {
       // Validate total amount first
       if (this.totalAmount <= 0) {
         console.log('Total amount validation failed');
-        this.toastr.warning('Please enter bank deposit or service fee first.');
+        this.toastr.warning('Please enter bank deposit first.');
         if (checkbox) {
           checkbox.checked = false;
         }
@@ -254,7 +253,8 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
     this.showCustomerError = !this.selectedCustomerId;
     this.showBankDepositError = !this.bankDeposit || this.bankDeposit < 0;
-    this.showServiceFeeError = !this.serviceFee || this.serviceFee < 0;
+    // Service fee is optional, only validate if provided
+    this.showServiceFeeError = this.serviceFee != null && this.serviceFee < 0;
     this.showPaymentMethodError = !this.paymentMethod;
     this.showInvoiceError = this.selectedInvoicesCount === 0;
     const trimmedNotes = this.notes.trim();
@@ -321,14 +321,14 @@ export class ReceivePayment implements OnInit, OnDestroy {
     // {
     //   bankDeposit: number,
     //   serviceFee: number,
-    //   paymentAmount: number (calculated as bankDeposit + serviceFee),
+    //   paymentAmount: number (calculated as bankDeposit only),
     //   paymentMethod: string,
     //   notes: string,
     //   invoiceIds: number[]
     // }
     const data: ApplyPaymentRequest = {
       bankDeposit: this.bankDeposit!,
-      serviceFee: this.serviceFee!,
+      serviceFee: this.serviceFee || 0,
       paymentAmount: this.totalAmount,
       paymentMethod: this.paymentMethod,
       notes: this.notes,

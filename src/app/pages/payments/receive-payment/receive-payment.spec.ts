@@ -29,7 +29,7 @@ describe('ReceivePayment', () => {
       invoiceService,
       paymentService,
       router,
-      companySelection
+      companySelection,
     );
   };
 
@@ -51,10 +51,52 @@ describe('ReceivePayment', () => {
       expect(instance.isFormValid()).toBe(false);
       expect(instance.showCustomerError).toBe(true);
       expect(instance.showBankDepositError).toBe(true);
-      expect(instance.showServiceFeeError).toBe(true);
+      expect(instance.showServiceFeeError).toBe(false); // Service fee is optional
       expect(instance.showPaymentMethodError).toBe(true);
       expect(instance.showInvoiceError).toBe(true);
       expect(instance.showNotesError).toBe(true);
+    });
+
+    it('validates service fee only if provided and ensures non-negative', () => {
+      const instance = createComponent();
+
+      // Service fee is null - should be valid
+      instance.serviceFee = null;
+      instance.selectedCustomerId = 1;
+      instance.bankDeposit = 100;
+      instance.paymentMethod = 'CASH';
+      instance.notes = 'Test';
+      instance.invoices = [createInvoice({ selected: true })];
+      expect(instance.isFormValid()).toBe(true);
+      expect(instance.showServiceFeeError).toBe(false);
+
+      // Service fee is negative - should be invalid
+      instance.serviceFee = -10;
+      expect(instance.isFormValid()).toBe(false);
+      expect(instance.showServiceFeeError).toBe(true);
+
+      // Service fee is 0 - should be valid
+      instance.serviceFee = 0;
+      expect(instance.isFormValid()).toBe(true);
+      expect(instance.showServiceFeeError).toBe(false);
+
+      // Service fee is positive - should be valid
+      instance.serviceFee = 25;
+      expect(instance.isFormValid()).toBe(true);
+      expect(instance.showServiceFeeError).toBe(false);
+    });
+
+    it('calculates total amount from bank deposit only', () => {
+      const instance = createComponent();
+      instance.bankDeposit = 100;
+      instance.serviceFee = 25;
+      expect(instance.totalAmount).toBe(100); // Service fee not included
+
+      instance.serviceFee = null;
+      expect(instance.totalAmount).toBe(100); // Still works with null service fee
+
+      instance.serviceFee = 0;
+      expect(instance.totalAmount).toBe(100); // Still works with 0 service fee
     });
 
     it('totals the applied amount across selected invoices', () => {
@@ -65,6 +107,16 @@ describe('ReceivePayment', () => {
         createInvoice({ appliedAmount: 5, selected: false }),
       ];
       expect(instance.totalApplied).toBe(40);
+    });
+
+    it('calculates unapplied amount correctly', () => {
+      const instance = createComponent();
+      instance.bankDeposit = 100;
+      instance.serviceFee = 25;
+      instance.invoices = [createInvoice({ appliedAmount: 60, selected: true })];
+
+      // Total is 100 (bank deposit only), applied is 60
+      expect(instance.unappliedAmount).toBe(40);
     });
   });
 });
