@@ -119,7 +119,7 @@ test.describe('Login Page - Field & Flow Tests', () => {
 
   // ---------- NO COMPANY FLOW ----------
 
-  test('should redirect to company onboarding if no lender exist', async ({ page }) => {
+  test('should redirect to company onboarding if no AR Company exist', async ({ page }) => {
     await page.route(loginEndpoint, async route => {
       await route.fulfill({
         status: 200,
@@ -173,7 +173,7 @@ test.describe('Login Page - Field & Flow Tests', () => {
     await page.fill(passwordInput, 'password123');
     await page.click(loginButton);
 
-    await expect(page.getByText('Failed to fetch')).toBeVisible();
+    await expect(page.getByText('An error occurred. Please try again.')).toBeVisible();
   });
 
   // ---------- ACCESSIBILITY ----------

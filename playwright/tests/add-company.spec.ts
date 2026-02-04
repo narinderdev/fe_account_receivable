@@ -21,7 +21,7 @@ const defaultAddressInfo = {
   postalCode: '62704',
   addressCountry: 'USA',
   primaryContactName: 'Lisa Simpson',
-  position: 'AR Manager',
+  position: 'Billing Admin',
   primaryContactEmail: 'lisa@example.com',
   primaryContactPhone: '3125550199',
   website: 'https://acme.example.com',
@@ -69,7 +69,7 @@ const success = <T>(data: T) => ({
   data,
 });
 
-test.describe('Add lender onboarding wizard', () => {
+test.describe('Add AR company onboarding wizard', () => {
   test.beforeEach(async ({ page }) => {
     await mockAdminApis(page);
     await setupOnboardingApiMocks(page);
@@ -77,7 +77,7 @@ test.describe('Add lender onboarding wizard', () => {
       hasCompanies: 'false',
       selectedCompanyId: '',
     });
-    await page.goto('/admin/lender/add/step-1');
+    await page.goto('/admin/ar-company/add/step-1');
     await expect(page.getByText('Basic Information')).toBeVisible();
   });
 
@@ -91,7 +91,7 @@ test.describe('Add lender onboarding wizard', () => {
 
     await expect(page.locator('.error', { hasText: 'Legal Name is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Trade Name is required.' })).toBeVisible();
-    await expect(page.locator('.error', { hasText: 'Lender Code is required.' })).toBeVisible();
+    await expect(page.locator('.error', { hasText: 'AR Company Code is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Country is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Base Currency is required.' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Time Zone is required.' })).toBeVisible();
@@ -102,7 +102,7 @@ test.describe('Add lender onboarding wizard', () => {
       page.getByRole('button', { name: 'Save & Continue' }).click(),
     ]);
 
-    await expect(page).toHaveURL(new RegExp(`/admin/lender/add/step-2\\?id=${MOCK_COMPANY_ID}$`));
+    await expect(page).toHaveURL(new RegExp(`/admin/ar-company/add/step-2\\?id=${MOCK_COMPANY_ID}$`));
 
     const companyId = await page.evaluate(() => localStorage.getItem('companyId'));
     expect(companyId).toBe(String(MOCK_COMPANY_ID));
@@ -137,7 +137,7 @@ test.describe('Add lender onboarding wizard', () => {
     await expect(page.locator('[formcontrolname="postalCode"]')).toHaveValue('123456');
 
     await page.locator('[formcontrolname="primaryContactPhone"]').fill('123-456-789012');
-    await expect(page.locator('[formcontrolname="primaryContactPhone"]')).toHaveValue('1234567890');
+    await expect(page.locator('[formcontrolname="primaryContactPhone"]')).toHaveValue('123456789012');
 
     await page.locator('[formcontrolname="primaryContactEmail"]').fill('CONTACT@EXAMPLE.COM');
     await expect(page.locator('[formcontrolname="primaryContactEmail"]')).toHaveValue('contact@example.com');
@@ -148,7 +148,7 @@ test.describe('Add lender onboarding wizard', () => {
       page.getByRole('button', { name: 'Continue' }).click(),
     ]);
 
-    await expect(page).toHaveURL('/admin/lender/add/step-3');
+    await expect(page).toHaveURL('/admin/ar-company/add/step-3');
     const currentStep = await page.evaluate(() => localStorage.getItem('currentStep'));
     expect(currentStep).toBe('step-3');
 
@@ -171,11 +171,11 @@ test.describe('Add lender onboarding wizard', () => {
 
     await fillFinancialSettingsForm(page, {
       ...defaultFinancialInfo,
-      defaultCreditLimit: '-10',
+      defaultCreditLimit: '0',
     });
 
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.locator('.error', { hasText: 'Must be 0 or above.' })).toBeVisible();
+    await expect(page.locator('.error', { hasText: 'Enter a number greater than zero.' })).toBeVisible();
 
     await fillFinancialSettingsForm(page, defaultFinancialInfo);
     await expect(page.locator('input[formcontrolname="allowOtherTerms"]')).toBeChecked();
@@ -187,7 +187,7 @@ test.describe('Add lender onboarding wizard', () => {
       page.getByRole('button', { name: 'Continue' }).click(),
     ]);
 
-    await expect(page).toHaveURL(new RegExp(`/admin/lender/onboarding-complete\\?id=${MOCK_COMPANY_ID}$`));
+    await expect(page).toHaveURL(new RegExp(`/admin/ar-company/onboarding-complete\\?id=${MOCK_COMPANY_ID}$`));
     const currentStep = await page.evaluate(() => localStorage.getItem('currentStep'));
     expect(currentStep).toBe('step-3');
     await expect(page.getByRole('heading', { name: 'Onboarding Complete' })).toBeVisible();
@@ -272,7 +272,7 @@ async function completeBasicInfo(page: Page) {
     waitForPost(page, `/api/companies/${DEFAULT_USER_ID}`),
     page.getByRole('button', { name: 'Save & Continue' }).click(),
   ]);
-  await expect(page).toHaveURL(new RegExp(`/admin/lender/add/step-2\\?id=${MOCK_COMPANY_ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/admin/ar-company/add/step-2\\?id=${MOCK_COMPANY_ID}$`));
 }
 
 async function fillBasicInfoForm(page: Page, data = defaultBasicInfo) {
@@ -280,7 +280,7 @@ async function fillBasicInfoForm(page: Page, data = defaultBasicInfo) {
   await page.locator('[formcontrolname="tradeName"]').fill(data.tradeName);
   await page.locator('[formcontrolname="companyCode"]').fill(data.companyCode);
   await page.locator('select[formcontrolname="country"]').selectOption(data.country);
-  await page.locator('[formcontrolname="baseCurrency"]').fill(data.baseCurrency);
+  await page.locator('select[formcontrolname="baseCurrency"]').selectOption(data.baseCurrency);
   await page.locator('select[formcontrolname="timeZone"]').selectOption(data.timeZone);
 }
 
@@ -290,7 +290,7 @@ async function completeCompanyAddress(page: Page) {
     waitForPost(page, `/api/companies/${MOCK_COMPANY_ID}/company-address`),
     page.getByRole('button', { name: 'Continue' }).click(),
   ]);
-  await expect(page).toHaveURL('/admin/lender/add/step-3');
+  await expect(page).toHaveURL('/admin/ar-company/add/step-3');
 }
 
 async function fillCompanyAddressForm(page: Page, data = defaultAddressInfo) {
@@ -300,7 +300,10 @@ async function fillCompanyAddressForm(page: Page, data = defaultAddressInfo) {
   await page.locator('[formcontrolname="postalCode"]').fill(data.postalCode);
   await page.locator('select[formcontrolname="addressCountry"]').selectOption(data.addressCountry);
   await page.locator('[formcontrolname="primaryContactName"]').fill(data.primaryContactName);
-  await page.locator('[formcontrolname="position"]').fill(data.position);
+  const positionSelect = page.locator('select[formcontrolname="position"]');
+  await expect(positionSelect).toBeVisible();
+  await expect(positionSelect.locator('option', { hasText: data.position })).toHaveCount(1);
+  await positionSelect.selectOption({ label: data.position });
   await page.locator('[formcontrolname="primaryContactEmail"]').fill(data.primaryContactEmail);
   await page.locator('[formcontrolname="primaryContactPhone"]').fill(data.primaryContactPhone);
   await page.locator('[formcontrolname="website"]').fill(data.website);

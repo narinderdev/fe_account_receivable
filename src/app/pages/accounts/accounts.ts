@@ -77,7 +77,7 @@ export class Accounts implements OnInit, OnDestroy {
   ] as const;
 
   readonly glCodeRequirementMessage = 'Create at least one GL code before mapping bank accounts.';
-  readonly companySelectionMessage = 'Select a lender from the top navigation to view bank accounts.';
+  readonly companySelectionMessage = 'Select an AR Company from the top navigation to view bank accounts.';
   readonly mappingInfoText =
     'Each bank account must be mapped to a GL code before it can be used in payments or postings.';
   readonly mappingStatusMeta: Record<string, MappingMeta> = {

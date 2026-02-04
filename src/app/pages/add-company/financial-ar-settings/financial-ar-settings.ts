@@ -121,7 +121,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           localStorage.setItem('currentStep', 'step-3');
-          this.router.navigate(['/admin/lender/onboarding-complete'], {
+          this.router.navigate(['/admin/ar-company/onboarding-complete'], {
             queryParams: { id: this.companyId },
           });
         },
@@ -167,7 +167,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
 
     if (!payload || Object.keys(payload).length === 0) {
       this.isSaving = false;
-      this.router.navigate(['/admin/lender']);
+      this.router.navigate(['/admin/ar-company']);
       return;
     }
 
@@ -183,11 +183,11 @@ export class FinancialArSettings implements OnInit, OnDestroy {
           localStorage.removeItem('editingCompany');
           this.companyService.setEditingCompany(null);
           this.companyService.setOriginalCompany(null);
-          this.router.navigate(['/admin/lender']);
+          this.router.navigate(['/admin/ar-company']);
         },
         error: (err) => {
-          console.error('Lender update failed:', err);
-          this.toastr.error('Failed to update lender. Please try again.', 'Error');
+          console.error('AR Company update failed:', err);
+          this.toastr.error('Failed to update AR company. Please try again.', 'Error');
         },
       });
   }
@@ -199,7 +199,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
 
     const company = this.companyService.getEditingCompanySnapshot() || this.companyData;
     if (!company) {
-      this.toastr.error('Lender data is missing. Please reload and try again.', 'Error');
+      this.toastr.error('AR Company data is missing. Please reload and try again.', 'Error');
       return false;
     }
 

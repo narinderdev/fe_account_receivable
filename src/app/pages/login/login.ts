@@ -114,7 +114,7 @@ export class Login {
             }
 
             const nextUrl =
-              userCompanies.length > 0 ? this.getLandingRoute() : '/admin/lender/add/step-1';
+              userCompanies.length > 0 ? this.getLandingRoute() : '/admin/ar-company/add/step-1';
             this.router.navigate([nextUrl]);
           } else {
             this.toastr.error(message || 'Login failed.');
@@ -136,12 +136,12 @@ export class Login {
     const permissions = this.userContext.getPermissions();
     const permissionRoutes = [
       { permission: 'VIEW_DASHBOARD', path: '/admin/dashboard' },
-      { permission: 'VIEW_CUSTOMERS', path: '/admin/company' },
+      { permission: 'VIEW_CUSTOMERS', path: '/admin/customer' },
       { permission: 'VIEW_INVOICES', path: '/admin/invoices' },
       { permission: 'VIEW_PAYMENTS', path: '/admin/payments' },
       { permission: 'VIEW_AGING_REPORTS', path: '/admin/ar-reports' },
       { permission: 'VIEW_PROMISE_TO_PAY', path: '/admin/collections' },
-      { permission: 'VIEW_COMPANY', path: '/admin/lender' },
+      { permission: 'VIEW_COMPANY', path: '/admin/ar-company' },
       { permission: 'VIEW_BANK_ACCOUNT', path: '/admin/accounts' },
       { permission: 'VIEW_USER', path: '/admin/users' },
       { permission: 'VIEW_ROLES', path: '/admin/roles' },

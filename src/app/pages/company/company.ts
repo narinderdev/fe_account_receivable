@@ -119,14 +119,14 @@ export class Company implements OnInit {
     if (!this.canUpdateCompany) {
       return;
     }
-    this.router.navigate(['/admin/lender/edit', id, 'step-1']);
+    this.router.navigate(['/admin/ar-company/edit', id, 'step-1']);
   }
 
   viewCompany(id: number) {
     if (!id) {
       return;
     }
-    this.router.navigate(['/admin/lender/details', id]);
+    this.router.navigate(['/admin/ar-company/details', id]);
   }
 
   openDeleteModal(id: number) {

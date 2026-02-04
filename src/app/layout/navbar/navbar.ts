@@ -16,14 +16,15 @@ type TitleRule = {
 const TITLE_RULES: TitleRule[] = [
   { prefix: '/admin/invoices-reports', title: 'Invoices Reports' },
   { prefix: '/admin/payment-reports', title: 'Payments Reports' },
-  { prefix: '/admin/lender/add', title: 'Add Lender' },
-  { prefix: '/admin/lender/edit', title: 'Edit Lender' },
-  { prefix: '/admin/lender/onboarding-complete', title: 'Onboarding Complete' },
-  { prefix: '/admin/lender', title: 'Lender' },
-  { prefix: '/admin/company/add', title: 'Add Company' },
-  { prefix: '/admin/company/edit', title: 'Edit Company' },
-  { prefix: '/admin/company/', title: 'Company Details' },
-  { prefix: '/admin/company', title: 'Company' },
+  { prefix: '/admin/ar-company/add', title: 'Add AR Company' },
+  { prefix: '/admin/ar-company/edit', title: 'Edit AR Company' },
+  { prefix: '/admin/ar-company/details', title: 'AR Company Details' },
+  { prefix: '/admin/ar-company/onboarding-complete', title: 'Onboarding Complete' },
+  { prefix: '/admin/ar-company', title: 'AR Company' },
+  { prefix: '/admin/customer/add', title: 'Add Customer' },
+  { prefix: '/admin/customer/edit', title: 'Edit Customer' },
+  { prefix: '/admin/customer/', title: 'Customer Details' },
+  { prefix: '/admin/customer', title: 'Customers' },
   { prefix: '/admin/invoices/create', title: 'Create Invoice' },
   { prefix: '/admin/invoices/detail', title: 'Invoice Detail' },
   { prefix: '/admin/invoices', title: 'Invoices' },
@@ -95,7 +96,7 @@ export class Navbar implements OnInit, OnDestroy {
         const nextUrl = event.urlAfterRedirects || event.url;
         this.setTitle(nextUrl);
 
-        if (nextUrl.includes('/admin/lender/onboarding-complete')) {
+        if (nextUrl.includes('/admin/ar-company/onboarding-complete')) {
           this.loadCompanies();
         }
       });
@@ -202,11 +203,11 @@ export class Navbar implements OnInit, OnDestroy {
 
   getSelectedCompanyLabel(): string {
     if (!this.companies.length) {
-      return 'No Lender';
+      return 'No AR Company';
     }
 
     if (!this.selectedCompanyId) {
-      return 'Select Lender';
+      return 'Select AR Company';
     }
 
     const selected = this.companies.find(
@@ -219,7 +220,7 @@ export class Navbar implements OnInit, OnDestroy {
   private setTitle(url: string) {
     const cleanUrl = url.split('?')[0];
 
-    if (cleanUrl.startsWith('/admin/company/') && cleanUrl.includes('/invoices/')) {
+    if (cleanUrl.startsWith('/admin/customer/') && cleanUrl.includes('/invoices/')) {
       this.pageTitle = 'Invoice Detail';
       return;
     }

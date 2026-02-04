@@ -35,7 +35,7 @@ describe('AddCompany', () => {
       instance.isEditMode = true;
       instance.companyId = 12;
       instance.goTo('step-3');
-      expect(router.navigate).toHaveBeenCalledWith(['/admin/lender/edit/12/step-3']);
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/ar-company/edit/12/step-3']);
     });
   });
 });

@@ -20,7 +20,7 @@
 
         <a
           *ngIf="canViewCustomers"
-          routerLink="company"
+          routerLink="customer"
           routerLinkActive="active"
           #customersLink="routerLinkActive"
           class="nav-item"
@@ -30,7 +30,7 @@
             [src]="customersLink.isActive ? '/customers1.svg' : '/customers.svg'"
             class="nav-icon"
           />
-          Companies
+          Customers
         </a>
 
         <a
@@ -146,10 +146,10 @@
         <div class="setup-children" *ngIf="setupOpen && showSetupLinks">
           <a
             *ngIf="canViewCompany"
-            routerLink="lender"
+            routerLink="ar-company"
             routerLinkActive="active"
             class="sub-nav-item"
-            >Lender</a
+            >AR Company</a
           >
           <a
             *ngIf="canViewGlCodes"
@@ -218,7 +218,7 @@
 
         <a
           *ngIf="canViewCustomers"
-          routerLink="company"
+          routerLink="customer"
           routerLinkActive="active"
           #mobileCustomers="routerLinkActive"
           (click)="closeMobileMenu()"
@@ -227,7 +227,7 @@
             [src]="mobileCustomers.isActive ? '/customers1.svg' : '/customers.svg'"
             class="nav-icon"
           />
-          Companies
+          Customers
         </a>
 
         <a
@@ -379,10 +379,10 @@
         <div class="mobile-setup-children" *ngIf="mobileSetupOpen && showSetupLinks">
           <a
             *ngIf="canViewCompany"
-            routerLink="lender"
+            routerLink="ar-company"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-            >Lender</a
+            >AR Company</a
           >
           <a
             *ngIf="canViewGlCodes"
