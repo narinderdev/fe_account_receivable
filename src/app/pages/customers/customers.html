@@ -74,7 +74,7 @@
           </td>
 
           <td>{{ c.customerId }}</td>
-          <td>{{ c.customerType }}</td>
+          <td>{{ formatCustomerType(c.customerType) }}</td>
 
           <td>{{ c.email }}</td>
 
@@ -178,11 +178,20 @@
 
 <!-- Import Modal -->
 <div class="modal-overlay" *ngIf="isImportModalOpen">
-  <div class="modal import-modal">
-    <h3>Import Customer</h3>
+  <div class="approve-modal import-modal">
+    <div class="modal-header">
+      <h2>Import Customers</h2>
+      <button
+        class="btn-close"
+        (click)="closeImportModal()"
+        aria-label="Close"
+        [disabled]="uploadingFile"
+      >
+        <span>&times;</span>
+      </button>
+    </div>
 
     <div class="modal-body">
-      <!-- Download Template Section -->
       <div class="template-section">
         <p class="template-info">
           <svg
@@ -202,36 +211,66 @@
           </svg>
           Download the template first to see the required format
         </p>
-        <button
-          class="download-template-btn"
-          (click)="downloadTemplate()"
-          [disabled]="downloadingTemplate"
-        >
-          <ng-container *ngIf="!downloadingTemplate">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Excel Template
-          </ng-container>
-          <ng-container *ngIf="downloadingTemplate">
-            <app-spinner></app-spinner>
-          </ng-container>
-        </button>
+
+        <div class="template-buttons">
+          <button
+            class="download-template-btn excel"
+            (click)="downloadTemplate()"
+            [disabled]="downloadingTemplate"
+          >
+            <ng-container *ngIf="!downloadingTemplate">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Excel Template
+            </ng-container>
+            <ng-container *ngIf="downloadingTemplate">
+              <app-spinner></app-spinner>
+            </ng-container>
+          </button>
+
+          <button
+            class="download-template-btn csv"
+            (click)="downloadCsvTemplate()"
+            [disabled]="downloadingTemplate"
+          >
+            <ng-container *ngIf="!downloadingTemplate">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              CSV Template
+            </ng-container>
+            <ng-container *ngIf="downloadingTemplate">
+              <app-spinner></app-spinner>
+            </ng-container>
+          </button>
+        </div>
       </div>
 
-      <!-- Hidden file input -->
       <input
         type="file"
         #fileInput
@@ -269,8 +308,15 @@
       </button>
     </div>
 
-    <div class="modal-actions">
-      <button class="cancelBtn" (click)="closeImportModal()">Close</button>
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="closeImportModal()"
+        [disabled]="uploadingFile"
+      >
+        Close
+      </button>
     </div>
   </div>
 </div>
