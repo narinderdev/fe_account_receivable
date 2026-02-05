@@ -34,7 +34,7 @@ export class CustomerDetail implements OnInit {
     private customerService: Customer,
     private collectionService: CollectionService,
     private monthEndService: MonthEndService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -119,6 +119,13 @@ export class CustomerDetail implements OnInit {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
+  }
+
+  formatCustomerType(type?: string | null): string {
+    if (!type) return '—';
+
+    const formatted = type.toLowerCase();
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }
 
   getStatusLabel(status: string): string {
