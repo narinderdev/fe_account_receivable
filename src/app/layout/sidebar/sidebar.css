@@ -12,24 +12,26 @@
   padding: 32px 0;
 }
 
-/* Add flex and overflow constraint to the first child (wrapper containing header + nav) */
 .sidebar > div:first-child {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Important: allows flex item to shrink below content size */
-  overflow: hidden; /* Prevent this container from overflowing */
+  min-height: 0;
+  overflow: hidden;
 }
 
 .sidebar-header {
   display: flex;
   align-items: center;
-  font-weight: bold;
-  gap: 12px;
-  padding: 0 32px;
-  margin-bottom: 20px;
-  flex-shrink: 0; /* Prevent header from shrinking */
+  justify-content: center;
+  padding-bottom: 20px;
 }
+
+.sidebar-logo {
+  max-width: 150px;
+  height: auto;
+}
+
 
 .sidebar-title {
   font-size: 18px;
@@ -178,7 +180,7 @@
 }
 
 .mobile-nav-bar {
-  background: #708090;
+  background: #f1f5f9;
   color: #fff;
   display: flex;
   align-items: center;
@@ -191,7 +193,7 @@
 }
 
 .menu-toggle {
-  background: transparent;
+  background: #3b82f6;
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 6px;
   padding: 8px;
@@ -219,9 +221,9 @@
   border: 0;
 }
 
-.mobile-title {
-  font-size: 18px;
-  font-weight: 600;
+.mobile-title img {
+  max-width: 150px;
+  height: 50px;
 }
 
 .mobile-overlay {
