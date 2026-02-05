@@ -227,6 +227,43 @@
   color: #3b82f6;
 }
 
+.template-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.download-template-btn {
+  flex: 1;
+  min-width: 150px;
+}
+
+.download-template-btn.excel {
+  background-color: #10b981;
+}
+
+.download-template-btn.excel:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.download-template-btn.csv {
+  background-color: #3b82f6;
+}
+
+.download-template-btn.csv:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+@media (max-width: 600px) {
+  .template-buttons {
+    flex-direction: column;
+  }
+
+  .download-template-btn {
+    width: 100%;
+  }
+}
+
 .download-template-btn,
 .upload-btn {
   width: 100%;

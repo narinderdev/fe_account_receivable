@@ -89,7 +89,10 @@ export class Invoices implements OnInit, OnDestroy {
     }
 
     if (!this.activeCompanyId) {
-      this.toastr.warning('Please select a AR Company from the navbar before importing.', 'Warning');
+      this.toastr.warning(
+        'Please select a AR Company from the navbar before importing.',
+        'Warning',
+      );
       return;
     }
 
@@ -123,13 +126,9 @@ export class Invoices implements OnInit, OnDestroy {
         const headers: string[] = [];
         const exampleRow: string[] = [];
 
-        // Collect all fields from all tabs
         metadata?.tabs?.forEach((tab: any) => {
           tab.fields?.forEach((field: any) => {
-            // Add field name instead of label
             headers.push(field.name);
-
-            // Add example value
             const example = field.rules?.example || '';
             exampleRow.push(example);
           });
@@ -139,23 +138,69 @@ export class Invoices implements OnInit, OnDestroy {
         const wsData: any[][] = [];
 
         if (headers.length) {
-          // Add headers row
           wsData.push(headers);
-          // Add example data row
           wsData.push(exampleRow);
         } else {
           wsData.push(['No metadata available']);
         }
 
         const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-        // Set column widths for better readability
         ws['!cols'] = headers.map(() => ({ wch: 25 }));
 
         XLSX.utils.book_append_sheet(wb, ws, 'Invoice Template');
         XLSX.writeFile(wb, 'invoice_import_template.xlsx');
 
-        this.toastr.success('Template downloaded successfully!', 'Success');
+        this.toastr.success('Excel template downloaded successfully!', 'Success');
+        this.downloadingTemplate = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Invoice template download failed:', err);
+        this.toastr.error('Failed to download template!', 'Error');
+        this.downloadingTemplate = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  downloadInvoiceCsvTemplate() {
+    if (!this.canCreateInvoice) return;
+
+    this.downloadingTemplate = true;
+    this.cdr.detectChanges();
+
+    this.invoiceService.getInvoiceTemplate().subscribe({
+      next: (res) => {
+        const metadata = res?.data;
+        const headers: string[] = [];
+        const exampleRow: string[] = [];
+
+        metadata?.tabs?.forEach((tab: any) => {
+          tab.fields?.forEach((field: any) => {
+            headers.push(field.name);
+            const example = field.rules?.example || '';
+            exampleRow.push(example);
+          });
+        });
+
+        const csvRows: string[] = [];
+
+        if (headers.length) {
+          csvRows.push(headers.join(','));
+          csvRows.push(exampleRow.join(','));
+        } else {
+          csvRows.push('No metadata available');
+        }
+
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'invoice_import_template.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+        this.toastr.success('CSV template downloaded successfully!', 'Success');
         this.downloadingTemplate = false;
         this.cdr.detectChanges();
       },
@@ -193,7 +238,10 @@ export class Invoices implements OnInit, OnDestroy {
     }
 
     if (!this.activeCompanyId) {
-      this.toastr.warning('Please select a AR Company from the navbar before importing.', 'Warning');
+      this.toastr.warning(
+        'Please select a AR Company from the navbar before importing.',
+        'Warning',
+      );
       input.value = '';
       return;
     }
@@ -219,24 +267,28 @@ export class Invoices implements OnInit, OnDestroy {
     reader.onload = (e: any) => {
       try {
         const data = e.target.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
-        // Get first sheet
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
 
-        // Convert to CSV string
-        const csvString = XLSX.utils.sheet_to_csv(worksheet);
+        // Convert to CSV
+        let csvString = XLSX.utils.sheet_to_csv(worksheet, {
+          dateNF: 'yyyy-mm-dd',
+          FS: ',',
+          RS: '\n',
+          strip: false,
+        });
 
-        // Create a Blob from CSV string
+        // Normalize boolean values to lowercase (FALSE -> false, TRUE -> true)
+        csvString = csvString.replace(/\bFALSE\b/g, 'false').replace(/\bTRUE\b/g, 'true');
+
         const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-
-        // Create a File object from Blob with .csv extension
         const csvFile = new File([csvBlob], file.name.replace(/\.(xlsx|xls)$/i, '.csv'), {
           type: 'text/csv',
         });
 
-        // Upload the CSV file
+        // Upload the converted CSV to API
         this.uploadCsvFile(csvFile, input);
       } catch (error) {
         console.error('Error converting Excel to CSV:', error);
@@ -255,7 +307,7 @@ export class Invoices implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     };
 
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   }
 
   private uploadCsvFile(file: File, input: HTMLInputElement) {
