@@ -472,7 +472,7 @@ export class Payments implements OnInit, OnDestroy {
       id: payment.id,
       type: 'MANUAL',
       customerName: this.extractManualCustomerName(payment),
-      status: payment.applications?.[0]?.invoice?.status || '',
+      status: payment.status || '',
       amount: payment.paymentAmount,
       description: payment.notes || '',
       source: payment.source || 'MANUAL',

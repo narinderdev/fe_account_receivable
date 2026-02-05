@@ -41,7 +41,7 @@ export interface Payment {
   paymentDate: string;
   notes: string;
   source?: string;
-
+  status: string;
   customer: CustomerEntity;
   applications: PaymentApplication[];
 }
