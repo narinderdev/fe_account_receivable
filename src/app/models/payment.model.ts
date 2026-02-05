@@ -40,6 +40,7 @@ export interface Payment {
   paymentMethod: string;
   paymentDate: string;
   notes: string;
+  source?: string;
 
   customer: CustomerEntity;
   applications: PaymentApplication[];
@@ -67,4 +68,28 @@ export interface ApplyPaymentResponse {
   status: string;
   message: string;
   data?: Payment;
+}
+
+export interface BankTransaction {
+  id: number;
+  baiCode: string;
+  transactionType: string;
+  debitCredit: string;
+  amount: number;
+  customerName: string;
+  reference: string;
+  description: string;
+  transactionDate: string;
+  status: string;
+  systemNote: string;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BankTransactionsResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: BankTransaction[];
 }

@@ -1,24 +1,51 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ChangeDetectorRef,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { PaymentService } from '../../services/payment-service';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Loader } from '../../shared/loader/loader';
 import { CompanySelectionService } from '../../services/company-selection.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, forkJoin, takeUntil } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
 import { FormsModule } from '@angular/forms';
-import { Payment } from '../../models/payment.model';
+import { BankTransaction, Payment } from '../../models/payment.model';
+import { Spinner } from '../../shared/spinner/spinner';
+import { ToastrService } from 'ngx-toastr';
+
+type PaymentType = 'MANUAL' | 'BANK';
+
+interface PaymentListItem {
+  id: number;
+  type: PaymentType;
+  customerName: string;
+  status?: string;
+  amount: number;
+  description?: string;
+  source?: string;
+  date?: string;
+  manualPayment?: Payment;
+  bankTransaction?: BankTransaction;
+}
 
 @Component({
   selector: 'app-payments',
   standalone: true,
-  imports: [CurrencyPipe, CommonModule, RouterLink, Loader, FormsModule],
+  imports: [CurrencyPipe, CommonModule, RouterLink, Loader, FormsModule, Spinner],
   templateUrl: './payments.html',
   styleUrls: ['./payments.css'],
 })
 export class Payments implements OnInit, OnDestroy {
-  payments: Payment[] = [];
-  allPayments: Payment[] = [];
+  @ViewChild('baiFileInput') baiFileInput?: ElementRef<HTMLInputElement>;
+
+  payments: PaymentListItem[] = [];
+  allPayments: PaymentListItem[] = [];
+  filteredPayments: PaymentListItem[] = [];
   searchName: string = '';
 
   // New filter properties
@@ -36,6 +63,8 @@ export class Payments implements OnInit, OnDestroy {
   pageSize = 10;
   totalItems = 0;
   Math = Math;
+  isBaiModalOpen = false;
+  uploadingBai = false;
 
   // Period options for dropdown
   periodOptions = [
@@ -52,6 +81,7 @@ export class Payments implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService,
     private userContext: UserContextService,
+    private toastr: ToastrService,
   ) {
     this.canApplyPayment = this.userContext.hasPermission('APPLY_PAYMENT');
   }
@@ -68,10 +98,11 @@ export class Payments implements OnInit, OnDestroy {
       this.activeCompanyId = nextId;
 
       if (this.activeCompanyId) {
-        this.loadPayments(this.activeCompanyId, 0);
+        this.loadPayments(this.activeCompanyId);
       } else {
         this.payments = [];
         this.allPayments = [];
+        this.filteredPayments = [];
         this.totalPages = 0;
         this.currentPage = 0;
         this.totalItems = 0;
@@ -81,33 +112,35 @@ export class Payments implements OnInit, OnDestroy {
     });
   }
 
-  loadPayments(companyId: number, page: number = 0): void {
+  loadPayments(companyId: number): void {
+    const dateRange = this.buildDateRange();
+    if (this.isCustomPeriod && !dateRange) {
+      return;
+    }
+
     this.loading = true;
     this.cdr.detectChanges();
 
-    const filters: any = {
-      page,
-      size: this.pageSize,
-    };
+    const manualFilters = this.buildManualFilters(dateRange);
+    const bankMonths = this.resolveBankMonths();
 
-    // Add months parameter for preset periods, or dates for custom
-    if (this.isCustomPeriod) {
-      if (this.fromDate) filters.fromDate = this.fromDate;
-      if (this.toDate) filters.toDate = this.toDate;
-    } else {
-      filters.months = parseInt(this.selectedPeriod, 10);
-    }
+    forkJoin({
+      bank: this.paymentService.getPayments(companyId, { months: bankMonths }),
+      manual: this.paymentService.getManualPayments(companyId, manualFilters),
+    }).subscribe({
+      next: ({ bank, manual }) => {
+        const manualContent = manual?.data?.content ?? [];
+        const bankContent = bank?.data ?? [];
 
-    this.paymentService.getFilteredPayments(companyId, filters).subscribe({
-      next: (response) => {
-        const pageData = response?.data;
+        const manualEntries = manualContent.map((payment) => this.mapManualPayment(payment));
+        const bankEntries = bankContent.map((payment) => this.mapBankTransaction(payment));
 
-        this.payments = pageData?.content || [];
-        this.allPayments = [...this.payments];
-        this.totalPages = pageData?.totalPages || 0;
-        this.currentPage = pageData?.number || 0;
-        this.totalItems = pageData?.totalElements || 0;
-        localStorage.setItem('paymentsData', JSON.stringify(this.payments));
+        const combined = this.sortPaymentsByDate([...manualEntries, ...bankEntries]);
+
+        this.allPayments = combined;
+        this.filteredPayments = [...combined];
+        this.currentPage = 0;
+        localStorage.setItem('paymentsData', JSON.stringify(combined));
 
         this.loading = false;
         this.applySearchFilter();
@@ -153,52 +186,141 @@ export class Payments implements OnInit, OnDestroy {
     }
   }
 
+  openBaiModal() {
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select an AR company from the navbar first.', 'Warning');
+      return;
+    }
+    this.isBaiModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeBaiModal() {
+    if (this.uploadingBai) {
+      return;
+    }
+    this.isBaiModalOpen = false;
+    this.resetBaiFileInput();
+    this.cdr.detectChanges();
+  }
+
+  handleBaiFileUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    if (extension !== 'txt') {
+      this.toastr.warning('Please upload a .txt BAI file.', 'Invalid File');
+      input.value = '';
+      return;
+    }
+
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select an AR company from the navbar first.', 'Warning');
+      input.value = '';
+      return;
+    }
+
+    this.uploadingBai = true;
+    this.cdr.detectChanges();
+
+    this.paymentService.uploadBaiFile(this.activeCompanyId, file).subscribe({
+      next: () => {
+        this.uploadingBai = false;
+        this.toastr.success('BAI file uploaded successfully.', 'Success');
+        input.value = '';
+        if (this.activeCompanyId) {
+          this.loadPayments(this.activeCompanyId);
+        }
+        this.closeBaiModal();
+      },
+      error: (error) => {
+        this.uploadingBai = false;
+        console.error('Failed to upload BAI file:', error);
+        const backendMessage = error?.error?.message;
+        this.toastr.error(backendMessage || 'Failed to upload BAI file.', 'Upload Failed');
+        input.value = '';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   private reloadWithFilters() {
     if (!this.activeCompanyId) {
       return;
     }
     this.currentPage = 0;
-    this.loadPayments(this.activeCompanyId, 0);
+    this.loadPayments(this.activeCompanyId);
   }
 
   private applySearchFilter() {
     const term = this.searchName.trim().toLowerCase();
 
     if (term.length < 3) {
-      this.payments = [...this.allPayments];
-      return;
+      this.filteredPayments = [...this.allPayments];
+    } else {
+      this.filteredPayments = this.allPayments.filter((payment) => {
+        const customerName = payment.customerName?.toLowerCase() || '';
+        return customerName.includes(term);
+      });
     }
 
-    this.payments = this.allPayments.filter((payment) => {
-      const customerName = this.getCustomerName(payment).toLowerCase();
-      return customerName.includes(term);
-    });
+    this.currentPage = 0;
+    this.updatePagination();
   }
 
-  /** Sum of applied amounts */
-  getAppliedAmount(payment: Payment): number {
-    return (
-      payment.applications?.reduce(
-        (total: number, app: any) => total + (app.appliedAmount || 0),
-        0,
-      ) || 0
-    );
-  }
+  private updatePagination() {
+    this.totalItems = this.filteredPayments.length;
+    this.totalPages = this.totalItems === 0 ? 0 : Math.ceil(this.totalItems / this.pageSize);
 
-  /** Get customer name from payment */
-  getCustomerName(payment: Payment): string {
-    // Try to get customer from the nested path in applications
-    const customerName = payment?.applications?.[0]?.invoice?.customer?.customerName;
-    if (customerName) {
-      return customerName;
+    if (this.totalPages === 0) {
+      this.currentPage = 0;
+    } else if (this.currentPage >= this.totalPages) {
+      this.currentPage = this.totalPages - 1;
     }
 
-    // Fallback to direct customer property if it exists
-    return payment?.customer?.customerName || '--';
+    this.updatePagedPayments();
   }
 
-  getInvoiceStatus(payment: Payment): string {
-    const status = payment?.applications?.[0]?.invoice?.status;
+  private updatePagedPayments() {
+    const start = this.currentPage * this.pageSize;
+    const end = start + this.pageSize;
+    this.payments = this.filteredPayments.slice(start, end);
+  }
+
+  private buildDateRange(): { fromDate: string; toDate: string } | null {
+    if (this.isCustomPeriod) {
+      if (this.fromDate && this.toDate) {
+        return { fromDate: this.fromDate, toDate: this.toDate };
+      }
+      return null;
+    }
+
+    const months = parseInt(this.selectedPeriod, 10);
+    const monthsToSubtract = Number.isFinite(months) ? months : 1;
+    const end = new Date();
+    const start = new Date(end);
+    start.setMonth(start.getMonth() - monthsToSubtract);
+
+    return {
+      fromDate: this.formatDateForApi(start),
+      toDate: this.formatDateForApi(end),
+    };
+  }
+
+  private formatDateForApi(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  getStatusLabel(payment: PaymentListItem): string {
+    const status = payment?.status;
     if (!status) {
       return '--';
     }
@@ -210,23 +332,35 @@ export class Payments implements OnInit, OnDestroy {
       .join(' ');
   }
 
-  getStatusClass(payment: Payment): string {
-    const status = payment?.applications?.[0]?.invoice?.status?.toUpperCase();
+  getStatusClass(payment: PaymentListItem): string {
+    const status = payment?.status?.toUpperCase();
     const classes: { [key: string]: string } = {
       OPEN: 'status-open',
       PARTIAL: 'status-partial',
       PAID: 'status-paid',
+      DRAFT: 'status-default',
     };
 
     return classes[status || ''] || 'status-default';
   }
 
-  getCustomerInitial(payment: Payment): string {
-    const name = this.getCustomerName(payment);
+  getCustomerInitial(payment: PaymentListItem): string {
+    const name = payment?.customerName;
     if (!name || name === '--') {
       return '?';
     }
     return name.trim().charAt(0).toUpperCase();
+  }
+
+  formatSource(source?: string): string {
+    if (!source) {
+      return '--';
+    }
+    return source
+      .toLowerCase()
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   getInitialColor(index: number): { background: string; color: string } {
@@ -270,25 +404,110 @@ export class Payments implements OnInit, OnDestroy {
   }
 
   goToPage(page: number) {
-    if (this.activeCompanyId && page >= 0 && page < this.totalPages && page !== this.currentPage) {
-      this.loadPayments(this.activeCompanyId, page);
+    if (page >= 0 && page < this.totalPages && page !== this.currentPage) {
+      this.currentPage = page;
+      this.updatePagedPayments();
     }
   }
 
   nextPage() {
-    if (this.activeCompanyId && this.currentPage < this.totalPages - 1) {
-      this.loadPayments(this.activeCompanyId, this.currentPage + 1);
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage += 1;
+      this.updatePagedPayments();
     }
   }
 
   prevPage() {
-    if (this.activeCompanyId && this.currentPage > 0) {
-      this.loadPayments(this.activeCompanyId, this.currentPage - 1);
+    if (this.currentPage > 0) {
+      this.currentPage -= 1;
+      this.updatePagedPayments();
     }
   }
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private resetBaiFileInput() {
+    if (this.baiFileInput) {
+      this.baiFileInput.nativeElement.value = '';
+    }
+  }
+
+  private buildManualFilters(dateRange: { fromDate: string; toDate: string } | null) {
+    if (this.isCustomPeriod) {
+      if (!dateRange) {
+        throw new Error('Custom date range is required for manual payment filtering.');
+      }
+      return {
+        page: 0,
+        size: this.pageSize,
+        fromDate: dateRange.fromDate,
+        toDate: dateRange.toDate,
+      };
+    }
+    const months = parseInt(this.selectedPeriod, 10);
+    return {
+      page: 0,
+      size: this.pageSize,
+      months: Number.isFinite(months) ? months : 1,
+    };
+  }
+
+  private resolveBankMonths(): number {
+    if (this.isCustomPeriod && this.fromDate && this.toDate) {
+      const start = new Date(this.fromDate);
+      const end = new Date(this.toDate);
+      const diffMonths =
+        (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+      return Math.max(1, diffMonths);
+    }
+    const months = parseInt(this.selectedPeriod, 10);
+    return Number.isFinite(months) ? months : 3;
+  }
+
+  private mapManualPayment(payment: Payment): PaymentListItem {
+    return {
+      id: payment.id,
+      type: 'MANUAL',
+      customerName: this.extractManualCustomerName(payment),
+      status: payment.applications?.[0]?.invoice?.status || '',
+      amount: payment.paymentAmount,
+      description: payment.notes || '',
+      source: payment.source || 'MANUAL',
+      date: payment.paymentDate,
+      manualPayment: payment,
+    };
+  }
+
+  private mapBankTransaction(payment: BankTransaction): PaymentListItem {
+    return {
+      id: payment.id,
+      type: 'BANK',
+      customerName: payment.customerName || '--',
+      status: payment.status,
+      amount: payment.amount,
+      description: payment.description,
+      source: payment.source || 'BANK',
+      date: payment.transactionDate,
+      bankTransaction: payment,
+    };
+  }
+
+  private extractManualCustomerName(payment: Payment): string {
+    return (
+      payment.applications?.[0]?.invoice?.customer?.customerName ||
+      payment.customer?.customerName ||
+      '--'
+    );
+  }
+
+  private sortPaymentsByDate(payments: PaymentListItem[]): PaymentListItem[] {
+    return payments.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      return dateB - dateA;
+    });
   }
 }

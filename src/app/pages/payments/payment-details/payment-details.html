@@ -17,7 +17,7 @@
       <div class="summary-grid">
         <div class="summary-item">
           <label>Payment Date</label>
-          <div class="value">{{ paymentDate }}</div>
+          <div class="value">{{ paymentDate | date: 'mediumDate' }}</div>
         </div>
 
         <div class="divider"></div>
@@ -27,24 +27,26 @@
           <div class="value">{{ paymentAmount | currency }}</div>
         </div>
 
-        <div class="divider"></div>
+        <ng-container *ngIf="isManual">
+          <div class="divider"></div>
 
-        <div class="summary-item">
-          <label>Bank Deposit</label>
-          <div class="value">{{ bankDeposit | currency }}</div>
-        </div>
+          <div class="summary-item">
+            <label>Bank Deposit</label>
+            <div class="value">{{ bankDeposit | currency }}</div>
+          </div>
 
-        <div class="divider"></div>
+          <div class="divider"></div>
 
-        <div class="summary-item">
-          <label>Service Fee</label>
-          <div class="value">{{ serviceFee | currency }}</div>
-        </div>
+          <div class="summary-item">
+            <label>Service Fee</label>
+            <div class="value">{{ serviceFee | currency }}</div>
+          </div>
+        </ng-container>
       </div>
     </div>
 
     <!-- Invoice Box -->
-    <div class="invoice-box">
+    <div class="invoice-box" *ngIf="isManual">
       <table class="invoice-table">
         <thead>
           <tr>
@@ -58,6 +60,9 @@
         </thead>
 
         <tbody>
+          <tr *ngIf="invoices.length === 0">
+            <td colspan="6" class="no-data-row">No invoices linked to this payment.</td>
+          </tr>
           <tr *ngFor="let invoice of invoices">
             <td>
               <a [routerLink]="['/admin/invoices/detail', invoice.invoice.id]" class="invoice-link">
@@ -79,7 +84,7 @@
     <div class="timeline-container">
       <h3>Timeline</h3>
 
-      <p class="timeline-text">Payment received on {{ paymentDate }}</p>
+      <p class="timeline-text">Payment received on {{ paymentDate | date: 'mediumDate' }}</p>
 
       <div class="notes-box">
         {{ notes }}
