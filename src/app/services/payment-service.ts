@@ -1,9 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { HttpHeaders } from '@angular/common/http';
-import { ApplyPaymentRequest, ApplyPaymentResponse, PaymentPage } from '../models/payment.model';
+import {
+  ApplyPaymentRequest,
+  ApplyPaymentResponse,
+  BankTransactionsResponse,
+  PaymentPage,
+} from '../models/payment.model';
 import { environment } from '../../environments/environment';
+import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
   providedIn: 'root',
@@ -12,34 +17,44 @@ export class PaymentService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  // ✅ Helper method to get authorization headers
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-  }
+  getPayments(companyId: number, params: { months: number }): Observable<BankTransactionsResponse> {
+    const headers = getAuthHeadersWithNgrok();
+    const months = params.months ?? 1;
 
-  // ✅ Helper method to get headers with both auth and ngrok skip (for GET requests)
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true',
-    });
-  }
-
-  getPayments(companyId: number, page = 0, size = 10): Observable<PaymentPage> {
-    const headers = this.getAuthHeadersWithNgrok();
-
-    return this.http.get<PaymentPage>(
-      `${this.baseUrl}/payment/company/${companyId}?page=${page}&size=${size}`,
+    return this.http.get<BankTransactionsResponse>(
+      `${this.baseUrl}/api/bank-reconciliation/company/${companyId}/transactions?months=${months}`,
       { headers },
     );
   }
 
+  uploadBaiFile(companyId: number, file: File): Observable<any> {
+    const headers = getAuthHeaders();
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post(
+      `${this.baseUrl}/api/bank-reconciliation/company/${companyId}/upload`,
+      formData,
+      { headers },
+    );
+  }
+
+  getManualPayments(
+    companyId: number,
+    params: {
+      statuses?: string[];
+      months?: number;
+      fromDate?: string;
+      toDate?: string;
+      page?: number;
+      size?: number;
+    },
+  ): Observable<PaymentPage> {
+    return this.getFilteredPayments(companyId, params);
+  }
+
   applyPayment(customerId: number, data: ApplyPaymentRequest): Observable<ApplyPaymentResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<ApplyPaymentResponse>(
       `${this.baseUrl}/payment/apply/${customerId}`,
       data,
@@ -58,7 +73,7 @@ export class PaymentService {
       size?: number;
     },
   ): Observable<PaymentPage> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     const queryParams: string[] = [];
 

@@ -6,12 +6,25 @@ import { Subject } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
 
 import { Payments } from './payments';
-import { Payment, PaymentApplication } from '../../models/payment.model';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
+
+interface TestPayment {
+  id: number;
+  type: 'MANUAL' | 'BANK';
+  customerName: string;
+  amount: number;
+  status?: string;
+  description?: string;
+  source?: string;
+  date?: string;
+}
 
 describe('Payments', () => {
   const createComponent = () => {
-    const paymentService = createSpyObj<PaymentService>('PaymentService', ['getPayments']);
+    const paymentService = createSpyObj<PaymentService>('PaymentService', [
+      'getPayments',
+      'getManualPayments',
+    ]);
     const router = createSpyObj<Router>('Router', ['navigate']);
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
     const companySelection = {
@@ -28,97 +41,28 @@ describe('Payments', () => {
   });
 
   describe('helper behaviour', () => {
-    it('totals applied amounts for a payment', () => {
+    it('returns friendly status labels and initials', () => {
       const instance = createComponent();
       const payment = createPayment({
-        applications: [createApplication({ appliedAmount: 10 }), createApplication({ appliedAmount: 15 })],
+        status: 'PARTIAL',
+        customerName: 'Acme Corp',
       });
-      expect(instance.getAppliedAmount(payment)).toBe(25);
-    });
-
-    it('returns friendly invoice statuses and initials', () => {
-      const instance = createComponent();
-      const payment = createPayment({
-        applications: [
-          createApplication({
-            invoice: {
-              ...createApplication().invoice,
-              status: 'PARTIAL',
-              customer: { ...createApplication().invoice.customer, customerName: 'Acme Corp' },
-            },
-          }),
-        ],
-      });
-      expect(instance.getInvoiceStatus(payment)).toBe('Partial');
+      expect(instance.getStatusLabel(payment)).toBe('Partial');
       expect(instance.getCustomerInitial(payment)).toBe('A');
     });
   });
 });
 
-function createPayment(overrides: Partial<Payment> = {}): Payment {
+function createPayment(overrides: Partial<TestPayment> = {}): TestPayment {
   return {
     id: 1,
-    bankDeposit: 0,
-    serviceFee: 0,
-    paymentAmount: 100,
-    paymentMethod: 'CARD',
-    paymentDate: '2024-01-01',
-    notes: '',
-    customer: {
-      id: 1,
-      customerId: 1,
-      customerName: 'Default Customer',
-      customerType: 'Business',
-      email: 'customer@example.com',
-      phoneNumber: null,
-      deleted: false,
-      address: null,
-      cashApplication: null,
-      dunning: null,
-      eft: null,
-      statement: null,
-      vat: null,
-    },
-    applications: [],
+    type: 'BANK',
+    date: '2024-01-01',
+    amount: 100,
+    customerName: 'Default Customer',
+    description: 'ACH Credit',
+    source: 'BANK',
+    status: 'DRAFT',
     ...overrides,
   };
-}
-
-function createApplication(overrides: Partial<PaymentApplication> = {}): PaymentApplication {
-  const base = {
-    id: 1,
-    appliedAmount: 0,
-    invoice: {
-      id: 1,
-      invoiceNumber: 'INV-1',
-      invoiceDate: '2024-01-01',
-      dueDate: '2024-01-31',
-      subTotal: 100,
-      totalAmount: 110,
-      balanceDue: 50,
-      status: 'OPEN' as const,
-      lastPaymentDate: null,
-      note: null,
-      generated: false,
-      active: true,
-      deleted: false,
-      customer: {
-        id: 1,
-        customerId: 1,
-        customerName: 'Default Customer',
-        customerType: 'Business',
-        email: 'customer@example.com',
-        phoneNumber: null,
-        deleted: false,
-        address: null,
-        cashApplication: null,
-        dunning: null,
-        eft: null,
-        statement: null,
-        vat: null,
-      },
-    },
-  };
-
-  return { ...base, ...overrides };
 }

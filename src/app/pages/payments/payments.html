@@ -9,7 +9,7 @@
         <input
           type="text"
           [(ngModel)]="searchName"
-          placeholder="Enter company name"
+          placeholder="Enter customer name"
           (input)="onSearchChange()"
         />
       </div>
@@ -49,9 +49,15 @@
         />
       </div>
 
-      <button class="btn-receive" routerLink="receive-payment" *ngIf="canApplyPayment">
-        Receive Payments
-      </button>
+      <div class="action-buttons">
+        <button class="btn-bai" (click)="openBaiModal()" [disabled]="uploadingBai">
+          Upload BAI File
+        </button>
+
+        <button class="btn-receive" routerLink="receive-payment" *ngIf="canApplyPayment">
+          Receive Payments
+        </button>
+      </div>
     </div>
   </div>
 
@@ -65,12 +71,11 @@
     <table class="payments-table">
       <thead>
         <tr>
-          <th>Company</th>
+          <th>Customer</th>
           <th>Status</th>
-          <th>Applied Amount</th>
-          <th>Bank Deposit</th>
-          <th>Service Fee</th>
-          <th>Payment Method</th>
+          <th>Amount</th>
+          <th>Description</th>
+          <th>Source</th>
           <th>Payment Date</th>
         </tr>
       </thead>
@@ -78,7 +83,7 @@
       <tbody>
         <!-- EMPTY STATE -->
         <tr *ngIf="payments.length === 0" class="no-data-row">
-          <td colspan="7">No payments found.</td>
+          <td colspan="6">No payments found.</td>
         </tr>
 
         <!-- PAYMENT ROWS -->
@@ -97,20 +102,19 @@
               >
                 {{ getCustomerInitial(payment) }}
               </div>
-              <span class="customer-name">{{ getCustomerName(payment) }}</span>
+              <span class="customer-name">{{ payment.customerName || '--' }}</span>
             </div>
           </td>
 
           <td>
             <span class="status-badge" [ngClass]="getStatusClass(payment)">
-              {{ getInvoiceStatus(payment) }}
+              {{ getStatusLabel(payment) }}
             </span>
           </td>
-          <td>{{ getAppliedAmount(payment) | currency }}</td>
-          <td>{{ payment.bankDeposit || 0 | currency }}</td>
-          <td>{{ payment.serviceFee || 0 | currency }}</td>
-          <td>{{ payment.paymentMethod || '--' }}</td>
-          <td>{{ payment.paymentDate | date: 'mediumDate' }}</td>
+          <td>{{ payment.amount || 0 | currency }}</td>
+          <td>{{ payment.description || '--' }}</td>
+          <td>{{ formatSource(payment.source) }}</td>
+          <td>{{ payment.date | date: 'mediumDate' }}</td>
         </tr>
       </tbody>
     </table>
@@ -146,6 +150,63 @@
           <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload BAI Modal -->
+<div class="modal-overlay" *ngIf="isBaiModalOpen">
+  <div class="approve-modal import-modal">
+    <div class="modal-header">
+      <h2>Upload BAI File</h2>
+      <button class="btn-close" (click)="closeBaiModal()" [disabled]="uploadingBai" aria-label="Close">
+        <span>&times;</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="template-info">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        Upload a .txt BAI file to ingest new bank transactions. Make sure the correct AR company is
+        selected in the top navbar before uploading.
+      </p>
+
+      <input
+        type="file"
+        #baiFileInput
+        accept=".txt"
+        style="display: none"
+        (change)="handleBaiFileUpload($event)"
+      />
+
+      <button class="upload-btn" (click)="baiFileInput.click()" [disabled]="uploadingBai">
+        <ng-container *ngIf="!uploadingBai">
+          Upload BAI (.txt)
+        </ng-container>
+        <ng-container *ngIf="uploadingBai">
+          <app-spinner></app-spinner>
+        </ng-container>
+      </button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeBaiModal()" [disabled]="uploadingBai">
+        Close
+      </button>
     </div>
   </div>
 </div>
