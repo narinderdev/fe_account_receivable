@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
@@ -14,6 +14,7 @@ import {
   ArGlMappingPayload,
   ArGlMappingResponse,
 } from '../models/ar-code.model';
+import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
   providedIn: 'root',
@@ -22,23 +23,8 @@ export class ArCodeService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-  }
-
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true',
-    });
-  }
-
   getCode(companyId: number): Observable<ArCodeListResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<ArCodeListResponse>(`${this.baseUrl}/codes/ar-codes/${companyId}`, {
       headers,
@@ -46,7 +32,7 @@ export class ArCodeService {
   }
 
   getCodesPage(companyId: number, page = 0, size = 10): Observable<ArCodePageResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<ArCodePageResponse>(
       `${this.baseUrl}/codes/ar-codes/${companyId}?page=${page}&size=${size}`,
       {
@@ -56,7 +42,7 @@ export class ArCodeService {
   }
 
   createCode(data: CreateArCodePayload, companyId: number): Observable<CreateArCodeResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<CreateArCodeResponse>(
       `${this.baseUrl}/codes/ar-codes/${companyId}`,
       data,
@@ -71,7 +57,7 @@ export class ArCodeService {
     companyId: number,
     data: UpdateArCodePayload
   ): Observable<UpdateArCodeResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.put<UpdateArCodeResponse>(
       `${this.baseUrl}/codes/ar-codes/${codeId}/${companyId}`,
       data,
@@ -80,7 +66,7 @@ export class ArCodeService {
   }
 
   deleteCode(codeId: number, companyId: number): Observable<DeleteArCodeResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.delete<DeleteArCodeResponse>(
       `${this.baseUrl}/codes/ar-codes/${codeId}/${companyId}`,
       {
@@ -90,7 +76,7 @@ export class ArCodeService {
   }
 
   activateCode(codeId: number, companyId: number): Observable<ToggleArCodeResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.patch<ToggleArCodeResponse>(
       `${this.baseUrl}/codes/ar-codes/${codeId}/active/${companyId}`,
       {},
@@ -99,7 +85,7 @@ export class ArCodeService {
   }
 
   deactivateCode(codeId: number, companyId: number): Observable<ToggleArCodeResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.patch<ToggleArCodeResponse>(
       `${this.baseUrl}/codes/ar-codes/${codeId}/inactive/${companyId}`,
       {},
@@ -112,7 +98,7 @@ export class ArCodeService {
     userId: number,
     data: ArGlMappingPayload
   ): Observable<ArGlMappingResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<ArGlMappingResponse>(
       `${this.baseUrl}/api/ar-gl-mappings/companies/${companyId}/user/${userId}`,
       data,
@@ -121,7 +107,7 @@ export class ArCodeService {
   }
 
   getArGlMapping(arCodeId: number): Observable<ArGlMappingResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<ArGlMappingResponse>(
       `${this.baseUrl}/api/ar-gl-mappings/ar-code/${arCodeId}`,
 
@@ -130,7 +116,7 @@ export class ArCodeService {
   }
 
   updateArGlMapping(arCodeId: number, companyId: number, userId:number, data:any): Observable<any> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.put<any>(
       `${this.baseUrl}/api/ar-gl-mappings/companies/${companyId}/user/${userId}/ar-code/${arCodeId}`,
       data,

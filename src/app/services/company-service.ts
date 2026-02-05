@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import {
   CompanyEntity,
@@ -24,6 +23,7 @@ import {
   InviteUserRequest,
   InviteUserResponse,
 } from '../models/company-users.model';
+import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
 
 type CompanyBankAccountSource = CompanyEntity['bankAccounts'][number] & EditableBankAccount;
 type CompanyUserSource = CompanyEntity['users'][number] & EditableCompanyUser;
@@ -76,21 +76,6 @@ export class CompanyService {
     'remittanceInstructions',
   ];
 
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-  }
-
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true',
-    });
-  }
-
   private getStoredUserId(): number | null {
     const raw = localStorage.getItem('signupUserId');
     const parsed = raw ? Number(raw) : NaN;
@@ -102,7 +87,7 @@ export class CompanyService {
     size: number = 10,
     userId?: number | null
   ): Observable<CompanyPageResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     const resolvedUserId = userId ?? this.getStoredUserId();
 
     return this.http.get<CompanyPageResponse>(
@@ -115,7 +100,7 @@ export class CompanyService {
     data: CreateCompanyPayload,
     userId?: number | null
   ): Observable<CreateCompanyResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     const resolvedUserId = userId ?? this.getStoredUserId();
 
     if (resolvedUserId) {
@@ -131,7 +116,7 @@ export class CompanyService {
   }
 
   createAddress(companyId: number, data: CompanyAddressInput): Observable<CreateAddressResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<CreateAddressResponse>(
       `${this.baseUrl}/api/companies/${companyId}/company-address`,
       data,
@@ -143,7 +128,7 @@ export class CompanyService {
     companyId: number,
     data: FinancialSettingsInput
   ): Observable<CompanyResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<CompanyResponse>(
       `${this.baseUrl}/api/companies/${companyId}/financial-settings`,
       data,
@@ -152,7 +137,7 @@ export class CompanyService {
   }
 
   createBanking(companyId: number, data: CreateBankingPayload): Observable<CompanyResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<CompanyResponse>(
       `${this.baseUrl}/api/companies/${companyId}/banking`,
       data,
@@ -161,7 +146,7 @@ export class CompanyService {
   }
 
   inviteUser(companyId: number, data: InviteUserRequest): Observable<InviteUserResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<InviteUserResponse>(
       `${this.baseUrl}/api/companies/${companyId}/users`,
       data,
@@ -170,26 +155,26 @@ export class CompanyService {
   }
 
   getUsers(companyId: number): Observable<CompanyUsersResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<CompanyUsersResponse>(`${this.baseUrl}/api/companies/users/${companyId}`, {
       headers,
     });
   }
 
   getCompanyById(id: number): Observable<CompanyResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<CompanyResponse>(`${this.baseUrl}/api/companies/${id}`, { headers });
   }
 
   updateCompany(id: number, data: UpdateCompanyPayload): Observable<CompanyResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.patch<CompanyResponse>(`${this.baseUrl}/api/companies/${id}/update`, data, {
       headers,
     });
   }
 
   deleteCompany(id: number): Observable<CompanyDeleteResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.delete<CompanyDeleteResponse>(`${this.baseUrl}/api/companies/${id}`, {
       headers,
     });

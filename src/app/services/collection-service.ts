@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { PromiseToPayResponse } from '../models/promise-to-pay.model';
@@ -15,6 +15,7 @@ import {
   ChangeDisputeStatusResponse,
   SendReminderResponse,
 } from '../models/collection.model';
+import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
   providedIn: 'root',
@@ -23,23 +24,8 @@ export class CollectionService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-  }
-
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true',
-    });
-  }
-
   getOverdueBalance(customerId: number): Observable<PendingAmountResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<PendingAmountResponse>(
       `${this.baseUrl}/invoice/${customerId}/pending-amount-customer`,
@@ -50,7 +36,7 @@ export class CollectionService {
   }
 
   getCompanyOverdue(companyId: number): Observable<PendingAmountResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<PendingAmountResponse>(
       `${this.baseUrl}/invoice/${companyId}/pending-amount-company`,
@@ -61,7 +47,7 @@ export class CollectionService {
   }
 
   getDisputeCode(): Observable<DisputeCodeResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<DisputeCodeResponse>(`${this.baseUrl}/api/disputes/codes`, {
       headers,
@@ -69,7 +55,7 @@ export class CollectionService {
   }
 
   getDisputes(companyId: number): Observable<DisputeResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<DisputeResponse>(`${this.baseUrl}/api/disputes/company/${companyId}`, {
       headers,
@@ -77,12 +63,12 @@ export class CollectionService {
   }
 
   createDispute(data: CreateDisputeRequest): Observable<PromiseToPayResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/api/disputes`, data, { headers });
   }
 
   getDisputeById(disputeId: number): Observable<DisputeDetailResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<DisputeDetailResponse>(`${this.baseUrl}/api/disputes/${disputeId}`, {
       headers,
@@ -93,7 +79,7 @@ export class CollectionService {
     data: { status: string },
     disputeId: number
   ): Observable<ChangeDisputeStatusResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.patch<ChangeDisputeStatusResponse>(
       `${this.baseUrl}/api/disputes/${disputeId}/status`,
       data,
@@ -102,14 +88,14 @@ export class CollectionService {
   }
 
   createPromiseToPay(data: CreatePromiseToPayRequest): Observable<PromiseToPayResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<PromiseToPayResponse>(`${this.baseUrl}/collections/promise`, data, {
       headers,
     });
   }
 
   getPromiseToPay(companyId: number): Observable<PromiseToPayResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<PromiseToPayResponse>(
       `${this.baseUrl}/collections/promise/company/${companyId}`,
       { headers }
@@ -117,7 +103,7 @@ export class CollectionService {
   }
 
   getOverdueBalanceList(companyId: number): Observable<PendingCustomerResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<PendingCustomerResponse>(
       `${this.baseUrl}/invoice/company/${companyId}/with-pending-amounts`,
       { headers }
@@ -125,7 +111,7 @@ export class CollectionService {
   }
 
   getCustomerPromise(customerId: number): Observable<PromiseToPayResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<PromiseToPayResponse>(
       `${this.baseUrl}/collections/promise/customer/${customerId}`,
       { headers }
@@ -133,7 +119,7 @@ export class CollectionService {
   }
 
   getOverdueInvoices(companyId: number): Observable<OverdueInvoicesResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<OverdueInvoicesResponse>(
       `${this.baseUrl}/invoice/company/${companyId}/overdue-invoices`,
       { headers }
@@ -141,7 +127,7 @@ export class CollectionService {
   }
 
   sendReminders(invoiceId: number, companyId: number): Observable<SendReminderResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.post<SendReminderResponse>(
       `${this.baseUrl}/api/reminders/invoice/${companyId}/${invoiceId}`,
       {},

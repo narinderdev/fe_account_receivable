@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { DashboardSummaryResponse, DashboardGraphResponse, DashboardInvoiceResponse } from '../models/dashboard.model';
+import { getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
   providedIn: 'root',
@@ -11,16 +12,8 @@ export class DashboardService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true',
-    });
-  }
-
   getDashboardCardData(companyId: number): Observable<DashboardSummaryResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<DashboardSummaryResponse>(
       `${this.baseUrl}/dashboard/summary/company/${companyId}`,
@@ -29,7 +22,7 @@ export class DashboardService {
   }
 
   getDashboardGraphData(companyId: number): Observable<DashboardGraphResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<DashboardGraphResponse>(
       `${this.baseUrl}/ar/company/${companyId}/balance-series`,
@@ -38,7 +31,7 @@ export class DashboardService {
   }
 
   getDashboardInvoiceData(companyId: number, year: number): Observable<DashboardInvoiceResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<DashboardInvoiceResponse>(
       `${this.baseUrl}/dashboard/invoices/monthly/company/${companyId}?year=${year}`, 

@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -10,6 +10,7 @@ import {
   CreateBankAccountResponse,
   UpdateBankGlMappingPayload,
 } from '../models/bank-account.model';
+import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
   providedIn: 'root',
@@ -18,23 +19,8 @@ export class BankAccountService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-  }
-
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true',
-    });
-  }
-
   getBankAccounts(companyId: number): Observable<BankAccountListResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<BankAccountListResponse>(
       `${this.baseUrl}/api/companies/${companyId}/bank-accounts`,
       { headers }
@@ -45,7 +31,7 @@ export class BankAccountService {
     companyId: number,
     payload: CreateBankAccountPayload
   ): Observable<CreateBankAccountResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<CreateBankAccountResponse>(
       `${this.baseUrl}/api/companies/${companyId}/banking`,
       payload,
@@ -57,7 +43,7 @@ export class BankAccountService {
     companyId: number,
     payload: BankGlMappingRequest
   ): Observable<BankGlMappingResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<BankGlMappingResponse>(
       `${this.baseUrl}/api/bank-gl-mappings/company/${companyId}`,
       payload,
@@ -66,7 +52,7 @@ export class BankAccountService {
   }
 
   getBankAccountGlMapping(bankAccountId: number): Observable<BankGlMappingResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<BankGlMappingResponse>(
       `${this.baseUrl}/api/companies/${bankAccountId}/gl-mapping`,
       { headers }
@@ -78,7 +64,7 @@ export class BankAccountService {
     mappingId: number,
     payload: UpdateBankGlMappingPayload
   ): Observable<BankGlMappingResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.put<BankGlMappingResponse>(
       `${this.baseUrl}/api/bank-gl-mappings/company/${companyId}/${mappingId}`,
       payload,

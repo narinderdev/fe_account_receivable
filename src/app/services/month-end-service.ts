@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { MonthEndCompanyResponse, MonthEndCustomerResponse } from '../models/month-end.model';
+import { getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
   providedIn: 'root',
@@ -11,16 +12,8 @@ export class MonthEndService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true'
-    });
-  }
-
   getCompanyMonthEnd(companyId: number, month: string): Observable<MonthEndCompanyResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     const params = new HttpParams()
       .set('companyId', String(companyId))
       .set('month', month);
@@ -32,7 +25,7 @@ export class MonthEndService {
   }
 
   getCustomerMonthEnd(customerId: number, month: string): Observable<MonthEndCustomerResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     const params = new HttpParams()
       .set('customerId', String(customerId))
       .set('month', month);
