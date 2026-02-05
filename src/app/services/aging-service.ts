@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AgingResponse, AgingFilters } from '../models/aging.model';
+import { getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
   providedIn: 'root',
@@ -11,16 +12,8 @@ export class AgingService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true'
-    });
-  }
-
   getAging(companyId: number, filters?: AgingFilters): Observable<AgingResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     let params = new HttpParams();
 
     if (filters) {

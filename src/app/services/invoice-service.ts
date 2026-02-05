@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { HttpHeaders } from '@angular/common/http';
 import {
   CreateInvoiceRequest,
   CustomerInvoiceListResponse,
@@ -11,6 +10,7 @@ import {
   SendInvoiceResponse,
 } from '../models/invoice.model';
 import { environment } from '../../environments/environment';
+import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
   providedIn: 'root',
@@ -18,21 +18,6 @@ import { environment } from '../../environments/environment';
 export class InvoiceService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
-
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-  }
-
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true',
-    });
-  }
 
   getInvoices(
     companyId: number,
@@ -44,7 +29,7 @@ export class InvoiceService {
       size?: number;
     },
   ): Observable<InvoicePage> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     let queryParams: string[] = [];
 
@@ -72,28 +57,28 @@ export class InvoiceService {
   }
 
   getDraftedInvoice(companyId: number): Observable<any> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<any>(`${this.baseUrl}/invoice/company/${companyId}/drafts`, {
       headers,
     });
   }
 
   approveInvoice(invoiceId: number): Observable<any> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<any>(`${this.baseUrl}/invoice/approve/${invoiceId}`, null, {
       headers,
     });
   }
 
   createInvoice(customerId: number, data: CreateInvoiceRequest): Observable<InvoiceDetailResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<InvoiceDetailResponse>(`${this.baseUrl}/invoice/${customerId}`, data, {
       headers,
     });
   }
 
   sendInvoice(invoiceId: number, companyId: number): Observable<SendInvoiceResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<SendInvoiceResponse>(
       `${this.baseUrl}/invoice/send/${companyId}/${invoiceId}`,
       null,
@@ -104,7 +89,7 @@ export class InvoiceService {
   }
 
   getUnpaidInvoices(customerId: number): Observable<InvoiceListResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     return this.http.get<InvoiceListResponse>(`${this.baseUrl}/invoice/unpaid/${customerId}`, {
       headers,
@@ -112,7 +97,7 @@ export class InvoiceService {
   }
 
   getCustomerInvoicesById(customerId: number): Observable<CustomerInvoiceListResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<CustomerInvoiceListResponse>(
       `${this.baseUrl}/invoice/customer/${customerId}`,
       {
@@ -132,7 +117,7 @@ export class InvoiceService {
       size?: number;
     },
   ): Observable<InvoicePage> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
 
     let queryParams: string[] = [];
 
@@ -163,14 +148,14 @@ export class InvoiceService {
   }
 
   getInvoiceTemplate(): Observable<any> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<any>(`${this.baseUrl}/invoice/import/template-metadata`, {
       headers,
     });
   }
 
   uploadInvoiceCsv(companyId: number, formData: FormData): Observable<any> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<any>(`${this.baseUrl}/invoice/import/${companyId}`, formData, {
       headers,
     });

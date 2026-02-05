@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -8,6 +8,7 @@ import {
   CreditMemoBalanceResponse,
   CreditMemoPageResponse,
 } from '../models/credit-memo.model';
+import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
   providedIn: 'root',
@@ -16,26 +17,11 @@ export class CreditMemoService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-  }
-
-  private getAuthHeadersWithNgrok(): HttpHeaders {
-    const token = localStorage.getItem('logintoken');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      // 'ngrok-skip-browser-warning': 'true',
-    });
-  }
-
   createMemo(
     data: CreateCreditMemoPayload,
     customerId: number
   ): Observable<CreateCreditMemoResponse> {
-    const headers = this.getAuthHeaders();
+    const headers = getAuthHeaders();
     return this.http.post<CreateCreditMemoResponse>(
       `${this.baseUrl}/credit-memos/customer/${customerId}`,
       data,
@@ -51,7 +37,7 @@ export class CreditMemoService {
     page = 0,
     size = 10
   ): Observable<CreditMemoPageResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     const statusQuery = status ? `&status=${status}` : '';
     return this.http.get<CreditMemoPageResponse>(
       `${this.baseUrl}/credit-memos/company/${companyId}?page=${page}&size=${size}${statusQuery}`,
@@ -62,7 +48,7 @@ export class CreditMemoService {
   }
 
   getCustomerCreditBalance(customerId: number): Observable<CreditMemoBalanceResponse> {
-    const headers = this.getAuthHeadersWithNgrok();
+    const headers = getAuthHeadersWithNgrok();
     return this.http.get<CreditMemoBalanceResponse>(
       `${this.baseUrl}/credit-memos/customer/${customerId}`,
       {
@@ -72,7 +58,7 @@ export class CreditMemoService {
   }
 
   approveCreditMemo(creditMemoId: number): Observable<any> {
-      const headers = this.getAuthHeaders();
+      const headers = getAuthHeaders();
       return this.http.post<any>(
         `${this.baseUrl}/credit-memos/${creditMemoId}/approve`,
         {},
