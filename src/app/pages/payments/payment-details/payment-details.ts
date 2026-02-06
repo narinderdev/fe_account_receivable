@@ -8,6 +8,7 @@ import { BankTransaction, Payment, PaymentApplication } from '../../../models/pa
 interface StoredPaymentEntry {
   id: number;
   type: 'MANUAL' | 'BANK';
+  tab?: 'DRAFT' | 'APPROVED';
   customerName?: string;
   status?: string;
   amount?: number;
@@ -16,6 +17,7 @@ interface StoredPaymentEntry {
   date?: string;
   manualPayment?: Payment;
   bankTransaction?: BankTransaction;
+  paymentRecord?: Payment;
 }
 
 @Component({
@@ -36,6 +38,9 @@ export class PaymentDetails implements OnInit {
   invoices: PaymentApplication[] = [];
   notes = 'No Notes Yet';
   isManual = false;
+  originTab: 'DRAFT' | 'APPROVED' = 'DRAFT';
+  showInvoices = false;
+  private paymentRecord: Payment | null = null;
 
   constructor(private route: ActivatedRoute) {}
 
@@ -51,6 +56,8 @@ export class PaymentDetails implements OnInit {
     const payment = paymentsData.find((p) => p.id === this.paymentId && p.type === paymentType);
 
     if (payment) {
+      this.originTab = payment.tab === 'APPROVED' ? 'APPROVED' : 'DRAFT';
+      this.paymentRecord = payment.paymentRecord || payment.manualPayment || null;
       if (payment.type === 'MANUAL' && payment.manualPayment) {
         this.populateManualPayment(payment.manualPayment);
       } else if (payment.bankTransaction) {
@@ -58,6 +65,8 @@ export class PaymentDetails implements OnInit {
       } else {
         this.populateFallback(payment);
       }
+      this.syncInvoicesFromRecord();
+      this.updateInvoiceVisibility();
     }
   }
 
@@ -132,6 +141,16 @@ export class PaymentDetails implements OnInit {
 
     const trimmedNotes = entry.description?.trim();
     this.notes = trimmedNotes || 'No Notes Yet';
+  }
+
+  private syncInvoicesFromRecord() {
+    if (this.paymentRecord?.applications) {
+      this.invoices = this.paymentRecord.applications;
+    }
+  }
+
+  private updateInvoiceVisibility() {
+    this.showInvoices = this.originTab === 'APPROVED';
   }
 
   private extractManualCustomerName(payment: Payment): string {

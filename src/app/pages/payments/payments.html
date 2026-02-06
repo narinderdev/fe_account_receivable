@@ -402,35 +402,6 @@
         </div>
       </div>
 
-      <div class="amount-breakdown">
-        <div>
-          <span>Total Available</span>
-          <strong>{{ approvePaymentAmount | currency }}</strong>
-        </div>
-        <div>
-          <span>Selected</span>
-          <strong>{{ totalAppliedAmount | currency }}</strong>
-        </div>
-        <div>
-          <span>Remaining</span>
-          <strong>{{ remainingApproveAmount | currency }}</strong>
-        </div>
-      </div>
-
-      <!-- <div
-        class="selected-customer"
-        *ngIf="approveContext === 'BANK'"
-      >
-        <label>Selected Customer</label>
-        <p *ngIf="selectedCustomer">
-          {{ selectedCustomer.customerName }}
-          <small>{{ selectedCustomer.email || 'No email' }}</small>
-        </p>
-        <p *ngIf="!selectedCustomer">
-          Select a customer below to continue.
-        </p>
-      </div> -->
-
       <div class="notes-block" *ngIf="approveContext === 'MANUAL' && selectedManualPayment?.notes">
         <label>Notes</label>
         <p>{{ selectedManualPayment?.notes }}</p>
