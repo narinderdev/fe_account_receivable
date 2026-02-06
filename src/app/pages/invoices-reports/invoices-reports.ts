@@ -182,9 +182,10 @@ export class InvoicesReports implements OnInit, OnDestroy {
       return;
     }
 
-    this.invoices = this.allInvoices.filter((invoice) =>
-      invoice.customer.customerName.toLowerCase().includes(term)
-    );
+    this.invoices = this.allInvoices.filter((invoice) => {
+      const name = invoice.customer?.customerName?.toLowerCase() || '';
+      return name.includes(term);
+    });
   }
 
   getInitialColor(index: number): { background: string; color: string } {

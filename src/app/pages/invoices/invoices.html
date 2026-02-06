@@ -91,10 +91,10 @@
               <td>
                 <div class="customer-info">
                   <div class="customer-initial" [ngStyle]="getInitialColor(i)">
-                    {{ getCustomerInitial(inv.customer.customerName) }}
+                    {{ getCustomerInitial(inv.customer?.customerName) }}
                   </div>
                   <span class="customer-name">
-                    {{ formatCustomerName(inv.customer.customerName) }}
+                    {{ formatCustomerName(inv.customer?.customerName) }}
                   </span>
                 </div>
               </td>
@@ -339,7 +339,7 @@
           </div>
           <div class="detail-row">
             <span class="detail-label">Customer:</span>
-            <span class="detail-value">{{ invoiceToApprove.customer.customerName }}</span>
+            <span class="detail-value">{{ invoiceToApprove.customer?.customerName || '--' }}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Invoice Date:</span>

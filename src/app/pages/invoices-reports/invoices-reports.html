@@ -165,9 +165,9 @@
                   color: getInitialColor(i).color
                 }"
               >
-                {{ inv.customer.customerName[0] }}
+                {{ inv.customer?.customerName?.charAt(0) || '?' }}
               </div>
-              <span class="customer-name">{{ inv.customer.customerName }}</span>
+              <span class="customer-name">{{ inv.customer?.customerName || '--' }}</span>
             </div>
           </td>
           <td>{{ formatDate(inv.invoiceDate) }}</td>

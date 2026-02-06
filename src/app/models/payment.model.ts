@@ -33,17 +33,31 @@ export interface PaymentApplication {
 
 // Main Payment interface
 export interface Payment {
-  id: number;
-  bankDeposit: number;
-  serviceFee: number;
-  paymentAmount: number;
-  paymentMethod: string;
-  paymentDate: string;
-  notes: string;
+  id?: number;
+  paymentId?: number;
+  customerId?: number;
+  customerName?: string;
+  createdAt?: string;
+  bankDeposit?: number;
+  serviceFee?: number;
+  paymentAmount?: number;
+  paymentMethod?: string;
+  paymentDate?: string;
+  notes?: string;
   source?: string;
-  status: string;
-  customer: CustomerEntity;
-  applications: PaymentApplication[];
+  status?: string;
+  customer?: CustomerEntity;
+  applications?: PaymentApplication[];
+  bankTransaction?: BankTransaction | null;
+}
+
+export interface ApproveApplyRequest {
+  invoiceIds: number[];
+}
+
+export interface BankApproveApplyRequest {
+  customerId: number;
+  invoiceIds: number[];
 }
 
 // Complete API response shape
@@ -60,7 +74,7 @@ export interface ApplyPaymentRequest {
   paymentAmount: number;
   paymentMethod: string;
   notes: string;
-  invoiceIds: number[];
+  
 }
 
 export interface ApplyPaymentResponse {

@@ -93,7 +93,7 @@
         </tr>
         <tr
           *ngFor="let payment of payments; let i = index"
-          (click)="openPaymentDetails(payment.id)"
+          (click)="openPaymentDetails(payment)"
         >
           <td>
             <div class="customer-info">

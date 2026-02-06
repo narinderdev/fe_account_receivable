@@ -40,13 +40,15 @@ export class PaymentDetails implements OnInit {
   constructor(private route: ActivatedRoute) {}
 
   ngOnInit() {
+    const paymentType = this.route.snapshot.paramMap.get('paymentType') as 'MANUAL' | 'BANK';
     this.paymentId = Number(this.route.snapshot.paramMap.get('paymentId'));
 
     const paymentsData: StoredPaymentEntry[] = JSON.parse(
       localStorage.getItem('paymentsData') || '[]',
     );
 
-    const payment = paymentsData.find((p) => p.id === this.paymentId);
+    // Find by BOTH id AND type
+    const payment = paymentsData.find((p) => p.id === this.paymentId && p.type === paymentType);
 
     if (payment) {
       if (payment.type === 'MANUAL' && payment.manualPayment) {
@@ -133,6 +135,11 @@ export class PaymentDetails implements OnInit {
   }
 
   private extractManualCustomerName(payment: Payment): string {
+    const directName = payment.customerName?.trim();
+    if (directName) {
+      return directName;
+    }
+
     return (
       payment.applications?.[0]?.invoice?.customer?.customerName ||
       payment.customer?.customerName ||

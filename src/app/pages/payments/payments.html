@@ -68,89 +68,197 @@
 
   <!-- TABLE CONTENT -->
   <div class="payments-card" *ngIf="!loading">
-    <table class="payments-table">
-      <thead>
-        <tr>
-          <th>Customer</th>
-          <th>Status</th>
-          <th>Amount</th>
-          <th>Description</th>
-          <th>Source</th>
-          <th>Payment Date</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <!-- EMPTY STATE -->
-        <tr *ngIf="payments.length === 0" class="no-data-row">
-          <td colspan="6">No payments found.</td>
-        </tr>
-
-        <!-- PAYMENT ROWS -->
-        <tr
-          *ngFor="let payment of payments; let i = index"
-          (click)="openPaymentDetails(payment.id)"
-        >
-          <td>
-            <div class="customer-info">
-              <div
-                class="customer-initial"
-                [ngStyle]="{
-                  backgroundColor: getInitialColor(i).background,
-                  color: getInitialColor(i).color,
-                }"
-              >
-                {{ getCustomerInitial(payment) }}
-              </div>
-              <span class="customer-name">{{ payment.customerName || '--' }}</span>
-            </div>
-          </td>
-
-          <td>
-            <span class="status-badge" [ngClass]="getStatusClass(payment)">
-              {{ getStatusLabel(payment) }}
-            </span>
-          </td>
-          <td>{{ payment.amount || 0 | currency }}</td>
-          <td>{{ payment.description || '--' }}</td>
-          <td>{{ formatSource(payment.source) }}</td>
-          <td>{{ payment.date | date: 'mediumDate' }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Pagination -->
-    <div class="pagination-wrapper" *ngIf="totalPages > 1">
-      <div class="pagination-info">
-        Showing {{ totalItems === 0 ? 0 : currentPage * pageSize + 1 }} to
-        {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
-      </div>
-
-      <div class="pagination-controls">
-        <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
-          <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
-        </button>
-
-        <button
-          *ngFor="let page of getPageNumbers()"
-          class="page-number-btn"
-          [class.active]="page === currentPage + 1"
-          [class.ellipsis]="page === -1"
-          (click)="page !== -1 && goToPage(page - 1)"
-          [disabled]="page === -1"
-        >
-          {{ page === -1 ? '...' : page }}
-        </button>
-
-        <button
-          class="page-nav-btn"
-          (click)="nextPage()"
-          [disabled]="currentPage === totalPages - 1"
-        >
-          <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
-        </button>
-      </div>
+    <div class="tab-nav">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'DRAFT'"
+        (click)="setTab('DRAFT')"
+      >
+        Drafts
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'APPROVED'"
+        (click)="setTab('APPROVED')"
+      >
+        Approved
+      </button>
     </div>
+
+    <ng-container *ngIf="activeTab === 'DRAFT'; else approvedTab">
+      <table class="payments-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Status</th>
+            <th>Amount</th>
+            <th>Description</th>
+            <th>Source</th>
+            <th>Payment Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- EMPTY STATE -->
+          <tr *ngIf="payments.length === 0" class="no-data-row">
+            <td colspan="7">No payments found.</td>
+          </tr>
+
+          <!-- PAYMENT ROWS -->
+          <tr *ngFor="let payment of payments; let i = index">
+            <td (click)="openPaymentDetails(payment.id, payment.type)">
+              <div class="customer-info">
+                <div
+                  class="customer-initial"
+                  [ngStyle]="{
+                    backgroundColor: getInitialColor(i).background,
+                    color: getInitialColor(i).color,
+                  }"
+                >
+                  {{ getCustomerInitial(payment) }}
+                </div>
+                <span class="customer-name">{{ payment.customerName || '--' }}</span>
+              </div>
+            </td>
+
+            <td (click)="openPaymentDetails(payment.id, payment.type)">
+              <span class="status-badge" [ngClass]="getStatusClass(payment)">
+                {{ getStatusLabel(payment) }}
+              </span>
+            </td>
+            <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.amount || 0 | currency }}</td>
+            <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.description || '--' }}</td>
+            <td (click)="openPaymentDetails(payment.id, payment.type)">{{ formatSource(payment.source) }}</td>
+            <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.date | date: 'mediumDate' }}</td>
+            <td>
+              <button 
+                class="btn-approve-apply" 
+                (click)="approveAndApply(payment, $event)"
+                *ngIf="canApplyPayment && payment.status?.toUpperCase() === 'DRAFT'"
+              >
+                Approve & Apply
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-wrapper" *ngIf="totalPages > 1">
+        <div class="pagination-info">
+          Showing {{ totalItems === 0 ? 0 : currentPage * pageSize + 1 }} to
+          {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
+        </div>
+
+        <div class="pagination-controls">
+          <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
+            <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+          </button>
+
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number-btn"
+            [class.active]="page === currentPage + 1"
+            [class.ellipsis]="page === -1"
+            (click)="page !== -1 && goToPage(page - 1)"
+            [disabled]="page === -1"
+          >
+            {{ page === -1 ? '...' : page }}
+          </button>
+
+          <button
+            class="page-nav-btn"
+            (click)="nextPage()"
+            [disabled]="currentPage === totalPages - 1"
+          >
+            <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #approvedTab>
+      <table class="payments-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Status</th>
+            <th>Amount</th>
+            <th>Description</th>
+            <th>Source</th>
+            <th>Payment Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="approvedPayments.length === 0" class="no-data-row">
+            <td colspan="7">No approved payments found.</td>
+          </tr>
+          <tr *ngFor="let payment of approvedPayments; let i = index">
+            <td (click)="openPaymentDetails(payment.id, payment.type)">
+              <div class="customer-info">
+                <div
+                  class="customer-initial"
+                  [ngStyle]="{
+                    backgroundColor: getInitialColor(i).background,
+                    color: getInitialColor(i).color,
+                  }"
+                >
+                  {{ getCustomerInitial(payment) }}
+                </div>
+                <span class="customer-name">{{ payment.customerName || '--' }}</span>
+              </div>
+            </td>
+            <td (click)="openPaymentDetails(payment.id, payment.type)">
+              <span class="status-badge" [ngClass]="getStatusClass(payment)">
+                {{ getStatusLabel(payment) }}
+              </span>
+            </td>
+            <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.amount || 0 | currency }}</td>
+            <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.description || '--' }}</td>
+            <td (click)="openPaymentDetails(payment.id, payment.type)">{{ formatSource(payment.source) }}</td>
+            <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.date | date: 'mediumDate' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination-wrapper" *ngIf="approvedTotalPages > 1">
+        <div class="pagination-info">
+          Showing {{ approvedTotalItems === 0 ? 0 : approvedCurrentPage * pageSize + 1 }} to
+          {{
+            approvedTotalItems === 0
+              ? 0
+              : Math.min((approvedCurrentPage + 1) * pageSize, approvedTotalItems)
+          }}
+          of {{ approvedTotalItems }} results
+        </div>
+
+        <div class="pagination-controls">
+          <button class="page-nav-btn" (click)="prevPage('APPROVED')" [disabled]="approvedCurrentPage === 0">
+            <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+          </button>
+
+          <button
+            *ngFor="let page of getPageNumbers('APPROVED')"
+            class="page-number-btn"
+            [class.active]="page === approvedCurrentPage + 1"
+            [class.ellipsis]="page === -1"
+            (click)="page !== -1 && goToPage(page - 1, 'APPROVED')"
+            [disabled]="page === -1"
+          >
+            {{ page === -1 ? '...' : page }}
+          </button>
+
+          <button
+            class="page-nav-btn"
+            (click)="nextPage('APPROVED')"
+            [disabled]="approvedCurrentPage === approvedTotalPages - 1"
+          >
+            <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+          </button>
+        </div>
+      </div>
+    </ng-template>
   </div>
 </div>
 
@@ -159,7 +267,12 @@
   <div class="approve-modal import-modal">
     <div class="modal-header">
       <h2>Upload BAI File</h2>
-      <button class="btn-close" (click)="closeBaiModal()" [disabled]="uploadingBai" aria-label="Close">
+      <button
+        class="btn-close"
+        (click)="closeBaiModal()"
+        [disabled]="uploadingBai"
+        aria-label="Close"
+      >
         <span>&times;</span>
       </button>
     </div>
@@ -194,9 +307,7 @@
       />
 
       <button class="upload-btn" (click)="baiFileInput.click()" [disabled]="uploadingBai">
-        <ng-container *ngIf="!uploadingBai">
-          Upload BAI (.txt)
-        </ng-container>
+        <ng-container *ngIf="!uploadingBai"> Upload BAI (.txt) </ng-container>
         <ng-container *ngIf="uploadingBai">
           <app-spinner></app-spinner>
         </ng-container>
@@ -206,6 +317,292 @@
     <div class="modal-footer">
       <button class="btn-secondary" (click)="closeBaiModal()" [disabled]="uploadingBai">
         Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Approve & Apply Modal -->
+<div class="modal-overlay" *ngIf="approveModalOpen">
+  <div class="approve-modal apply-modal">
+    <div class="modal-header">
+      <h2>
+        {{ approveContext === 'BANK' ? 'Match & Apply Payment' : 'Approve & Apply Payment' }}
+      </h2>
+      <button
+        class="btn-close"
+        (click)="closeApproveModal()"
+        [disabled]="approveModalSubmitting"
+        aria-label="Close"
+      >
+        <span>&times;</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="approve-summary" *ngIf="approveContext === 'MANUAL' && selectedManualPayment as manual">
+        <div class="summary-grid">
+          <div>
+            <label>Customer</label>
+            <p>{{ manual.customerName || '--' }}</p>
+          </div>
+          <div>
+            <label>Payment Date</label>
+            <p>{{ manual.paymentDate | date: 'mediumDate' }}</p>
+          </div>
+          <div>
+            <label>Method</label>
+            <p>{{ manual.paymentMethod || '--' }}</p>
+          </div>
+        </div>
+        <div class="summary-grid">
+          <div>
+            <label>Payment Amount</label>
+            <p>{{ manual.paymentAmount ?? 0 | currency }}</p>
+          </div>
+          <div>
+            <label>Bank Deposit</label>
+            <p>{{ manual.bankDeposit ?? 0 | currency }}</p>
+          </div>
+          <div>
+            <label>Service Fee</label>
+            <p>{{ manual.serviceFee ?? 0 | currency }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="approve-summary" *ngIf="approveContext === 'BANK' && selectedBankTransaction as bank">
+        <div class="summary-grid">
+          <div>
+            <label>Customer Name</label>
+            <p>{{ bank.customerName || '--' }}</p>
+          </div>
+          <div>
+            <label>Transaction Date</label>
+            <p>{{ bank.transactionDate | date: 'mediumDate' }}</p>
+          </div>
+          <div>
+            <label>Reference</label>
+            <p>{{ bank.reference || '--' }}</p>
+          </div>
+        </div>
+        <div class="summary-grid">
+          <div>
+            <label>Amount</label>
+            <p>{{ bank.amount | currency }}</p>
+          </div>
+          <div>
+            <label>Transaction Type</label>
+            <p>{{ bank.transactionType || '--' }}</p>
+          </div>
+          <div>
+            <label>Status</label>
+            <p>{{ bank.status || '--' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="amount-breakdown">
+        <div>
+          <span>Total Available</span>
+          <strong>{{ approvePaymentAmount | currency }}</strong>
+        </div>
+        <div>
+          <span>Selected</span>
+          <strong>{{ totalAppliedAmount | currency }}</strong>
+        </div>
+        <div>
+          <span>Remaining</span>
+          <strong>{{ remainingApproveAmount | currency }}</strong>
+        </div>
+      </div>
+
+      <!-- <div
+        class="selected-customer"
+        *ngIf="approveContext === 'BANK'"
+      >
+        <label>Selected Customer</label>
+        <p *ngIf="selectedCustomer">
+          {{ selectedCustomer.customerName }}
+          <small>{{ selectedCustomer.email || 'No email' }}</small>
+        </p>
+        <p *ngIf="!selectedCustomer">
+          Select a customer below to continue.
+        </p>
+      </div> -->
+
+      <div class="notes-block" *ngIf="approveContext === 'MANUAL' && selectedManualPayment?.notes">
+        <label>Notes</label>
+        <p>{{ selectedManualPayment?.notes }}</p>
+      </div>
+
+      <div
+        class="notes-block"
+        *ngIf="
+          approveContext === 'BANK' &&
+          (selectedBankTransaction?.description || selectedBankTransaction?.systemNote)
+        "
+      >
+        <label>Bank Notes</label>
+        <p>{{ selectedBankTransaction?.systemNote || selectedBankTransaction?.description }}</p>
+      </div>
+
+      <div class="customer-selection" *ngIf="approveContext === 'BANK'">
+        <div class="invoice-list-header">
+          <h3>Matching Customers</h3>
+          <span *ngIf="filteredCustomerOptions.length && !customerOptionsLoading">
+            {{ filteredCustomerOptions.length }} found
+          </span>
+        </div>
+
+        <div *ngIf="customerMatchMessage && !customerOptionsLoading" class="match-hint">
+          {{ customerMatchMessage }}
+        </div>
+
+        <div *ngIf="customerOptionsError" class="modal-alert error">
+          {{ customerOptionsError }}
+        </div>
+
+        <div *ngIf="customerOptionsLoading" class="invoice-loading">
+          <app-spinner></app-spinner>
+        </div>
+
+        <div *ngIf="!customerOptionsLoading && !customerOptionsError">
+          <div *ngIf="filteredCustomerOptions.length; else noMatchingCustomers">
+            <label
+              class="customer-option"
+              *ngFor="let customer of filteredCustomerOptions"
+              [class.selected]="selectedCustomer?.id === customer.id"
+            >
+              <input
+                type="radio"
+                name="bankCustomer"
+                [checked]="selectedCustomer?.id === customer.id"
+                (change)="selectBankCustomer(customer)"
+                [disabled]="approveModalSubmitting"
+              />
+              <div class="customer-option-details">
+                <span class="customer-option-name">{{ customer.customerName }}</span>
+                <span class="customer-option-email">{{ customer.email || 'No email on file' }}</span>
+              </div>
+            </label>
+          </div>
+          <ng-template #noMatchingCustomers>
+            <div class="no-data-row">
+              No customers available for matching. Add a customer before applying this payment.
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <div class="invoice-list">
+        <div class="invoice-list-header">
+          <h3>Customer Invoices</h3>
+          <span *ngIf="approveInvoices.length && !approveModalLoading">
+            {{ approveInvoices.length }} invoice{{ approveInvoices.length === 1 ? '' : 's' }}
+          </span>
+        </div>
+
+        <div *ngIf="approveModalError" class="modal-alert error">
+          {{ approveModalError }}
+        </div>
+
+        <div *ngIf="approveModalLoading" class="invoice-loading">
+          <app-spinner></app-spinner>
+        </div>
+
+        <div
+          *ngIf="
+            !approveModalLoading &&
+            approveContext === 'BANK' &&
+            !selectedCustomer &&
+            !customerOptionsLoading
+          "
+          class="no-data-row"
+        >
+          Select a customer above to load invoices.
+        </div>
+
+        <div
+          *ngIf="
+            !approveModalLoading &&
+            approveInvoices.length === 0 &&
+            !approveModalError &&
+            (approveContext === 'MANUAL' || (approveContext === 'BANK' && selectedCustomer))
+          "
+          class="no-data-row"
+        >
+          No open invoices available for this customer.
+        </div>
+
+        <div
+          class="invoice-table-wrapper"
+          *ngIf="
+            !approveModalLoading &&
+            approveInvoices.length > 0 &&
+            (approveContext === 'MANUAL' || (approveContext === 'BANK' && selectedCustomer))
+          "
+        >
+          <table class="invoice-select-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Invoice</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Balance Due</th>
+                <th>Applied</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let invoice of approveInvoices; trackBy: trackInvoiceById">
+                <td>
+                  <input
+                    type="checkbox"
+                    [checked]="isInvoiceSelected(invoice.id)"
+                    (change)="toggleInvoiceSelection(invoice)"
+                    [disabled]="
+                      approveModalSubmitting ||
+                      (!isInvoiceSelected(invoice.id) && remainingApproveAmount <= 0)
+                    "
+                  />
+                </td>
+                <td>
+                  <div class="invoice-info">
+                    <span class="invoice-number">#{{ invoice.invoiceNumber }}</span>
+                    <small>{{ invoice.customer?.customerName || '--' }}</small>
+                  </div>
+                </td>
+                <td>{{ invoice.dueDate | date: 'mediumDate' }}</td>
+                <td>
+                  <span class="status-badge">{{ invoice.status || '--' }}</span>
+                </td>
+                <td>{{ (invoice.balanceDue ?? invoice.totalAmount ?? 0) | currency }}</td>
+                <td>{{ getInvoiceAppliedAmount(invoice.id) | currency }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeApproveModal()" [disabled]="approveModalSubmitting">
+        Cancel
+      </button>
+      <button
+        class="btn-primary"
+        (click)="confirmApproveAndApply()"
+        [disabled]="
+          approveModalSubmitting ||
+          selectedInvoiceApplications.length === 0 ||
+          (approveContext === 'BANK' && !selectedCustomer)
+        "
+      >
+        <ng-container *ngIf="!approveModalSubmitting">Approve & Apply</ng-container>
+        <ng-container *ngIf="approveModalSubmitting">
+          <app-spinner></app-spinner>
+        </ng-container>
       </button>
     </div>
   </div>
