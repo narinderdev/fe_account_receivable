@@ -340,6 +340,13 @@
     </div>
 
     <div class="modal-body">
+      <div
+        class="modal-loading-overlay"
+        *ngIf="approveContext === 'BANK' && customerOptionsLoading"
+      >
+        <app-loader [visible]="true"></app-loader>
+      </div>
+
       <div class="approve-summary" *ngIf="approveContext === 'MANUAL' && selectedManualPayment as manual">
         <div class="summary-grid">
           <div>
@@ -432,10 +439,6 @@
 
         <div *ngIf="customerOptionsError" class="modal-alert error">
           {{ customerOptionsError }}
-        </div>
-
-        <div *ngIf="customerOptionsLoading" class="invoice-loading">
-          <app-spinner></app-spinner>
         </div>
 
         <div *ngIf="!customerOptionsLoading && !customerOptionsError">
