@@ -25,7 +25,7 @@ const adminRouteCases = [
   { path: '/admin/invoices/detail/9001', title: 'Invoice Detail' },
   { path: '/admin/payments', title: 'Payments' },
   { path: '/admin/payments/receive-payment', title: 'Receive Payment' },
-  { path: '/admin/payments/details/4001', title: 'Payment Details' },
+  { path: '/admin/payments/details/MANUAL/4001', title: 'Payment Details' },
   { path: '/admin/users', title: 'Users' },
   { path: '/admin/roles', title: 'Roles' },
   { path: '/admin/roles/details/1', title: 'Roles' },

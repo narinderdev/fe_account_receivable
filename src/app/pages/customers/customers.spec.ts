@@ -173,7 +173,10 @@ describe('Customers', () => {
 
       instance.handleFileUpload(event);
 
-      expect(toastr.warning).toHaveBeenCalledWith('Please select a company first!', 'Warning');
+      expect(toastr.warning).toHaveBeenCalledWith(
+        'Please select a AR Company from the navbar before importing.',
+        'Warning',
+      );
     });
   });
 });

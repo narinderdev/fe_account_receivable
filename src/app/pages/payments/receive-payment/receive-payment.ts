@@ -117,7 +117,7 @@ export class ReceivePayment implements OnInit, OnDestroy {
     let isValid = true;
 
     this.showCustomerError = !this.selectedCustomerId;
-    this.showBankDepositError = !this.bankDeposit || this.bankDeposit < 0;
+    this.showBankDepositError = this.bankDeposit == null || this.bankDeposit < 0;
     // Service fee is optional, only validate if provided
     this.showServiceFeeError = this.serviceFee != null && this.serviceFee < 0;
     this.showPaymentMethodError = !this.paymentMethod;

@@ -6,8 +6,11 @@ describe('PaymentDetails', () => {
   afterEach(() => localStorage.removeItem('paymentsData'));
 
   const createComponent = () => {
+    const paramMap = {
+      get: (key: string) => (key === 'paymentType' ? 'MANUAL' : '15'),
+    };
     const route = {
-      snapshot: { paramMap: { get: () => '15' } },
+      snapshot: { paramMap },
     } as unknown as ActivatedRoute;
     return new PaymentDetails(route);
   };

@@ -322,7 +322,7 @@
   </div>
 </div>
 
-<!-- Approve & Apply Modal -->
+<!-- Approve & Apply Modal - Two Step Form -->
 <div class="modal-overlay" *ngIf="approveModalOpen">
   <div class="approve-modal apply-modal">
     <div class="modal-header">
@@ -339,245 +339,391 @@
       </button>
     </div>
 
+    <!-- Stepper -->
+    <div class="stepper">
+      <div class="step" [class.active]="modalStep === 1" [class.completed]="modalStep > 1">
+        <div class="step-number">1</div>
+        <div class="step-label">Select Customer</div>
+      </div>
+      <div class="step-divider"></div>
+      <div class="step" [class.active]="modalStep === 2" [class.completed]="modalStep > 2">
+        <div class="step-number">2</div>
+        <div class="step-label">Select Invoices</div>
+      </div>
+    </div>
+
     <div class="modal-body">
-      <div
-        class="modal-loading-overlay"
-        *ngIf="approveContext === 'BANK' && customerOptionsLoading"
-      >
-        <app-loader [visible]="true"></app-loader>
-      </div>
-
-      <div class="approve-summary" *ngIf="approveContext === 'MANUAL' && selectedManualPayment as manual">
-        <div class="summary-grid">
-          <div>
-            <label>Customer</label>
-            <p>{{ manual.customerName || '--' }}</p>
-          </div>
-          <div>
-            <label>Payment Date</label>
-            <p>{{ manual.paymentDate | date: 'mediumDate' }}</p>
-          </div>
-          <div>
-            <label>Method</label>
-            <p>{{ manual.paymentMethod || '--' }}</p>
-          </div>
-        </div>
-        <div class="summary-grid">
-          <div>
-            <label>Payment Amount</label>
-            <p>{{ manual.paymentAmount ?? 0 | currency }}</p>
-          </div>
-          <div>
-            <label>Bank Deposit</label>
-            <p>{{ manual.bankDeposit ?? 0 | currency }}</p>
-          </div>
-          <div>
-            <label>Service Fee</label>
-            <p>{{ manual.serviceFee ?? 0 | currency }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="approve-summary" *ngIf="approveContext === 'BANK' && selectedBankTransaction as bank">
-        <div class="summary-grid">
-          <div>
-            <label>Customer Name</label>
-            <p>{{ bank.customerName || '--' }}</p>
-          </div>
-          <div>
-            <label>Transaction Date</label>
-            <p>{{ bank.transactionDate | date: 'mediumDate' }}</p>
-          </div>
-          <div>
-            <label>Reference</label>
-            <p>{{ bank.reference || '--' }}</p>
-          </div>
-        </div>
-        <div class="summary-grid">
-          <div>
-            <label>Amount</label>
-            <p>{{ bank.amount | currency }}</p>
-          </div>
-          <div>
-            <label>Transaction Type</label>
-            <p>{{ bank.transactionType || '--' }}</p>
-          </div>
-          <div>
-            <label>Status</label>
-            <p>{{ bank.status || '--' }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="notes-block" *ngIf="approveContext === 'MANUAL' && selectedManualPayment?.notes">
-        <label>Notes</label>
-        <p>{{ selectedManualPayment?.notes }}</p>
-      </div>
-
-      <div
-        class="notes-block"
-        *ngIf="
-          approveContext === 'BANK' &&
-          (selectedBankTransaction?.description || selectedBankTransaction?.systemNote)
-        "
-      >
-        <label>Bank Notes</label>
-        <p>{{ selectedBankTransaction?.systemNote || selectedBankTransaction?.description }}</p>
-      </div>
-
-      <div class="customer-selection" *ngIf="approveContext === 'BANK'">
-        <div class="invoice-list-header">
-          <h3>Matching Customers</h3>
-          <span *ngIf="filteredCustomerOptions.length && !customerOptionsLoading">
-            {{ filteredCustomerOptions.length }} found
-          </span>
+      <!-- STEP 1: Customer Selection -->
+      <ng-container *ngIf="modalStep === 1">
+        <div
+          class="modal-loading-overlay"
+          *ngIf="approveContext === 'BANK' && customerOptionsLoading"
+        >
+          <app-loader [visible]="true"></app-loader>
         </div>
 
-        <div *ngIf="customerMatchMessage && !customerOptionsLoading" class="match-hint">
-          {{ customerMatchMessage }}
-        </div>
-
-        <div *ngIf="customerOptionsError" class="modal-alert error">
-          {{ customerOptionsError }}
-        </div>
-
-        <div *ngIf="!customerOptionsLoading && !customerOptionsError">
-          <div *ngIf="filteredCustomerOptions.length; else noMatchingCustomers">
-            <label
-              class="customer-option"
-              *ngFor="let customer of filteredCustomerOptions"
-              [class.selected]="selectedCustomer?.id === customer.id"
-            >
-              <input
-                type="radio"
-                name="bankCustomer"
-                [checked]="selectedCustomer?.id === customer.id"
-                (change)="selectBankCustomer(customer)"
-                [disabled]="approveModalSubmitting"
-              />
-              <div class="customer-option-details">
-                <span class="customer-option-name">{{ customer.customerName }}</span>
-                <span class="customer-option-email">{{ customer.email || 'No email on file' }}</span>
-              </div>
-            </label>
-          </div>
-          <ng-template #noMatchingCustomers>
-            <div class="no-data-row">
-              No customers available for matching. Add a customer before applying this payment.
+        <!-- Combined Payment Details for MANUAL -->
+        <div class="payment-details-box" *ngIf="approveContext === 'MANUAL' && selectedManualPayment as manual">
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Customer Name</span>
+              <span class="detail-value">{{ manual.customerName || '--' }}</span>
             </div>
-          </ng-template>
-        </div>
-      </div>
-
-      <div class="invoice-list">
-        <div class="invoice-list-header">
-          <h3>Customer Invoices</h3>
-          <span *ngIf="approveInvoices.length && !approveModalLoading">
-            {{ approveInvoices.length }} invoice{{ approveInvoices.length === 1 ? '' : 's' }}
-          </span>
-        </div>
-
-        <div *ngIf="approveModalError" class="modal-alert error">
-          {{ approveModalError }}
-        </div>
-
-        <div *ngIf="approveModalLoading" class="invoice-loading">
-          <app-spinner></app-spinner>
-        </div>
-
-        <div
-          *ngIf="
-            !approveModalLoading &&
-            approveContext === 'BANK' &&
-            !selectedCustomer &&
-            !customerOptionsLoading
-          "
-          class="no-data-row"
-        >
-          Select a customer above to load invoices.
+            <div class="detail-item">
+              <span class="detail-label">Transaction Date</span>
+              <span class="detail-value">{{ manual.paymentDate | date: 'mediumDate' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Reference</span>
+              <span class="detail-value">{{ manual.paymentMethod || '--' }}</span>
+            </div>
+          </div>
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Amount</span>
+              <span class="detail-value">{{ manual.paymentAmount ?? 0 | currency }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Transaction Type</span>
+              <span class="detail-value">Manual Payment</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Status</span>
+              <span class="detail-value">{{ manual.status || 'DRAFT' }}</span>
+            </div>
+          </div>
+          <div class="notes-section" *ngIf="manual.notes">
+            <span class="detail-label">Bank Notes</span>
+            <span class="detail-value">{{ manual.notes }}</span>
+          </div>
         </div>
 
-        <div
-          *ngIf="
-            !approveModalLoading &&
-            approveInvoices.length === 0 &&
-            !approveModalError &&
-            (approveContext === 'MANUAL' || (approveContext === 'BANK' && selectedCustomer))
-          "
-          class="no-data-row"
-        >
-          No open invoices available for this customer.
+        <!-- Combined Payment Details for BANK -->
+        <div class="payment-details-box" *ngIf="approveContext === 'BANK' && selectedBankTransaction as bank">
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Customer Name</span>
+              <span class="detail-value">{{ bank.customerName || '--' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Transaction Date</span>
+              <span class="detail-value">{{ bank.transactionDate | date: 'mediumDate' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Reference</span>
+              <span class="detail-value">{{ bank.reference || '--' }}</span>
+            </div>
+          </div>
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Amount</span>
+              <span class="detail-value">{{ bank.amount | currency }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Transaction Type</span>
+              <span class="detail-value">{{ bank.transactionType || '--' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Status</span>
+              <span class="detail-value">{{ bank.status || '--' }}</span>
+            </div>
+          </div>
+          <div class="notes-section" *ngIf="bank.description || bank.systemNote">
+            <span class="detail-label">Bank Notes</span>
+            <span class="detail-value">{{ bank.systemNote || bank.description }}</span>
+          </div>
         </div>
 
-        <div
-          class="invoice-table-wrapper"
-          *ngIf="
-            !approveModalLoading &&
-            approveInvoices.length > 0 &&
-            (approveContext === 'MANUAL' || (approveContext === 'BANK' && selectedCustomer))
-          "
-        >
-          <table class="invoice-select-table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Invoice</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Balance Due</th>
-                <th>Applied</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let invoice of approveInvoices; trackBy: trackInvoiceById">
-                <td>
-                  <input
-                    type="checkbox"
-                    [checked]="isInvoiceSelected(invoice.id)"
-                    (change)="toggleInvoiceSelection(invoice)"
-                    [disabled]="
-                      approveModalSubmitting ||
-                      (!isInvoiceSelected(invoice.id) && remainingApproveAmount <= 0)
-                    "
-                  />
-                </td>
-                <td>
-                  <div class="invoice-info">
-                    <span class="invoice-number">#{{ invoice.invoiceNumber }}</span>
-                    <small>{{ invoice.customer?.customerName || '--' }}</small>
-                  </div>
-                </td>
-                <td>{{ invoice.dueDate | date: 'mediumDate' }}</td>
-                <td>
-                  <span class="status-badge">{{ invoice.status || '--' }}</span>
-                </td>
-                <td>{{ (invoice.balanceDue ?? invoice.totalAmount ?? 0) | currency }}</td>
-                <td>{{ getInvoiceAppliedAmount(invoice.id) | currency }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Customer Selection Table for BANK -->
+        <div class="customer-selection-step" *ngIf="approveContext === 'BANK'">
+          <div class="section-header">
+            <h3>Select Customer</h3>
+            <span *ngIf="filteredCustomerOptions.length && !customerOptionsLoading">
+              {{ filteredCustomerOptions.length }} customer{{ filteredCustomerOptions.length === 1 ? '' : 's' }}
+            </span>
+          </div>
+
+          <div *ngIf="customerMatchMessage && !customerOptionsLoading" class="match-hint">
+            {{ customerMatchMessage }}
+          </div>
+
+          <div *ngIf="customerOptionsError" class="modal-alert error">
+            {{ customerOptionsError }}
+          </div>
+
+          <!-- Customer Search -->
+          <div class="customer-search" *ngIf="!customerOptionsLoading && !customerOptionsError">
+            <input
+              type="text"
+              class="search-input-modal"
+              [(ngModel)]="customerSearchTerm"
+              (input)="onCustomerSearch()"
+              placeholder="Search customers by name or email..."
+            />
+          </div>
+
+          <div *ngIf="!customerOptionsLoading && !customerOptionsError">
+            <div *ngIf="paginatedCustomers.length; else noMatchingCustomers">
+              <div class="customer-table-wrapper">
+                <table class="customer-select-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 50px;"></th>
+                      <th>Customer Name</th>
+                      <th>Email</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      *ngFor="let customer of paginatedCustomers"
+                      [class.selected-row]="selectedCustomer?.id === customer.id"
+                      (click)="selectBankCustomer(customer)"
+                    >
+                      <td>
+                        <input
+                          type="radio"
+                          name="bankCustomer"
+                          [checked]="selectedCustomer?.id === customer.id"
+                          (click)="$event.stopPropagation(); selectBankCustomer(customer)"
+                          [disabled]="approveModalSubmitting"
+                        />
+                      </td>
+                      <td>
+                        <span class="customer-name-cell">{{ customer.customerName }}</span>
+                      </td>
+                      <td>
+                        <span class="customer-email-cell">{{ customer.email || 'No email on file' }}</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Customer Pagination -->
+              <div class="modal-pagination" *ngIf="customerTotalPages > 1">
+                <button
+                  class="page-nav-btn-sm"
+                  (click)="prevCustomerPage()"
+                  [disabled]="customerCurrentPage === 0"
+                >
+                  <img src="/assets/left.svg" alt="Previous" class="pagination-icon-sm" />
+                </button>
+
+                <span class="page-info">
+                  Page {{ customerCurrentPage + 1 }} of {{ customerTotalPages }}
+                </span>
+
+                <button
+                  class="page-nav-btn-sm"
+                  (click)="nextCustomerPage()"
+                  [disabled]="customerCurrentPage === customerTotalPages - 1"
+                >
+                  <img src="/assets/right.svg" alt="Next" class="pagination-icon-sm" />
+                </button>
+              </div>
+            </div>
+            <ng-template #noMatchingCustomers>
+              <div class="no-data-row">
+                No customers available for matching. Add a customer before applying this payment.
+              </div>
+            </ng-template>
+          </div>
         </div>
-      </div>
+
+        <!-- For MANUAL, customer is already selected, just show confirmation -->
+        <div class="selected-customer-info" *ngIf="approveContext === 'MANUAL' && selectedManualPayment">
+          <div class="section-header">
+            <h3>Customer</h3>
+          </div>
+          <div class="customer-info-box">
+            <div class="customer-initial-large" style="background-color: #DBEAFE; color: #2563EB;">
+              {{ getCustomerInitialFromName(selectedManualPayment.customerName) }}
+            </div>
+            <div>
+              <div class="customer-name-large">{{ selectedManualPayment.customerName || '--' }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- STEP 2: Invoice Selection -->
+      <ng-container *ngIf="modalStep === 2">
+        <!-- Loading Overlay for Invoices -->
+        <div class="modal-loading-overlay" *ngIf="approveModalLoading">
+          <app-loader [visible]="true"></app-loader>
+        </div>
+
+        <!-- Selected Customer Display -->
+        <div class="selected-customer-summary" *ngIf="selectedCustomer || selectedManualPayment">
+          <div class="section-header">
+            <h3>Selected Customer</h3>
+          </div>
+          <div class="customer-info-box">
+            <div class="customer-initial-large" style="background-color: #DBEAFE; color: #2563EB;">
+              {{ getCustomerInitialFromName(selectedCustomer?.customerName || selectedManualPayment?.customerName) }}
+            </div>
+            <div>
+              <div class="customer-name-large">
+                {{ selectedCustomer?.customerName || selectedManualPayment?.customerName || '--' }}
+              </div>
+              <div class="customer-email-small">
+                {{ selectedCustomer?.email || 'No email on file' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Amount Summary -->
+        <div class="amount-breakdown">
+          <div>
+            <span>Payment Amount</span>
+            <strong>{{ approvePaymentAmount | currency }}</strong>
+          </div>
+          <div>
+            <span>Applied</span>
+            <strong>{{ totalAppliedAmount | currency }}</strong>
+          </div>
+          <div>
+            <span>Remaining</span>
+            <strong>{{ remainingApproveAmount | currency }}</strong>
+          </div>
+        </div>
+
+        <!-- Invoice Selection -->
+        <div class="invoice-list">
+          <div class="section-header">
+            <h3>Select Invoices</h3>
+            <span *ngIf="approveInvoices.length && !approveModalLoading">
+              {{ approveInvoices.length }} invoice{{ approveInvoices.length === 1 ? '' : 's' }}
+            </span>
+          </div>
+
+          <div *ngIf="approveModalError" class="modal-alert error">
+            {{ approveModalError }}
+          </div>
+
+          <div
+            *ngIf="!approveModalLoading && approveInvoices.length === 0 && !approveModalError"
+            class="no-data-row"
+          >
+            No open invoices available for this customer.
+          </div>
+
+          <div *ngIf="!approveModalLoading && paginatedInvoices.length > 0">
+            <div class="invoice-table-wrapper">
+              <table class="invoice-select-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;"></th>
+                    <th>Invoice</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Balance Due</th>
+                    <th>Applied</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let invoice of paginatedInvoices; trackBy: trackInvoiceById">
+                    <td>
+                      <input
+                        type="checkbox"
+                        [checked]="isInvoiceSelected(invoice.id)"
+                        (change)="toggleInvoiceSelection(invoice)"
+                        [disabled]="
+                          approveModalSubmitting ||
+                          (!isInvoiceSelected(invoice.id) && remainingApproveAmount <= 0)
+                        "
+                      />
+                    </td>
+                    <td>
+                      <div class="invoice-info">
+                        <span class="invoice-number">#{{ invoice.invoiceNumber }}</span>
+                        <small>{{ invoice.customer?.customerName || '--' }}</small>
+                      </div>
+                    </td>
+                    <td>{{ invoice.dueDate | date: 'mediumDate' }}</td>
+                    <td>
+                      <span class="status-badge">{{ invoice.status || '--' }}</span>
+                    </td>
+                    <td>{{ (invoice.balanceDue ?? invoice.totalAmount ?? 0) | currency }}</td>
+                    <td>{{ getInvoiceAppliedAmount(invoice.id) | currency }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Invoice Pagination -->
+            <div class="modal-pagination" *ngIf="invoiceTotalPages > 1">
+              <button
+                class="page-nav-btn-sm"
+                (click)="prevInvoicePage()"
+                [disabled]="invoiceCurrentPage === 0"
+              >
+                <img src="/assets/left.svg" alt="Previous" class="pagination-icon-sm" />
+              </button>
+
+              <span class="page-info">
+                Page {{ invoiceCurrentPage + 1 }} of {{ invoiceTotalPages }}
+              </span>
+
+              <button
+                class="page-nav-btn-sm"
+                (click)="nextInvoicePage()"
+                [disabled]="invoiceCurrentPage === invoiceTotalPages - 1"
+              >
+                <img src="/assets/right.svg" alt="Next" class="pagination-icon-sm" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
     </div>
 
     <div class="modal-footer">
       <button class="btn-secondary" (click)="closeApproveModal()" [disabled]="approveModalSubmitting">
         Cancel
       </button>
-      <button
-        class="btn-primary"
-        (click)="confirmApproveAndApply()"
-        [disabled]="
-          approveModalSubmitting ||
-          selectedInvoiceApplications.length === 0 ||
-          (approveContext === 'BANK' && !selectedCustomer)
-        "
-      >
-        <ng-container *ngIf="!approveModalSubmitting">Approve & Apply</ng-container>
-        <ng-container *ngIf="approveModalSubmitting">
-          <app-spinner></app-spinner>
-        </ng-container>
-      </button>
+
+      <div class="footer-actions">
+        <button
+          *ngIf="modalStep === 2"
+          class="btn-secondary"
+          (click)="goToPreviousStep()"
+          [disabled]="approveModalSubmitting"
+        >
+          Back
+        </button>
+
+        <button
+          *ngIf="modalStep === 1 && approveContext === 'BANK'"
+          class="btn-primary"
+          (click)="goToNextStep()"
+          [disabled]="!selectedCustomer || approveModalSubmitting"
+        >
+          Next
+        </button>
+
+        <button
+          *ngIf="modalStep === 1 && approveContext === 'MANUAL'"
+          class="btn-primary"
+          (click)="goToNextStep()"
+          [disabled]="approveModalSubmitting"
+        >
+          Next
+        </button>
+
+        <button
+          *ngIf="modalStep === 2"
+          class="btn-primary"
+          (click)="confirmApproveAndApply()"
+          [disabled]="approveModalSubmitting || selectedInvoiceApplications.length === 0"
+        >
+          <ng-container *ngIf="!approveModalSubmitting">Approve & Apply</ng-container>
+          <ng-container *ngIf="approveModalSubmitting">
+            <app-spinner></app-spinner>
+          </ng-container>
+        </button>
+      </div>
     </div>
   </div>
 </div>

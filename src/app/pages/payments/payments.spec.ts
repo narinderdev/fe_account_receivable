@@ -13,6 +13,7 @@ import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 interface TestPayment {
   id: number;
   type: 'MANUAL' | 'BANK';
+  tab: 'DRAFT' | 'APPROVED';
   customerName: string;
   amount: number;
   status?: string;
@@ -75,6 +76,7 @@ function createPayment(overrides: Partial<TestPayment> = {}): TestPayment {
   return {
     id: 1,
     type: 'BANK',
+    tab: 'DRAFT',
     date: '2024-01-01',
     amount: 100,
     customerName: 'Default Customer',

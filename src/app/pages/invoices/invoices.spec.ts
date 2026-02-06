@@ -36,14 +36,14 @@ describe('Invoices', () => {
     it('filters invoices when searching by customer name', () => {
       const instance = createComponent();
       instance.state.allInvoices = [
-        createInvoice({ customer: { ...createInvoice().customer, customerName: 'Acme' } }),
-        createInvoice({ customer: { ...createInvoice().customer, customerName: 'Globex' } }),
+        createInvoice({ customer: { ...createInvoice().customer!, customerName: 'Acme' } }),
+        createInvoice({ customer: { ...createInvoice().customer!, customerName: 'Globex' } }),
       ];
       instance.state.invoices = [...instance.state.allInvoices];
       instance.searchName = 'acm';
       instance.onSearchChange();
       expect(instance.state.invoices.length).toBe(1);
-      expect(instance.state.invoices[0].customer.customerName).toBe('Acme');
+      expect(instance.state.invoices[0].customer!.customerName).toBe('Acme');
     });
 
     it('returns readable status labels', () => {

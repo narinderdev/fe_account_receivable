@@ -14,24 +14,38 @@ test.describe('Invoices and create invoice flows', () => {
     await seedAdminState(page);
   });
 
-  test('lists invoices, supports filtering, and navigates to creation form', async ({ page }) => {
-    await page.goto('/admin/invoices');
+test('lists invoices, supports filtering and new period controls, and navigates to creation form', async ({ page }) => {
+  await page.goto('/admin/invoices');
 
-    const searchInput = page.getByPlaceholder('Enter company name');
-    await expect(searchInput).toBeVisible();
-    await expect(page.getByText(sampleCustomerName)).toBeVisible();
-    await expect(page.getByText(sampleInvoiceNumber)).toBeVisible();
+  const searchInput = page.getByPlaceholder('Enter company name');
+  await expect(searchInput).toBeVisible();
+  await expect(page.getByText(sampleCustomerName)).toBeVisible();
+  await expect(page.getByText(sampleInvoiceNumber)).toBeVisible();
 
-    await searchInput.fill('zzz');
-    await expect(page.getByText('No invoices found.')).toBeVisible();
+  const periodSelect = page.locator('.period-select');
+  await expect(periodSelect).toHaveValue('12');
+  await periodSelect.selectOption('custom');
 
-    await searchInput.fill('glo');
-    await expect(page.getByText(sampleCustomerName)).toBeVisible();
+  const customDateInputs = page.locator('.search-card-body input[type="date"]');
+  await expect(customDateInputs).toHaveCount(2);
+  await customDateInputs.first().fill('2024-01-01');
+  await customDateInputs.nth(1).fill('2024-02-01');
 
-    await page.getByRole('button', { name: 'New Invoice' }).click();
-    await expect(page).toHaveURL('/admin/invoices/create');
-    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
-  });
+  await periodSelect.selectOption('6');
+  await expect(customDateInputs).toHaveCount(0);
+
+  await searchInput.fill('zzz');
+  await expect(page.getByText('No invoices found.')).toBeVisible();
+
+  await searchInput.fill('glo');
+  await expect(page.getByText(sampleCustomerName)).toBeVisible();
+
+  await expect(page.getByRole('button', { name: 'Import Invoice' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'New Invoice' }).click();
+  await expect(page).toHaveURL('/admin/invoices/create');
+  await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+});
 
   test('creates a manual invoice, validates totals, and sends it', async ({ page }) => {
     await setupInvoiceCreationMocks(page);

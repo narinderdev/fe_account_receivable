@@ -1,8 +1,13 @@
 import { defineConfig } from '@playwright/test';
 
+const isHeaded = process.env.HEADLESS === 'false';
+const slowMoValue = Number(process.env.SLOWMO || 0);
+const isDemoLikeRun = isHeaded || slowMoValue > 0;
+
 export default defineConfig({
   testDir: '.',
   testMatch: ['playwright/**/*.spec.ts'],
+  workers: isDemoLikeRun ? 1 : undefined,
 
   use: {
     baseURL: 'http://localhost:4200',
@@ -12,7 +17,7 @@ export default defineConfig({
 
     // ⏱️ SLOW SPEED CONFIG
     launchOptions: {
-      slowMo: Number(process.env.SLOWMO || 0),
+      slowMo: slowMoValue,
     },
   },
 
@@ -21,7 +26,7 @@ export default defineConfig({
       name: 'chromium',
       use: {
         browserName: 'chromium',
-        headless: process.env.HEADLESS !== 'false',
+        headless: !isHeaded,
       },
     },
   ],

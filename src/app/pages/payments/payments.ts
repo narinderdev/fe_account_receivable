@@ -67,8 +67,8 @@ export class Payments implements OnInit, OnDestroy {
   approvedAllPayments: PaymentListItem[] = [];
   approvedFilteredPayments: PaymentListItem[] = [];
 
-  // New filter properties
-  selectedPeriod: string = '12'; // Default to 12 months
+  // Filter properties
+  selectedPeriod: string = '12';
   isCustomPeriod: boolean = false;
   fromDate: string | null = null;
   toDate: string | null = null;
@@ -105,6 +105,22 @@ export class Payments implements OnInit, OnDestroy {
   customerMatchMessage: string | null = null;
   activeTab: PaymentTab = 'DRAFT';
 
+  // Two-step modal properties
+  modalStep: number = 1;
+  customerSearchTerm: string = '';
+  
+  // Customer pagination
+  customerCurrentPage = 0;
+  customerPageSize = 5;
+  customerTotalPages = 0;
+  paginatedCustomers: CustomerEntity[] = [];
+  
+  // Invoice pagination
+  invoiceCurrentPage = 0;
+  invoicePageSize = 5;
+  invoiceTotalPages = 0;
+  paginatedInvoices: InvoiceWithItems[] = [];
+
   get approvePaymentAmount(): number {
     if (this.approveContext === 'BANK') {
       return this.selectedBankTransaction?.amount ?? 0;
@@ -120,7 +136,6 @@ export class Payments implements OnInit, OnDestroy {
     return Math.max(this.approvePaymentAmount - this.totalAppliedAmount, 0);
   }
 
-  // Period options for dropdown
   periodOptions = [
     { value: '1', label: 'Last 1 Month' },
     { value: '2', label: 'Last 2 Months' },
@@ -275,11 +290,9 @@ export class Payments implements OnInit, OnDestroy {
     this.applySearchFilter();
   }
 
-  // Handle period dropdown change
   onPeriodChange(): void {
     if (this.selectedPeriod === 'custom') {
       this.isCustomPeriod = true;
-      // Don't reload until user selects dates
     } else {
       this.isCustomPeriod = false;
       this.fromDate = null;
@@ -288,7 +301,6 @@ export class Payments implements OnInit, OnDestroy {
     }
   }
 
-  // Handle custom date changes
   handleFromDateChange(value: string) {
     this.fromDate = value || null;
     if (this.isCustomPeriod && this.fromDate && this.toDate) {
@@ -502,7 +514,7 @@ export class Payments implements OnInit, OnDestroy {
       PARTIAL: 'status-partial',
       PAID: 'status-paid',
       DRAFT: 'status-partial',
-      APPROVED:'status-paid'
+      APPROVED: 'status-paid',
     };
 
     return classes[status || ''] || 'status-default';
@@ -510,6 +522,13 @@ export class Payments implements OnInit, OnDestroy {
 
   getCustomerInitial(payment: PaymentListItem): string {
     const name = payment?.customerName;
+    if (!name || name === '--') {
+      return '?';
+    }
+    return name.trim().charAt(0).toUpperCase();
+  }
+
+  getCustomerInitialFromName(name?: string | null): string {
     if (!name || name === '--') {
       return '?';
     }
@@ -586,10 +605,12 @@ export class Payments implements OnInit, OnDestroy {
     this.approveInvoices = [];
     this.approveModalError = null;
     this.approveModalOpen = true;
-    this.approveModalLoading = true;
+    this.approveModalLoading = false;
+    this.modalStep = 1;
+    this.customerSearchTerm = '';
+    this.customerCurrentPage = 0;
+    this.invoiceCurrentPage = 0;
     this.cdr.detectChanges();
-
-    this.loadInvoicesForApproval(customerId);
   }
 
   private openBankApproveModal(bankTransaction: BankTransaction) {
@@ -615,6 +636,10 @@ export class Payments implements OnInit, OnDestroy {
     this.approveModalOpen = true;
     this.approveModalLoading = false;
     this.customerOptionsLoading = true;
+    this.modalStep = 1;
+    this.customerSearchTerm = '';
+    this.customerCurrentPage = 0;
+    this.invoiceCurrentPage = 0;
     this.cdr.detectChanges();
 
     this.customerService
@@ -628,6 +653,7 @@ export class Payments implements OnInit, OnDestroy {
             this.filteredCustomerOptions = [];
             this.customerMatchMessage = 'No customers available for this company.';
             this.customerOptionsLoading = false;
+            this.updateCustomerPagination();
             this.cdr.detectChanges();
             return;
           }
@@ -636,13 +662,11 @@ export class Payments implements OnInit, OnDestroy {
             customers,
           );
           this.customerOptionsLoading = false;
-
-          // Force change detection BEFORE selecting customer
+          this.updateCustomerPagination();
           this.cdr.detectChanges();
 
           // Auto-select first matching customer
           if (this.filteredCustomerOptions.length) {
-            // Use setTimeout to ensure UI is updated
             setTimeout(() => {
               this.selectBankCustomer(this.filteredCustomerOptions[0]);
             }, 0);
@@ -655,6 +679,7 @@ export class Payments implements OnInit, OnDestroy {
           this.customerOptionsError = error?.error?.message || 'Unable to load customers.';
           this.customerMatchMessage = null;
           this.customerOptionsLoading = false;
+          this.updateCustomerPagination();
           this.toastr.error(this.customerOptionsError ?? 'Unable to load customers.', 'Error');
           this.cdr.detectChanges();
         },
@@ -666,6 +691,7 @@ export class Payments implements OnInit, OnDestroy {
       this.approveInvoices = [];
       this.approveModalLoading = false;
       this.approveModalError = 'No customer selected for loading invoices.';
+      this.updateInvoicePagination();
       return;
     }
 
@@ -680,6 +706,8 @@ export class Payments implements OnInit, OnDestroy {
         next: (response) => {
           this.approveInvoices = response?.data ?? [];
           this.approveModalLoading = false;
+          this.invoiceCurrentPage = 0;
+          this.updateInvoicePagination();
           this.cdr.detectChanges();
         },
         error: (error) => {
@@ -691,6 +719,7 @@ export class Payments implements OnInit, OnDestroy {
             this.approveModalError ?? 'Unable to load invoices for this customer.',
             'Error',
           );
+          this.updateInvoicePagination();
           this.cdr.detectChanges();
         },
       });
@@ -729,13 +758,125 @@ export class Payments implements OnInit, OnDestroy {
     }
 
     this.selectedCustomer = customer;
-    this.selectedInvoiceApplications = [];
-    this.approveInvoices = [];
-    this.approveModalError = null;
-
     this.cdr.detectChanges();
+  }
 
-    this.loadInvoicesForApproval(customer.id);
+  onCustomerSearch() {
+    const term = this.customerSearchTerm.trim().toLowerCase();
+    
+    if (!term) {
+      this.filteredCustomerOptions = [...this.customerOptions];
+    } else {
+      this.filteredCustomerOptions = this.customerOptions.filter((customer) => {
+        const name = customer.customerName?.toLowerCase() || '';
+        const email = customer.email?.toLowerCase() || '';
+        return name.includes(term) || email.includes(term);
+      });
+    }
+
+    this.customerCurrentPage = 0;
+    this.updateCustomerPagination();
+    this.cdr.detectChanges();
+  }
+
+  updateCustomerPagination() {
+    this.customerTotalPages = Math.max(
+      1,
+      Math.ceil(this.filteredCustomerOptions.length / this.customerPageSize)
+    );
+
+    if (this.customerCurrentPage >= this.customerTotalPages) {
+      this.customerCurrentPage = Math.max(0, this.customerTotalPages - 1);
+    }
+
+    const start = this.customerCurrentPage * this.customerPageSize;
+    const end = start + this.customerPageSize;
+    this.paginatedCustomers = this.filteredCustomerOptions.slice(start, end);
+  }
+
+  updateInvoicePagination() {
+    this.invoiceTotalPages = Math.max(
+      1,
+      Math.ceil(this.approveInvoices.length / this.invoicePageSize)
+    );
+
+    if (this.invoiceCurrentPage >= this.invoiceTotalPages) {
+      this.invoiceCurrentPage = Math.max(0, this.invoiceTotalPages - 1);
+    }
+
+    const start = this.invoiceCurrentPage * this.invoicePageSize;
+    const end = start + this.invoicePageSize;
+    this.paginatedInvoices = this.approveInvoices.slice(start, end);
+  }
+
+  nextCustomerPage() {
+    if (this.customerCurrentPage < this.customerTotalPages - 1) {
+      this.customerCurrentPage++;
+      this.updateCustomerPagination();
+      this.cdr.detectChanges();
+    }
+  }
+
+  prevCustomerPage() {
+    if (this.customerCurrentPage > 0) {
+      this.customerCurrentPage--;
+      this.updateCustomerPagination();
+      this.cdr.detectChanges();
+    }
+  }
+
+  nextInvoicePage() {
+    if (this.invoiceCurrentPage < this.invoiceTotalPages - 1) {
+      this.invoiceCurrentPage++;
+      this.updateInvoicePagination();
+      this.cdr.detectChanges();
+    }
+  }
+
+  prevInvoicePage() {
+    if (this.invoiceCurrentPage > 0) {
+      this.invoiceCurrentPage--;
+      this.updateInvoicePagination();
+      this.cdr.detectChanges();
+    }
+  }
+
+  goToNextStep() {
+    if (this.modalStep === 1) {
+      if (this.approveContext === 'BANK' && !this.selectedCustomer) {
+        this.toastr.warning('Please select a customer first.', 'Customer Required');
+        return;
+      }
+
+      // Load invoices for step 2
+      const customerId = this.approveContext === 'BANK' 
+        ? this.selectedCustomer?.id 
+        : this.selectedManualPayment?.customerId ?? this.selectedManualPayment?.customer?.id;
+
+      if (customerId) {
+        // Set loading state and clear previous selections
+        this.approveModalLoading = true;
+        this.selectedInvoiceApplications = [];
+        
+        // Change to step 2
+        this.modalStep = 2;
+        this.cdr.detectChanges();
+        
+        // Load invoices
+        this.loadInvoicesForApproval(customerId);
+      }
+    }
+  }
+
+  goToPreviousStep() {
+    if (this.modalStep === 2) {
+      this.modalStep = 1;
+      this.selectedInvoiceApplications = [];
+      this.invoiceCurrentPage = 0;
+      this.approveModalLoading = false;
+      this.approveModalError = null;
+      this.cdr.detectChanges();
+    }
   }
 
   closeApproveModal() {
@@ -762,6 +903,12 @@ export class Payments implements OnInit, OnDestroy {
     this.customerOptionsLoading = false;
     this.selectedCustomer = null;
     this.customerMatchMessage = null;
+    this.modalStep = 1;
+    this.customerSearchTerm = '';
+    this.customerCurrentPage = 0;
+    this.invoiceCurrentPage = 0;
+    this.paginatedCustomers = [];
+    this.paginatedInvoices = [];
   }
 
   toggleInvoiceSelection(invoice: InvoiceWithItems) {
