@@ -345,7 +345,7 @@
 .invoice-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
+  min-width: 820px;
   font-size: 16px;
   color: #111827;
 }
@@ -397,6 +397,12 @@
 
 .customer-name {
   color: #111827;
+}
+
+.customer-email {
+  color: #4b5563;
+  font-size: 13px;
+  word-break: break-word;
 }
 
 .status-chip {

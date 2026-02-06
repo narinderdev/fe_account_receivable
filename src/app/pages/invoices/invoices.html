@@ -73,6 +73,7 @@
             <tr>
               <th>INVOICE</th>
               <th>COMPANY</th>
+              <th>EMAIL</th>
               <th>DATE</th>
               <th>DUE DATE</th>
               <th>STATUS</th>
@@ -97,6 +98,10 @@
                     {{ formatCustomerName(inv.customer?.customerName) }}
                   </span>
                 </div>
+              </td>
+
+              <td class="customer-email" [title]="inv.customer?.email || '--'">
+                {{ inv.customer?.email || '--' }}
               </td>
 
               <td>{{ formatDate(inv.invoiceDate) }}</td>
@@ -124,7 +129,7 @@
           <ng-template #noInvoices>
             <tbody>
               <tr>
-                <td [attr.colspan]="canApproveInvoice ? 6 : 5" class="no-data-row">
+                <td [attr.colspan]="canApproveInvoice ? 7 : 6" class="no-data-row">
                   No invoices found.
                 </td>
               </tr>

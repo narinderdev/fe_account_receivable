@@ -32,6 +32,7 @@ type PaymentTab = 'DRAFT' | 'APPROVED';
 interface PaymentListItem {
   id: number;
   type: PaymentType;
+  tab: PaymentTab;
   customerName: string;
   status?: string;
   amount: number;
@@ -40,6 +41,7 @@ interface PaymentListItem {
   date?: string;
   manualPayment?: Payment;
   bankTransaction?: BankTransaction;
+  paymentRecord?: Payment;
 }
 
 interface InvoiceSelection {
@@ -1031,6 +1033,7 @@ export class Payments implements OnInit, OnDestroy {
     return {
       id: manualId,
       type: 'MANUAL',
+      tab: 'DRAFT',
       customerName: this.extractManualCustomerName(payment),
       status: payment.status || '',
       amount: payment.paymentAmount ?? 0,
@@ -1038,6 +1041,7 @@ export class Payments implements OnInit, OnDestroy {
       source: payment.source || 'MANUAL',
       date: payment.paymentDate,
       manualPayment: payment,
+      paymentRecord: payment,
     };
   }
 
@@ -1052,6 +1056,7 @@ export class Payments implements OnInit, OnDestroy {
     return {
       id,
       type,
+      tab: 'APPROVED',
       customerName,
       status: payment.status || '',
       amount: payment.paymentAmount ?? payment.bankTransaction?.amount ?? 0,
@@ -1060,6 +1065,7 @@ export class Payments implements OnInit, OnDestroy {
       date: payment.paymentDate || payment.bankTransaction?.transactionDate,
       manualPayment: type === 'MANUAL' ? payment : undefined,
       bankTransaction: type === 'BANK' ? payment.bankTransaction ?? undefined : undefined,
+      paymentRecord: payment,
     };
   }
 
@@ -1067,6 +1073,7 @@ export class Payments implements OnInit, OnDestroy {
     return {
       id: payment.id,
       type: 'BANK',
+      tab: 'DRAFT',
       customerName: payment.customerName || '--',
       status: payment.status,
       amount: payment.amount,
@@ -1074,6 +1081,7 @@ export class Payments implements OnInit, OnDestroy {
       source: payment.source || 'BANK',
       date: payment.transactionDate,
       bankTransaction: payment,
+      paymentRecord: undefined,
     };
   }
 
