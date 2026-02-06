@@ -263,7 +263,7 @@
 
 .notes-textarea {
   flex: 1;
-  min-height: 200px;
+  min-height: 80px;
   padding: 12px;
   border-radius: 6px;
   border: 1px solid #d1d5db;

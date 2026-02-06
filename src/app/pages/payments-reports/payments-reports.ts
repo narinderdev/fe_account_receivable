@@ -8,37 +8,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { PaymentService } from '../../services/payment-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Loader } from '../../shared/loader/loader';
-
-interface InvoiceCustomer {
-  customerName: string;
-}
-
-interface Invoice {
-  id: number;
-  invoiceNumber: string;
-  invoiceDate: string;
-  dueDate: string;
-  balanceDue: number;
-  status?: string;
-  customer: InvoiceCustomer;
-}
-
-interface Application {
-  id: number;
-  invoice: Invoice;
-  appliedAmount: number;
-}
-
-interface Payment {
-  id: number;
-  bankDeposit?: number;
-  serviceFee?: number;
-  paymentAmount: number;
-  paymentMethod: string;
-  paymentDate: string;
-  notes: string;
-  applications: Application[];
-}
+import { Payment, PaymentApplication } from '../../models/payment.model';
 
 @Component({
   selector: 'app-payments-reports',
@@ -137,14 +107,18 @@ export class PaymentsReports implements OnInit, OnDestroy {
   getAppliedAmount(payment: Payment): number {
     return (
       payment.applications?.reduce(
-        (total: number, app: Application) => total + app.appliedAmount,
+        (total: number, app: PaymentApplication) => total + (app.appliedAmount || 0),
         0
       ) || 0
     );
   }
 
   getCustomerName(payment: Payment): string {
-    return payment?.applications?.[0]?.invoice?.customer?.customerName || '--';
+    return (
+      payment.customerName?.trim() ||
+      payment?.applications?.[0]?.invoice?.customer?.customerName ||
+      '--'
+    );
   }
 
   getInvoiceStatus(payment: Payment): string {
@@ -208,8 +182,15 @@ export class PaymentsReports implements OnInit, OnDestroy {
     return palette[colorIndex];
   }
 
-  openPaymentDetails(paymentId: number) {
-    this.router.navigate(['/admin/payments/details', paymentId]);
+  openPaymentDetails(payment: Payment) {
+    const paymentId = payment?.id ?? payment?.paymentId;
+    if (!paymentId) {
+      console.warn('Unable to open payment details without an id', payment);
+      return;
+    }
+
+    const paymentType = payment.source?.toUpperCase() === 'BANK' ? 'BANK' : 'MANUAL';
+    this.router.navigate(['/admin/payments/details', paymentType, paymentId]);
   }
 
   getPageNumbers(): number[] {

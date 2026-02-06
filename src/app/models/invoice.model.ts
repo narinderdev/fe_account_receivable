@@ -17,20 +17,20 @@ export interface Invoice {
   id: number;
   invoiceNumber: string;
   invoiceDate: string;
-  dueDate: string;
-  subTotal: number;
-  taxAmount: number;
-  totalAmount: number;
+  dueDate?: string;
+  subTotal?: number;
+  taxAmount?: number;
+  totalAmount?: number;
   description: string | null;
-  balanceDue: number;
-  status: 'OPEN' | 'PAID' | 'COMPLETED';
+  balanceDue?: number;
+  status?: 'OPEN' | 'PAID' | 'COMPLETED';
   lastPaymentDate: string | null;
   note: string | null;
   generated: boolean;
   active: boolean;
   deleted: boolean;
 
-  customer: CustomerEntity;
+  customer?: CustomerEntity;
 }
 
 export interface InvoiceWithItems extends Invoice {

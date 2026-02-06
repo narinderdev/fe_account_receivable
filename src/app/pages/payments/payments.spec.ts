@@ -4,6 +4,8 @@ import { PaymentService } from '../../services/payment-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
+import { ToastrService } from 'ngx-toastr';
+import { Customer as CustomerService } from '../../services/customer';
 
 import { Payments } from './payments';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
@@ -24,6 +26,9 @@ describe('Payments', () => {
     const paymentService = createSpyObj<PaymentService>('PaymentService', [
       'getPayments',
       'getManualPayments',
+      'getFilteredPayments',
+      'approveAndApply',
+      'approveAndApplyBankTransaction',
     ]);
     const router = createSpyObj<Router>('Router', ['navigate']);
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
@@ -32,7 +37,20 @@ describe('Payments', () => {
     } as unknown as CompanySelectionService;
     const userContext = createSpyObj<UserContextService>('UserContextService', ['hasPermission']);
     userContext.hasPermission.mockReturnValue(true);
-    return new Payments(paymentService, router, cdr, companySelection, userContext);
+    const toastr = createSpyObj<ToastrService>('ToastrService', ['success', 'error', 'warning']);
+    const customerService = createSpyObj<CustomerService>('CustomerService', [
+      'getCustomerInvoicesById',
+      'getCustomers',
+    ]);
+    return new Payments(
+      paymentService,
+      router,
+      cdr,
+      companySelection,
+      userContext,
+      toastr,
+      customerService,
+    );
   };
 
   it('should create', () => {

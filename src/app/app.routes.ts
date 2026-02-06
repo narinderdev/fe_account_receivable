@@ -104,7 +104,10 @@ export const routes: Routes = [
 
       { path: 'payments', component: Payments },
       { path: 'payments/receive-payment', component: ReceivePayment },
-      { path: 'payments/details/:paymentId', component: PaymentDetails },
+      {
+        path: 'payments/details/:paymentType/:paymentId',
+        component: PaymentDetails,
+      },
 
       { path: 'users', component: Users },
       { path: 'roles', component: Roles },

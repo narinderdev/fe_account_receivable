@@ -48,7 +48,7 @@ export class InvoiceDetail implements OnInit {
     });
   }
 
-  formatDate(date: string): string {
+  formatDate(date?: string | null): string {
     if (!date) return '--';
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',

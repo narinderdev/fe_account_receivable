@@ -472,7 +472,7 @@ export class Collections implements OnInit, OnDestroy {
     this.selectedInvoice = this.customerInvoices.find((inv) => inv.id === invoiceId) || null;
 
     if (this.selectedInvoice) {
-      this.amountPromised = this.selectedInvoice.balanceDue;
+      this.amountPromised = this.selectedInvoice.balanceDue ?? null;
     }
 
     this.cdr.detectChanges();

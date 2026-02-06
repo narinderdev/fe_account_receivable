@@ -15,14 +15,14 @@
     <div class="grid">
       <!-- Customer -->
       <div class="form-group">
-        <label>Company <span class="required">*</span></label>
-        <select
+        <label>Customer <span class="required">*</span></label>
+        <select          
           [(ngModel)]="selectedCustomerId"
           (change)="onCustomerChange()"
           [class.error-input]="showCustomerError"
           name="customer"
         >
-          <option [ngValue]="null">Select Company</option>
+          <option [ngValue]="null">Select Customer</option>
           <option *ngFor="let c of customers" [ngValue]="c.id">
             {{ c.customerName }}
           </option>
@@ -36,7 +36,6 @@
         <input
           type="number"
           [(ngModel)]="bankDeposit"
-          (ngModelChange)="onAmountFieldChange()"
           placeholder="0.00"
           [class.error-input]="showBankDepositError"
           (blur)="showBankDepositError = submitted && (!bankDeposit || bankDeposit < 0)"
@@ -55,7 +54,6 @@
         <input
           type="number"
           [(ngModel)]="serviceFee"
-          (ngModelChange)="onAmountFieldChange()"
           placeholder="0.00"
           [class.error-input]="showServiceFeeError"
           (blur)="showServiceFeeError = submitted && serviceFee != null && serviceFee < 0"
@@ -101,84 +99,8 @@
       </div>
     </div>
 
-    <!-- Invoice Table Section with Icon -->
-    <div class="section-header">
-      <div class="section-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-      </div>
-      <h3 class="section-title">Apply to Invoices <span class="required">*</span></h3>
-    </div>
-
-    <div class="table-scroll" *ngIf="invoices.length > 0">
-      <table class="invoice-table">
-        <thead>
-          <tr>
-            <th style="width: 50px"></th>
-            <th>Invoice</th>
-            <th>Due Date</th>
-            <th>Original Amount</th>
-            <th>Balance Due</th>
-            <th>Applied</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr *ngFor="let inv of invoices" [class.selected-row]="inv.selected">
-            <td>
-              <input
-                type="checkbox"
-                [checked]="inv.selected"
-                (change)="toggleInvoice(inv, $event)"
-                [id]="'invoice-' + inv.id"
-                class="invoice-checkbox"
-              />
-            </td>
-            <td class="invoice-link" [routerLink]="['/admin/invoices/detail', inv.id]">
-              {{ inv.invoiceNumber || inv.id }}
-            </td>
-            <td>{{ inv.dueDate }}</td>
-            <td>{{ inv.totalAmount | currency }}</td>
-            <td class="balance-due">{{ inv.balanceDue | currency }}</td>
-            <td class="applied-amount" [class.has-amount]="inv.appliedAmount && inv.appliedAmount > 0">
-              {{ inv.appliedAmount ? (inv.appliedAmount | currency) : '—' }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div *ngIf="selectedCustomerId && invoices.length === 0" class="empty-state">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <p>No unpaid invoices found for this customer.</p>
-    </div>
-
-    <div *ngIf="!selectedCustomerId" class="empty-state">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/>
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-      <p>Please select a company to view their unpaid invoices.</p>
-    </div>
-
-    <!-- Show error if no invoice selected -->
-    <div *ngIf="showInvoiceError" class="error-message" style="margin-top: 10px">
-      Please select at least one invoice to apply the payment
-    </div>
-
     <!-- Notes and Summary Section Side by Side -->
-    <div class="notes-summary-container" *ngIf="invoices.length > 0 && totalAmount > 0">
+    <div class="notes-summary-container">
       <!-- Notes Section (Left) -->
       <div class="notes-section">
         <h3 class="notes-heading">Notes <span class="required">*</span></h3>
@@ -200,69 +122,14 @@
             <span>Bank Deposit</span>
             <strong>{{ bankDeposit || 0 | currency }}</strong>
           </div>
-          <div class="summary-row" *ngIf="serviceFee != null && serviceFee > 0">
+          <div class="summary-row">
             <span>Service Fee</span>
-            <strong>{{ serviceFee | currency }}</strong>
+            <strong>{{ serviceFee || 0 | currency }}</strong>
           </div>
+          <div class="summary-divider"></div>
           <div class="summary-row total-row">
             <span>Total Payment Amount</span>
             <strong>{{ totalAmount | currency }}</strong>
-          </div>
-          <div class="summary-divider"></div>
-          <div class="summary-row">
-            <span>Applied to Invoices</span>
-            <strong class="applied">{{ totalApplied | currency }}</strong>
-          </div>
-          <div class="summary-row">
-            <span>Unapplied Amount</span>
-            <strong [class.negative]="unappliedAmount < 0" [class.positive]="unappliedAmount > 0">
-              {{ unappliedAmount | currency }}
-            </strong>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Notes field for when no invoices or total amount -->
-    <div class="notes-only-section" *ngIf="!(invoices.length > 0 && totalAmount > 0)">
-      <h3 class="notes-heading">Notes <span class="required">*</span></h3>
-      <textarea
-        [(ngModel)]="notes"
-        placeholder="Add any additional notes or payment terms..."
-        [class.error-input]="showNotesError"
-        (blur)="showNotesError = submitted && !notes.trim()"
-        name="notes"
-        rows="4"
-      ></textarea>
-      <div *ngIf="showNotesError" class="error-message">Notes are required</div>
-    </div>
-
-    <!-- Summary Section -->
-    <div class="summary-section" *ngIf="invoices.length > 0 && totalAmount > 0" style="display: none;">
-      <div class="summary-box-wrapper">
-        <div class="summary-box">
-          <div class="summary-row">
-            <span>Bank Deposit</span>
-            <strong>{{ bankDeposit || 0 | currency }}</strong>
-          </div>
-          <div class="summary-row" *ngIf="serviceFee != null && serviceFee > 0">
-            <span>Service Fee</span>
-            <strong>{{ serviceFee | currency }}</strong>
-          </div>
-          <div class="summary-row total-row">
-            <span>Total Payment Amount</span>
-            <strong>{{ totalAmount | currency }}</strong>
-          </div>
-          <div class="summary-divider"></div>
-          <div class="summary-row">
-            <span>Applied to Invoices</span>
-            <strong class="applied">{{ totalApplied | currency }}</strong>
-          </div>
-          <div class="summary-row">
-            <span>Unapplied Amount</span>
-            <strong [class.negative]="unappliedAmount < 0" [class.positive]="unappliedAmount > 0">
-              {{ unappliedAmount | currency }}
-            </strong>
           </div>
         </div>
       </div>

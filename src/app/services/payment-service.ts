@@ -6,6 +6,8 @@ import {
   ApplyPaymentResponse,
   BankTransactionsResponse,
   PaymentPage,
+  ApproveApplyRequest,
+  BankApproveApplyRequest,
 } from '../models/payment.model';
 import { environment } from '../../environments/environment';
 import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
@@ -41,7 +43,7 @@ export class PaymentService {
 
   getManualPayments(
     companyId: number,
-    params: {
+    _params?: {
       statuses?: string[];
       months?: number;
       fromDate?: string;
@@ -50,14 +52,40 @@ export class PaymentService {
       size?: number;
     },
   ): Observable<PaymentPage> {
-    return this.getFilteredPayments(companyId, params);
+    const headers = getAuthHeadersWithNgrok();
+
+    return this.http.get<PaymentPage>(
+      `${this.baseUrl}/payment/company/${companyId}/draft`,
+      { headers },
+    );
   }
 
   applyPayment(customerId: number, data: ApplyPaymentRequest): Observable<ApplyPaymentResponse> {
     const headers = getAuthHeaders();
     return this.http.post<ApplyPaymentResponse>(
-      `${this.baseUrl}/payment/apply/${customerId}`,
+      `${this.baseUrl}/payment/manual/create/${customerId}`,
       data,
+      { headers },
+    );
+  }
+
+  approveAndApply(paymentId: number, payload: ApproveApplyRequest): Observable<any> {
+    const headers = getAuthHeaders();
+    return this.http.post(
+      `${this.baseUrl}/payment/${paymentId}/approve-apply`,
+      payload,
+      { headers },
+    );
+  }
+
+  approveAndApplyBankTransaction(
+    bankTransactionId: number,
+    payload: BankApproveApplyRequest,
+  ): Observable<any> {
+    const headers = getAuthHeaders();
+    return this.http.post(
+      `${this.baseUrl}/api/bank-reconciliation/transaction/${bankTransactionId}/approve-apply`,
+      payload,
       { headers },
     );
   }

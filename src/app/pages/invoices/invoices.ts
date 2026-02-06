@@ -598,9 +598,10 @@ export class Invoices implements OnInit, OnDestroy {
       return;
     }
 
-    const filtered = this.state.allInvoices.filter((inv) =>
-      inv.customer?.customerName?.toLowerCase().includes(term),
-    );
+    const filtered = this.state.allInvoices.filter((inv) => {
+      const customerName = inv.customer?.customerName?.toLowerCase() || '';
+      return customerName.includes(term);
+    });
 
     this.state = { ...this.state, invoices: filtered };
   }
@@ -711,7 +712,10 @@ export class Invoices implements OnInit, OnDestroy {
     }
   }
 
-  formatDate(date: string) {
+  formatDate(date?: string | null) {
+    if (!date) {
+      return '--';
+    }
     return new Date(date).toLocaleDateString('en-US');
   }
 

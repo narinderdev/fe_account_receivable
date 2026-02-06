@@ -2,13 +2,11 @@ import { ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Customer } from '../../../services/customer';
 import { ToastrService } from 'ngx-toastr';
-import { InvoiceService } from '../../../services/invoice-service';
 import { PaymentService } from '../../../services/payment-service';
 import { CompanySelectionService } from '../../../services/company-selection.service';
 import { Subject } from 'rxjs';
 
 import { ReceivePayment } from './receive-payment';
-import { Invoice } from '../../../models/invoice.model';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
 describe('ReceivePayment', () => {
@@ -16,7 +14,6 @@ describe('ReceivePayment', () => {
     const customerService = createSpyObj<Customer>('Customer', ['getCustomers']);
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
     const toastr = createSpyObj<ToastrService>('ToastrService', ['success', 'error', 'warning']);
-    const invoiceService = createSpyObj<InvoiceService>('InvoiceService', ['getUnpaidInvoices']);
     const paymentService = createSpyObj<PaymentService>('PaymentService', ['applyPayment']);
     const router = createSpyObj<Router>('Router', ['navigate']);
     const companySelection = {
@@ -26,7 +23,6 @@ describe('ReceivePayment', () => {
       customerService,
       cdr,
       toastr,
-      invoiceService,
       paymentService,
       router,
       companySelection,
@@ -46,15 +42,29 @@ describe('ReceivePayment', () => {
       instance.serviceFee = null;
       instance.paymentMethod = '';
       instance.notes = '   ';
-      instance.invoices = [];
 
       expect(instance.isFormValid()).toBe(false);
       expect(instance.showCustomerError).toBe(true);
       expect(instance.showBankDepositError).toBe(true);
       expect(instance.showServiceFeeError).toBe(false); // Service fee is optional
       expect(instance.showPaymentMethodError).toBe(true);
-      expect(instance.showInvoiceError).toBe(true);
       expect(instance.showNotesError).toBe(true);
+    });
+
+    it('validates form as valid when all required fields are provided', () => {
+      const instance = createComponent();
+      instance.selectedCustomerId = 1;
+      instance.bankDeposit = 100;
+      instance.serviceFee = null;
+      instance.paymentMethod = 'CASH';
+      instance.notes = 'Test payment';
+
+      expect(instance.isFormValid()).toBe(true);
+      expect(instance.showCustomerError).toBe(false);
+      expect(instance.showBankDepositError).toBe(false);
+      expect(instance.showServiceFeeError).toBe(false);
+      expect(instance.showPaymentMethodError).toBe(false);
+      expect(instance.showNotesError).toBe(false);
     });
 
     it('validates service fee only if provided and ensures non-negative', () => {
@@ -66,7 +76,6 @@ describe('ReceivePayment', () => {
       instance.bankDeposit = 100;
       instance.paymentMethod = 'CASH';
       instance.notes = 'Test';
-      instance.invoices = [createInvoice({ selected: true })];
       expect(instance.isFormValid()).toBe(true);
       expect(instance.showServiceFeeError).toBe(false);
 
@@ -86,6 +95,56 @@ describe('ReceivePayment', () => {
       expect(instance.showServiceFeeError).toBe(false);
     });
 
+    it('validates bank deposit as required and non-negative', () => {
+      const instance = createComponent();
+      instance.selectedCustomerId = 1;
+      instance.paymentMethod = 'CASH';
+      instance.notes = 'Test';
+
+      // Bank deposit is null - should be invalid
+      instance.bankDeposit = null;
+      expect(instance.isFormValid()).toBe(false);
+      expect(instance.showBankDepositError).toBe(true);
+
+      // Bank deposit is negative - should be invalid
+      instance.bankDeposit = -10;
+      expect(instance.isFormValid()).toBe(false);
+      expect(instance.showBankDepositError).toBe(true);
+
+      // Bank deposit is 0 - should be valid
+      instance.bankDeposit = 0;
+      expect(instance.isFormValid()).toBe(true);
+      expect(instance.showBankDepositError).toBe(false);
+
+      // Bank deposit is positive - should be valid
+      instance.bankDeposit = 100;
+      expect(instance.isFormValid()).toBe(true);
+      expect(instance.showBankDepositError).toBe(false);
+    });
+
+    it('validates notes as required with trimming', () => {
+      const instance = createComponent();
+      instance.selectedCustomerId = 1;
+      instance.bankDeposit = 100;
+      instance.paymentMethod = 'CASH';
+
+      // Empty notes - should be invalid
+      instance.notes = '';
+      expect(instance.isFormValid()).toBe(false);
+      expect(instance.showNotesError).toBe(true);
+
+      // Whitespace only notes - should be invalid and trim
+      instance.notes = '   ';
+      expect(instance.isFormValid()).toBe(false);
+      expect(instance.showNotesError).toBe(true);
+      expect(instance.notes).toBe('');
+
+      // Valid notes - should be valid
+      instance.notes = 'Valid payment note';
+      expect(instance.isFormValid()).toBe(true);
+      expect(instance.showNotesError).toBe(false);
+    });
+
     it('calculates total amount from bank deposit only', () => {
       const instance = createComponent();
       instance.bankDeposit = 100;
@@ -98,68 +157,5 @@ describe('ReceivePayment', () => {
       instance.serviceFee = 0;
       expect(instance.totalAmount).toBe(100); // Still works with 0 service fee
     });
-
-    it('totals the applied amount across selected invoices', () => {
-      const instance = createComponent();
-      instance.invoices = [
-        createInvoice({ appliedAmount: 25, selected: true }),
-        createInvoice({ appliedAmount: 10, selected: true }),
-        createInvoice({ appliedAmount: 5, selected: false }),
-      ];
-      expect(instance.totalApplied).toBe(40);
-    });
-
-    it('calculates unapplied amount correctly', () => {
-      const instance = createComponent();
-      instance.bankDeposit = 100;
-      instance.serviceFee = 25;
-      instance.invoices = [createInvoice({ appliedAmount: 60, selected: true })];
-
-      // Total is 100 (bank deposit only), applied is 60
-      expect(instance.unappliedAmount).toBe(40);
-    });
   });
 });
-
-type TestSelectableInvoice = Invoice & {
-  selected?: boolean;
-  appliedAmount?: number;
-};
-
-function createInvoice(overrides: Partial<TestSelectableInvoice> = {}): TestSelectableInvoice {
-  return {
-    id: 1,
-    invoiceNumber: 'INV-1',
-    invoiceDate: '2024-01-01',
-    dueDate: '2024-01-31',
-    subTotal: 100,
-    taxAmount: 10,
-    totalAmount: 110,
-    description: null,
-    balanceDue: 0,
-    status: 'OPEN',
-    lastPaymentDate: null,
-    note: null,
-    generated: false,
-    active: true,
-    deleted: false,
-    customer: {
-      id: 1,
-      customerId: 1,
-      customerName: 'Acme',
-      customerType: 'Business',
-      email: 'acme@example.com',
-      phoneNumber: null,
-      deleted: false,
-      address: null,
-      cashApplication: null,
-      dunning: null,
-      eft: null,
-      statement: null,
-      vat: null,
-    },
-    selected: false,
-    appliedAmount: 0,
-    ...overrides,
-  };
-}
