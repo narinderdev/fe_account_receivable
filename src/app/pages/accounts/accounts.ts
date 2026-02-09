@@ -83,7 +83,7 @@ export class Accounts implements OnInit, OnDestroy {
   readonly mappingStatusMeta: Record<string, MappingMeta> = {
     CONFIGURED: { label: 'Configured', variant: 'configured' },
     COMPLETE: { label: 'Configured', variant: 'configured' },
-    MISSING: { label: 'Missing', variant: 'missing' },
+    MISSING: { label: 'Click to Map', variant: 'missing' },
   };
 
   private destroy$ = new Subject<void>();

@@ -72,7 +72,7 @@ export class ArCodes implements OnInit, OnDestroy {
   > = {
     CONFIGURED: { label: 'Configured', variant: 'configured' },
     COMPLETE: { label: 'Configured', variant: 'configured' },
-    MISSING: { label: 'Missing', variant: 'missing' },
+    MISSING: { label: 'Click to Map', variant: 'missing' },
   };
   private deletingCodeIds = new Set<number>();
   private togglingCodeIds = new Set<number>();
