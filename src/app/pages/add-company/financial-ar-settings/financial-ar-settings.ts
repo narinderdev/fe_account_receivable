@@ -192,6 +192,30 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       });
   }
 
+  formatCreditLimit() {
+    const control = this.financialForm.get('defaultCreditLimit');
+    if (!control) return;
+
+    const raw = control.value;
+    if (!raw) return;
+
+    const numericValue = Number(String(raw).replace(/\D/g, ''));
+    if (!Number.isFinite(numericValue)) return;
+
+    control.setValue(`$${numericValue.toLocaleString('en-US')}`, { emitEvent: false });
+  }
+
+  removeCreditLimitFormatting() {
+    const control = this.financialForm.get('defaultCreditLimit');
+    if (!control) return;
+
+    const raw = control.value;
+    if (!raw) return;
+
+    const numericValue = String(raw).replace(/\D/g, '');
+    control.setValue(numericValue, { emitEvent: false });
+  }
+
   private validateEditFlow(): boolean {
     if (!this.isEditMode) {
       return true;
@@ -230,7 +254,10 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       'primaryContactCountry',
     ];
     if (!this.hasValues(addressSource, addressFields)) {
-      this.toastr.error('Please fill all required fields in the Address Info tab.', 'Missing fields');
+      this.toastr.error(
+        'Please fill all required fields in the Address Info tab.',
+        'Missing fields',
+      );
       return false;
     }
 
@@ -252,7 +279,10 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     }
 
     if (!this.hasMinValue(financialSource?.defaultCreditLimit, 1)) {
-      this.toastr.error('Financial & AR Settings requires a valid credit limit (> 0).', 'Invalid value');
+      this.toastr.error(
+        'Financial & AR Settings requires a valid credit limit (> 0).',
+        'Invalid value',
+      );
       return false;
     }
 

@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { CompanyService } from '../../services/company-service';
 import {
   RoleService,
   SecurityReportByObjectResponse,
@@ -51,10 +52,12 @@ interface TableRow {
 export class SecurityReport implements OnInit, OnDestroy {
   private roleService = inject(RoleService);
   private companySelection = inject(CompanySelectionService);
+  private companyService = inject(CompanyService);
 
   private destroy$ = new Subject<void>();
   private pendingRequests = 0;
   private activeCompanyId: number | null = null;
+  private activeCompanyCode: string | null = null;
 
   private roleRows = signal<RolePermissionRow[]>([]);
   private objectRows = signal<RolePermissionRow[]>([]);
@@ -178,12 +181,14 @@ export class SecurityReport implements OnInit, OnDestroy {
         const parsed = companyIdValue ? Number(companyIdValue) : NaN;
         const nextCompanyId = Number.isFinite(parsed) ? parsed : null;
         this.activeCompanyId = nextCompanyId;
+        this.activeCompanyCode = null;
 
         if (!this.activeCompanyId) {
           this.resetState();
           return;
         }
 
+        this.loadCompanyMetadata(this.activeCompanyId);
         this.fetchRoleView(this.activeCompanyId);
         if (this.viewMode() === 'OBJECT') {
           this.fetchObjectView(this.activeCompanyId);
@@ -257,12 +262,17 @@ export class SecurityReport implements OnInit, OnDestroy {
     }
 
     const permissions = this.permissionColumns();
-    const headers = [this.primaryHeader(), this.secondaryHeader(), ...permissions.map(p => this.formatPermissionLabel(p))];
+    const headers = [
+      'AR Company Code',
+      this.primaryHeader(),
+      this.secondaryHeader(),
+      ...permissions.map((p) => this.formatPermissionLabel(p)),
+    ];
 
-    // Build CSV content
     const csvRows: string[] = [];
     csvRows.push(headers.join(','));
 
+    const companyCodeValue = this.escapeCsvValue(this.getActiveCompanyCode() || 'N/A');
     rows.forEach((row) => {
       const primary = this.viewMode() === 'ROLE' 
         ? this.formatRoleLabel(row.primary) 
@@ -276,6 +286,7 @@ export class SecurityReport implements OnInit, OnDestroy {
       );
 
       const rowData = [
+        companyCodeValue,
         this.escapeCsvValue(primary),
         this.escapeCsvValue(secondary),
         ...permissionValues
@@ -298,12 +309,18 @@ export class SecurityReport implements OnInit, OnDestroy {
     }
 
     const permissions = this.permissionColumns();
-    const headers = [this.primaryHeader(), this.secondaryHeader(), ...permissions.map(p => this.formatPermissionLabel(p))];
+    const headers = [
+      'AR Company Code',
+      this.primaryHeader(),
+      this.secondaryHeader(),
+      ...permissions.map((p) => this.formatPermissionLabel(p)),
+    ];
 
     // Build data array
     const data: any[][] = [];
     data.push(headers);
 
+    const companyCodeValue = this.getActiveCompanyCode() || 'N/A';
     rows.forEach((row) => {
       const primary = this.viewMode() === 'ROLE'
         ? this.formatRoleLabel(row.primary)
@@ -316,7 +333,7 @@ export class SecurityReport implements OnInit, OnDestroy {
         this.hasPermission(row.permissions, perm) ? 'Yes' : 'No'
       );
 
-      data.push([primary, secondary, ...permissionValues]);
+      data.push([companyCodeValue, primary, secondary, ...permissionValues]);
     });
 
     // Create workbook and worksheet
@@ -325,6 +342,7 @@ export class SecurityReport implements OnInit, OnDestroy {
 
     // Set column widths
     const colWidths = [
+      { wch: 18 }, // Company code column
       { wch: 25 }, // Primary column
       { wch: 25 }, // Secondary column
       ...permissions.map(() => ({ wch: 12 })) // Permission columns
@@ -347,7 +365,12 @@ export class SecurityReport implements OnInit, OnDestroy {
     }
 
     const permissions = this.permissionColumns();
-    const headers = [this.primaryHeader(), this.secondaryHeader(), ...permissions.map(p => this.formatPermissionLabel(p))];
+    const headers = [
+      'AR Company Code',
+      this.primaryHeader(),
+      this.secondaryHeader(),
+      ...permissions.map((p) => this.formatPermissionLabel(p)),
+    ];
 
     // Determine orientation based on number of columns
     const orientation = permissions.length > 5 ? 'landscape' : 'portrait';
@@ -375,22 +398,31 @@ export class SecurityReport implements OnInit, OnDestroy {
       ? `Role: ${this.formatRoleLabel(this.selectedRole()) || 'All Roles'}`
       : `Object: ${this.formatObjectLabel(this.selectedObject()) || 'All Objects'}`;
     doc.text(subtitle, margin, 22);
+    const companyCode = this.getActiveCompanyCode();
+    if (companyCode) {
+      doc.text(`Company Code: ${companyCode}`, margin, 27);
+    }
 
     // Table settings
-    const startY = 30;
+    const startY = companyCode ? 36 : 30;
     const rowHeight = 8;
     const headerHeight = 10;
     const fontSize = 8;
     const cellPadding = 2;
 
     // Calculate column widths
-    const totalColumns = headers.length;
+    const companyColWidth = usableWidth * 0.2;
     const primaryColWidth = usableWidth * 0.25;
     const secondaryColWidth = usableWidth * 0.25;
-    const remainingWidth = usableWidth - primaryColWidth - secondaryColWidth;
-    const permColWidth = remainingWidth / permissions.length;
+    const remainingWidth = Math.max(usableWidth - companyColWidth - primaryColWidth - secondaryColWidth, 0);
+    const permColWidth = permissions.length ? remainingWidth / permissions.length : 0;
 
-    const columnWidths = [primaryColWidth, secondaryColWidth, ...permissions.map(() => permColWidth)];
+    const columnWidths = [
+      companyColWidth,
+      primaryColWidth,
+      secondaryColWidth,
+      ...permissions.map(() => permColWidth),
+    ];
 
     let currentY = startY;
 
@@ -467,32 +499,40 @@ export class SecurityReport implements OnInit, OnDestroy {
       // Draw cell content
       currentX = margin;
       
+      // Company code column
+      doc.setFont('helvetica', 'normal');
+      const companyValue = this.getActiveCompanyCode() || 'N/A';
+      const companyTruncated = this.truncateText(doc, companyValue, columnWidths[0] - cellPadding * 2);
+      doc.text(companyTruncated, currentX + cellPadding, currentY + rowHeight / 2 + 2);
+      currentX += columnWidths[0];
+
       // Primary column (bold)
       doc.setFont('helvetica', 'bold');
       const primary = this.viewMode() === 'ROLE'
         ? this.formatRoleLabel(row.primary)
         : this.formatObjectLabel(row.primary);
-      const primaryTruncated = this.truncateText(doc, primary, columnWidths[0] - cellPadding * 2);
+      const primaryTruncated = this.truncateText(doc, primary, columnWidths[1] - cellPadding * 2);
       doc.text(primaryTruncated, currentX + cellPadding, currentY + rowHeight / 2 + 2);
-      currentX += columnWidths[0];
+      currentX += columnWidths[1];
 
       // Secondary column (normal)
       doc.setFont('helvetica', 'normal');
       const secondary = this.viewMode() === 'ROLE'
         ? this.formatObjectLabel(row.secondary)
         : this.formatRoleLabel(row.secondary);
-      const secondaryTruncated = this.truncateText(doc, secondary, columnWidths[1] - cellPadding * 2);
+      const secondaryTruncated = this.truncateText(doc, secondary, columnWidths[2] - cellPadding * 2);
       doc.text(secondaryTruncated, currentX + cellPadding, currentY + rowHeight / 2 + 2);
-      currentX += columnWidths[1];
+      currentX += columnWidths[2];
 
       // Permission columns (centered)
       permissions.forEach((perm, permIndex) => {
         const hasPermission = this.hasPermission(row.permissions, perm);
         const value = hasPermission ? 'Yes' : 'No';
         const textWidth = doc.getTextWidth(value);
-        const textX = currentX + (permColWidth - textWidth) / 2;
+        const columnWidth = columnWidths[permIndex + 3] ?? 0;
+        const textX = currentX + (columnWidth - textWidth) / 2;
         doc.text(value, textX, currentY + rowHeight / 2 + 2);
-        currentX += permColWidth;
+        currentX += columnWidth;
       });
 
       currentY += rowHeight;
@@ -518,7 +558,11 @@ export class SecurityReport implements OnInit, OnDestroy {
   private getExportFileName(extension: string): string {
     const date = new Date().toISOString().split('T')[0];
     const mode = this.viewMode() === 'ROLE' ? 'by-role' : 'by-object';
-    return `security-report-${mode}-${date}.${extension}`;
+    const codeSegment = this.getCompanyCodeForFileName();
+    const base = codeSegment
+      ? `security-report-${codeSegment}-${mode}-${date}`
+      : `security-report-${mode}-${date}`;
+    return `${base}.${extension}`;
   }
 
   private escapeCsvValue(value: string): string {
@@ -653,6 +697,27 @@ export class SecurityReport implements OnInit, OnDestroy {
     this.selectedObject.set('');
     this.loading.set(false);
     this.resetPagination();
+    this.activeCompanyCode = null;
+  }
+
+  private loadCompanyMetadata(companyId: number) {
+    this.companyService
+      .getCompanyById(companyId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (this.activeCompanyId !== companyId) {
+            return;
+          }
+          const code = response?.data?.companyCode?.trim();
+          this.activeCompanyCode = code || null;
+        },
+        error: () => {
+          if (this.activeCompanyId === companyId) {
+            this.activeCompanyCode = null;
+          }
+        },
+      });
   }
 
   private beginLoading() {
@@ -751,5 +816,19 @@ export class SecurityReport implements OnInit, OnDestroy {
       return 'UPDATE';
     }
     return normalized;
+  }
+
+  getActiveCompanyCode(): string | null {
+    const trimmed = this.activeCompanyCode?.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  private getCompanyCodeForFileName(): string | null {
+    const code = this.getActiveCompanyCode();
+    if (!code) {
+      return null;
+    }
+    const sanitized = code.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '');
+    return sanitized || null;
   }
 }

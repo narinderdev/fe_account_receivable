@@ -108,9 +108,13 @@
             <input
               type="text"
               formControlName="defaultCreditLimit"
-              (input)="onCreditLimitInput()"
+              placeholder="$0"
               inputmode="numeric"
+              (focus)="removeCreditLimitFormatting()"
+              (blur)="formatCreditLimit()"
+              (input)="onCreditLimitInput()"
             />
+
             <div
               class="error"
               *ngIf="submitted && financialForm.controls['defaultCreditLimit'].errors"
