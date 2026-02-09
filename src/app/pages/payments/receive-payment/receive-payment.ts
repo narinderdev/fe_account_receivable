@@ -26,6 +26,8 @@ export class ReceivePayment implements OnInit, OnDestroy {
   paymentMethod: string = '';
   notes: string = '';
   showNotesError: boolean = false;
+  bankDepositDisplay: string = '';
+  serviceFeeDisplay: string = '';
 
   // Validation flags
   submitted: boolean = false;
@@ -41,7 +43,7 @@ export class ReceivePayment implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private paymentService: PaymentService,
     private router: Router,
-    private companySelection: CompanySelectionService
+    private companySelection: CompanySelectionService,
   ) {}
 
   private destroy$ = new Subject<void>();
@@ -94,6 +96,42 @@ export class ReceivePayment implements OnInit, OnDestroy {
     });
   }
 
+  onBankDepositInput(event: any) {
+    const raw = event.target.value.replace(/[^\d.]/g, '');
+    this.bankDeposit = raw ? Number(raw) : null;
+    this.bankDepositDisplay = raw;
+  }
+
+  formatBankDeposit() {
+    if (this.bankDeposit == null) {
+      this.bankDepositDisplay = '';
+      return;
+    }
+
+    this.bankDepositDisplay = `$${this.bankDeposit.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  onServiceFeeInput(event: any) {
+    const raw = event.target.value.replace(/[^\d.]/g, '');
+    this.serviceFee = raw ? Number(raw) : null;
+    this.serviceFeeDisplay = raw;
+  }
+
+  formatServiceFee() {
+    if (this.serviceFee == null) {
+      this.serviceFeeDisplay = '';
+      return;
+    }
+
+    this.serviceFeeDisplay = `$${this.serviceFee.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
   /** When customer is selected */
   onCustomerChange() {
     console.log('Customer changed to ID:', this.selectedCustomerId);
@@ -103,7 +141,9 @@ export class ReceivePayment implements OnInit, OnDestroy {
 
     setTimeout(() => {
       this.bankDeposit = null;
+      this.bankDepositDisplay = '';
       this.serviceFee = null;
+      this.serviceFeeDisplay = '';
       this.paymentMethod = '';
       this.showBankDepositError = false;
       this.showServiceFeeError = false;
@@ -184,7 +224,7 @@ export class ReceivePayment implements OnInit, OnDestroy {
     this.paymentService.applyPayment(this.selectedCustomerId!, data).subscribe({
       next: (response: ApplyPaymentResponse) => {
         console.log('PAYMENT SUCCESS:', response);
-        this.toastr.success('Payment applied successfully!', 'Success');
+        this.toastr.success(response!.message, 'Success');
         setTimeout(() => {
           this.router.navigate(['/admin/payments']);
         }, 1000);

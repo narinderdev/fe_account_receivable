@@ -71,10 +71,10 @@
     <div class="tab-nav">
       <button
         class="tab-btn"
-        [class.active]="activeTab === 'DRAFT'"
-        (click)="setTab('DRAFT')"
+        [class.active]="activeTab === 'CREATED'"
+        (click)="setTab('CREATED')"
       >
-        Drafts
+        Created
       </button>
       <button
         class="tab-btn"
@@ -85,7 +85,7 @@
       </button>
     </div>
 
-    <ng-container *ngIf="activeTab === 'DRAFT'; else approvedTab">
+    <ng-container *ngIf="activeTab === 'CREATED'; else approvedTab">
       <table class="payments-table">
         <thead>
           <tr>
@@ -135,7 +135,7 @@
               <button 
                 class="btn-approve-apply" 
                 (click)="approveAndApply(payment, $event)"
-                *ngIf="canApplyPayment && payment.status?.toUpperCase() === 'DRAFT'"
+                *ngIf="canApplyPayment && payment.status?.toUpperCase() === 'CREATED'"
               >
                 Approve & Apply
               </button>
@@ -389,7 +389,7 @@
             </div>
             <div class="detail-item">
               <span class="detail-label">Status</span>
-              <span class="detail-value">{{ manual.status || 'DRAFT' }}</span>
+              <span class="detail-value">{{ manual.status || 'CREATED' }}</span>
             </div>
           </div>
           <div class="notes-section" *ngIf="manual.notes">
@@ -583,10 +583,10 @@
             <span>Applied</span>
             <strong>{{ totalAppliedAmount | currency }}</strong>
           </div>
-          <div>
+          <!-- <div>
             <span>Remaining</span>
             <strong>{{ remainingApproveAmount | currency }}</strong>
-          </div>
+          </div> -->
         </div>
 
         <!-- Invoice Selection -->
@@ -638,7 +638,6 @@
                     <td>
                       <div class="invoice-info">
                         <span class="invoice-number">#{{ invoice.invoiceNumber }}</span>
-                        <small>{{ invoice.customer?.customerName || '--' }}</small>
                       </div>
                     </td>
                     <td>{{ invoice.dueDate | date: 'mediumDate' }}</td>

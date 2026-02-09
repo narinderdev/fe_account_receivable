@@ -27,7 +27,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Customer as CustomerService } from '../../services/customer';
 
 type PaymentType = 'MANUAL' | 'BANK';
-type PaymentTab = 'DRAFT' | 'APPROVED';
+type PaymentTab = 'CREATED' | 'APPROVED';
 
 interface PaymentListItem {
   id: number;
@@ -103,7 +103,7 @@ export class Payments implements OnInit, OnDestroy {
   customerOptionsError: string | null = null;
   selectedCustomer: CustomerEntity | null = null;
   customerMatchMessage: string | null = null;
-  activeTab: PaymentTab = 'DRAFT';
+  activeTab: PaymentTab = 'CREATED';
 
   // Two-step modal properties
   modalStep: number = 1;
@@ -166,7 +166,7 @@ export class Payments implements OnInit, OnDestroy {
       }
 
       this.activeCompanyId = nextId;
-      this.activeTab = 'DRAFT';
+      this.activeTab = 'CREATED';
       this.approvedLoaded = false;
       this.resetApprovedCollections();
 
@@ -186,8 +186,8 @@ export class Payments implements OnInit, OnDestroy {
     }
     this.activeTab = tab;
     this.cdr.detectChanges();
-    if (tab === 'DRAFT') {
-      this.applySearchFilter('DRAFT');
+    if (tab === 'CREATED') {
+      this.applySearchFilter('CREATED');
       if (this.activeCompanyId && !this.allPayments.length) {
         this.loadPayments(this.activeCompanyId);
       }
@@ -215,10 +215,10 @@ export class Payments implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     const manualFilters = this.buildManualFilters(dateRange);
-    const bankMonths = this.resolveBankMonths();
+    const bankFilters = this.buildBankFilters(dateRange);
 
     forkJoin({
-      bank: this.paymentService.getPayments(companyId, { months: bankMonths }),
+      bank: this.paymentService.getPayments(companyId, bankFilters),
       manual: this.paymentService.getManualPayments(companyId, manualFilters),
     }).subscribe({
       next: ({ bank, manual }) => {
@@ -235,7 +235,7 @@ export class Payments implements OnInit, OnDestroy {
         this.currentPage = 0;
 
         this.loading = false;
-        this.applySearchFilter('DRAFT');
+        this.applySearchFilter('CREATED');
         this.updateLocalPaymentsCache();
         this.cdr.detectChanges();
       },
@@ -423,7 +423,7 @@ export class Payments implements OnInit, OnDestroy {
     }
 
     this.currentPage = 0;
-    this.updatePagination('DRAFT');
+    this.updatePagination('CREATED');
   }
 
   private updatePagination(targetTab: PaymentTab = this.activeTab) {
@@ -451,7 +451,7 @@ export class Payments implements OnInit, OnDestroy {
       this.currentPage = this.totalPages - 1;
     }
 
-    this.updatePagedPayments('DRAFT');
+    this.updatePagedPayments('CREATED');
   }
 
   private updatePagedPayments(targetTab: PaymentTab = this.activeTab) {
@@ -513,7 +513,7 @@ export class Payments implements OnInit, OnDestroy {
       OPEN: 'status-open',
       PARTIAL: 'status-partial',
       PAID: 'status-paid',
-      DRAFT: 'status-partial',
+      CREATED: 'status-partial',
       APPROVED: 'status-paid',
     };
 
@@ -1089,7 +1089,7 @@ export class Payments implements OnInit, OnDestroy {
 
     if (page >= 0 && page < this.totalPages && page !== this.currentPage) {
       this.currentPage = page;
-      this.updatePagedPayments('DRAFT');
+      this.updatePagedPayments('CREATED');
     }
   }
 
@@ -1104,7 +1104,7 @@ export class Payments implements OnInit, OnDestroy {
 
     if (this.currentPage < this.totalPages - 1) {
       this.currentPage += 1;
-      this.updatePagedPayments('DRAFT');
+      this.updatePagedPayments('CREATED');
     }
   }
 
@@ -1119,7 +1119,7 @@ export class Payments implements OnInit, OnDestroy {
 
     if (this.currentPage > 0) {
       this.currentPage -= 1;
-      this.updatePagedPayments('DRAFT');
+      this.updatePagedPayments('CREATED');
     }
   }
 
@@ -1164,15 +1164,26 @@ export class Payments implements OnInit, OnDestroy {
   }
 
   private resolveBankMonths(): number {
-    if (this.isCustomPeriod && this.fromDate && this.toDate) {
-      const start = new Date(this.fromDate);
-      const end = new Date(this.toDate);
-      const diffMonths =
-        (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
-      return Math.max(1, diffMonths);
-    }
     const months = parseInt(this.selectedPeriod, 10);
     return Number.isFinite(months) ? months : 3;
+  }
+
+  private buildBankFilters(
+    dateRange: { fromDate: string; toDate: string } | null,
+  ): { months?: number; fromDate?: string; toDate?: string } {
+    if (this.isCustomPeriod) {
+      if (!dateRange) {
+        throw new Error('Custom date range is required for bank payment filtering.');
+      }
+      return {
+        fromDate: dateRange.fromDate,
+        toDate: dateRange.toDate,
+      };
+    }
+
+    return {
+      months: this.resolveBankMonths(),
+    };
   }
 
   private mapManualPayment(payment: Payment): PaymentListItem {
@@ -1180,7 +1191,7 @@ export class Payments implements OnInit, OnDestroy {
     return {
       id: manualId,
       type: 'MANUAL',
-      tab: 'DRAFT',
+      tab: 'CREATED',
       customerName: this.extractManualCustomerName(payment),
       status: payment.status || '',
       amount: payment.paymentAmount ?? 0,
@@ -1220,7 +1231,7 @@ export class Payments implements OnInit, OnDestroy {
     return {
       id: payment.id,
       type: 'BANK',
-      tab: 'DRAFT',
+      tab: 'CREATED',
       customerName: payment.customerName || '--',
       status: payment.status,
       amount: payment.amount,
