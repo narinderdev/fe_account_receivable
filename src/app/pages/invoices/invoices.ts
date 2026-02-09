@@ -483,9 +483,9 @@ export class Invoices implements OnInit, OnDestroy {
     });
   }
 
-  // Show approve only for draft invoices
+    
   isDraft(inv: Invoice): boolean {
-    return (inv as any)?.status === 'DRAFT';
+    return (inv as any)?.status === 'CREATED';
   }
 
   openApproveModal(invoice: Invoice, event: Event): void {
@@ -676,7 +676,7 @@ export class Invoices implements OnInit, OnDestroy {
   getStatusClass(status?: string | null): string {
     const normalized = (status || '').toLowerCase();
     switch (normalized) {
-      case 'draft':
+      case 'created':
         return 'status-draft';
       case 'sent':
       case 'open':

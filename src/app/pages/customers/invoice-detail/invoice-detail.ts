@@ -74,9 +74,11 @@ export class InvoiceDetail implements OnInit {
     
     const status = this.invoice.status?.toUpperCase();
     
-    if (status === 'PAID') return 'PAID';
-    if (status === 'COMPLETED') return 'COMPLETED';
+    if (status === 'PAID') return 'Paid';
+    if (status === 'CREATED') return 'Created';
+    if (status === 'PARTIAL') return 'Partial';
+    if (status === 'OPEN') return 'Open';
     
-    return 'OPEN';
+    return 'Open';
   }
 }
