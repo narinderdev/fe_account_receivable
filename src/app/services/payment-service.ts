@@ -19,12 +19,32 @@ export class PaymentService {
   private baseUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  getPayments(companyId: number, params: { months: number }): Observable<BankTransactionsResponse> {
+  getPayments(
+    companyId: number,
+    params: { months?: number; fromDate?: string; toDate?: string },
+  ): Observable<BankTransactionsResponse> {
     const headers = getAuthHeadersWithNgrok();
-    const months = params.months ?? 1;
+    const queryParams: string[] = [];
+
+    if (params.fromDate) {
+      queryParams.push(`fromDate=${encodeURIComponent(params.fromDate)}`);
+    }
+    if (params.toDate) {
+      queryParams.push(`toDate=${encodeURIComponent(params.toDate)}`);
+    }
+
+    if (params.months !== undefined) {
+      queryParams.push(`months=${params.months}`);
+    }
+
+    if (!queryParams.length) {
+      queryParams.push('months=1');
+    }
+
+    const queryString = queryParams.join('&');
 
     return this.http.get<BankTransactionsResponse>(
-      `${this.baseUrl}/api/bank-reconciliation/company/${companyId}/transactions?months=${months}`,
+      `${this.baseUrl}/api/bank-reconciliation/company/${companyId}/transactions?${queryString}`,
       { headers },
     );
   }
@@ -53,9 +73,44 @@ export class PaymentService {
     },
   ): Observable<PaymentPage> {
     const headers = getAuthHeadersWithNgrok();
+    const queryParams: string[] = [];
+
+    if (_params) {
+      // Add pagination params
+      if (_params.page !== undefined) {
+        queryParams.push(`page=${_params.page}`);
+      }
+
+      if (_params.size !== undefined) {
+        queryParams.push(`size=${_params.size}`);
+      }
+
+      // Add date filters
+      if (_params.fromDate) {
+        queryParams.push(`fromDate=${encodeURIComponent(_params.fromDate)}`);
+      }
+
+      if (_params.toDate) {
+        queryParams.push(`toDate=${encodeURIComponent(_params.toDate)}`);
+      }
+
+      // Add months filter
+      if (_params.months !== undefined) {
+        queryParams.push(`months=${_params.months}`);
+      }
+
+      // Add statuses array
+      if (_params.statuses?.length) {
+        _params.statuses.forEach((status) => {
+          queryParams.push(`statuses=${encodeURIComponent(status)}`);
+        });
+      }
+    }
+
+    const queryString = queryParams.length ? `?${queryParams.join('&')}` : '';
 
     return this.http.get<PaymentPage>(
-      `${this.baseUrl}/payment/company/${companyId}/draft`,
+      `${this.baseUrl}/payment/company/${companyId}/created${queryString}`,
       { headers },
     );
   }
@@ -71,11 +126,9 @@ export class PaymentService {
 
   approveAndApply(paymentId: number, payload: ApproveApplyRequest): Observable<any> {
     const headers = getAuthHeaders();
-    return this.http.post(
-      `${this.baseUrl}/payment/${paymentId}/approve-apply`,
-      payload,
-      { headers },
-    );
+    return this.http.post(`${this.baseUrl}/payment/${paymentId}/approve-apply`, payload, {
+      headers,
+    });
   }
 
   approveAndApplyBankTransaction(
@@ -114,9 +167,9 @@ export class PaymentService {
 
     if (params.months !== undefined) queryParams.push(`months=${params.months}`);
 
-    if (params.statuses?.length) {
-      params.statuses.forEach((s) => queryParams.push(`statuses=${encodeURIComponent(s)}`));
-    }
+    // if (params.statuses?.length) {
+    //   params.statuses.forEach((s) => queryParams.push(`statuses=${encodeURIComponent(s)}`));
+    // }
 
     return this.http.get<PaymentPage>(
       `${this.baseUrl}/payment/company/${companyId}/filter?${queryParams.join('&')}`,
