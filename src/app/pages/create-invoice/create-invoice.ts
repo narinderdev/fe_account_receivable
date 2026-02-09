@@ -202,28 +202,28 @@ export class CreateInvoice implements OnInit, OnDestroy {
   // RATE FORMATTING METHODS
   // ---------------------------
   onRateInput(item: InvoiceItemDraft, event: any): void {
-    // Remove all non-digit and non-decimal characters for the actual value
-    const input = event.target.value.replace(/[^\d.]/g, '');
-    item.rate = input;
-    item.rateDisplay = input;
-  }
+  const input = event.target.value.replace(/[^\d.]/g, '');
+  item.rate = input;
+  item.rateDisplay = input;
+}
+
 
   formatRateOnBlur(item: InvoiceItemDraft): void {
-    if (!item.rate) {
-      item.rateDisplay = '';
-      return;
-    }
-
-    const numericValue = parseFloat(item.rate);
-    if (isNaN(numericValue)) {
-      item.rateDisplay = '';
-      item.rate = '';
-      return;
-    }
-
-    // Format with thousand separators
-    item.rateDisplay = this.formatNumberWithCommas(numericValue);
+  if (!item.rate) {
+    item.rateDisplay = '';
+    return;
   }
+
+  const numericValue = parseFloat(item.rate);
+  if (isNaN(numericValue)) {
+    item.rateDisplay = '';
+    item.rate = '';
+    return;
+  }
+
+  item.rateDisplay = `$${this.formatNumberWithCommas(numericValue)}`;
+}
+
 
   removeRateFormatting(item: InvoiceItemDraft): void {
     // When focused, show the raw number without formatting

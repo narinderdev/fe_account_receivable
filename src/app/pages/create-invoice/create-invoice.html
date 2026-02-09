@@ -22,9 +22,9 @@
         <div class="form-row">
           <!-- Customer -->
           <div class="form-field">
-            <label>Company</label>
+            <label>Customer</label>
             <select [(ngModel)]="invoice.customerId" (change)="onCustomerChange()">
-              <option value="">Select Company</option>
+              <option value="">Select Customer</option>
               <option *ngFor="let c of customers" [value]="c.id">
                 {{ c.customerName }}
               </option>
