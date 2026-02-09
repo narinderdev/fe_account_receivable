@@ -33,7 +33,7 @@ export class CreditMemoService {
 
   getCompanyCreditMemos(
     companyId: number,
-    status?: 'DRAFT' | 'APPROVED',
+    status?: 'CREATED' | 'APPROVED',
     page = 0,
     size = 10
   ): Observable<CreditMemoPageResponse> {

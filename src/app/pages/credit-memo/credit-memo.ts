@@ -46,7 +46,7 @@ const CREDIT_MEMO_CURRENCY = 'USD';
 const CREDIT_REASON_ON_ACCOUNT = 'Manual credit memo';
 const CREDIT_REASON_APPLIED = 'Credit memo applied to invoice';
 
-type CreditMemoTab = 'DRAFT' | 'APPROVED';
+type CreditMemoTab = 'CREATED' | 'APPROVED';
 
 interface CreditMemoTabState {
   records: CreditMemoRecord[];
@@ -106,7 +106,7 @@ export class CreditMemo implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private lastCompanyId: number | null = null;
   private readonly defaultPageSize = 10;
-  activeTab: CreditMemoTab = 'DRAFT';
+  activeTab: CreditMemoTab = 'CREATED';
   tabStates: Record<CreditMemoTab, CreditMemoTabState> = this.createInitialTabStates();
 
   constructor(
@@ -170,14 +170,14 @@ export class CreditMemo implements OnInit, OnDestroy {
 
         if (companyId === null) {
           this.lastCompanyId = null;
-          this.activeTab = 'DRAFT';
+          this.activeTab = 'CREATED';
           this.resetTabStates('Select a company to view credit memos.');
           this.cdr.detectChanges();
           return;
         }
 
         this.lastCompanyId = companyId;
-        this.activeTab = 'DRAFT';
+        this.activeTab = 'CREATED';
         this.resetTabStates();
         this.cdr.detectChanges();
         this.fetchInitialData(companyId);
@@ -187,7 +187,7 @@ export class CreditMemo implements OnInit, OnDestroy {
   private fetchInitialData(companyId: number) {
     this.loadCustomersFromService(true, companyId);
     this.loadArCodesFromService(true, companyId);
-    this.loadCreditMemos(companyId, 'DRAFT');
+    this.loadCreditMemos(companyId, 'CREATED');
     this.loadCreditMemos(companyId, 'APPROVED');
   }
 
@@ -599,7 +599,7 @@ export class CreditMemo implements OnInit, OnDestroy {
         this.approveModalOpen = false;
         this.creditMemoToApprove = null;
         if (this.lastCompanyId !== null) {
-          this.loadCreditMemos(this.lastCompanyId, 'DRAFT');
+          this.loadCreditMemos(this.lastCompanyId, 'CREATED');
           this.loadCreditMemos(this.lastCompanyId, 'APPROVED');
         }
         this.cdr.detectChanges();
@@ -754,7 +754,7 @@ export class CreditMemo implements OnInit, OnDestroy {
             const targetTab = this.mapStatusToTab(createdMemo.status);
             this.updateTabRecords(targetTab, (records) => [createdMemo, ...records]);
           } else if (this.lastCompanyId) {
-            this.loadCreditMemos(this.lastCompanyId, 'DRAFT');
+            this.loadCreditMemos(this.lastCompanyId, 'CREATED');
           }
 
           let message = response?.message || 'Credit memo created successfully';
@@ -953,8 +953,8 @@ export class CreditMemo implements OnInit, OnDestroy {
     }
     const normalized = String(status).toUpperCase();
     switch (normalized) {
-      case 'DRAFTED':
-        return 'Draft';
+      case 'CREATED':
+        return 'Created';
       case 'POSTED':
         return 'Posted';
       case 'ALLOWED':
@@ -969,8 +969,8 @@ export class CreditMemo implements OnInit, OnDestroy {
       return '';
     }
     const normalized = String(status).toUpperCase();
-    if (normalized === 'DRAFT' || normalized === 'DRAFTED') {
-      return 'draft';
+    if (normalized === 'CREATED' || normalized === 'CREATED') {
+      return 'created';
     }
     if (['APPROVED', 'POSTED', 'ALLOWED'].includes(normalized)) {
       return 'approved';
@@ -1018,7 +1018,7 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   private createInitialTabStates(errorMessage: string | null = null): Record<CreditMemoTab, CreditMemoTabState> {
     return {
-      DRAFT: this.buildInitialTabState(errorMessage),
+      CREATED: this.buildInitialTabState(errorMessage),
       APPROVED: this.buildInitialTabState(errorMessage),
     };
   }
@@ -1063,12 +1063,12 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   private mapStatusToTab(status?: CreditMemoStatus | null): CreditMemoTab {
     if (!status) {
-      return 'DRAFT';
+      return 'CREATED';
     }
     const normalized = String(status).toUpperCase();
     if (normalized === 'APPROVED' || normalized === 'POSTED' || normalized === 'ALLOWED') {
       return 'APPROVED';
     }
-    return 'DRAFT';
+    return 'CREATED';
   }
 }

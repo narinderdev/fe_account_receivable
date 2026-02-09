@@ -6,8 +6,8 @@
   </div>
 
   <div class="tabs" *ngIf="canViewCreditMemos">
-    <button class="tab" [class.active]="activeTab === 'DRAFT'" (click)="setTab('DRAFT')">
-      Draft
+    <button class="tab" [class.active]="activeTab === 'CREATED'" (click)="setTab('CREATED')">
+      Created
     </button>
     <button class="tab" [class.active]="activeTab === 'APPROVED'" (click)="setTab('APPROVED')">
       Approved
@@ -29,8 +29,8 @@
         class="empty-text"
       >
         {{
-          activeTab === 'DRAFT'
-            ? 'No draft credit memos have been created yet.'
+          activeTab === 'CREATED'
+            ? 'No credit memos have been created yet.'
             : 'No approved credit memos available.'
         }}
       </div>
@@ -46,7 +46,7 @@
               <th>AR Code</th>
               <th>Date</th>
               <th>Status</th>
-              <th *ngIf="activeTab === 'DRAFT' && canApproveCreditMemo">Actions</th>
+              <th *ngIf="activeTab === 'CREATED' && canApproveCreditMemo">Actions</th>
               <!-- <th *ngIf="showActionsColumn">Actions</th> -->
             </tr>
           </thead>
@@ -84,7 +84,7 @@
                   {{ getStatusLabel(record.status) }}
                 </span>
               </td>
-              <td *ngIf="activeTab === 'DRAFT' && canApproveCreditMemo">
+              <td *ngIf="activeTab === 'CREATED' && canApproveCreditMemo">
                 <button
                   type="button"
                   class="btn-approve"
