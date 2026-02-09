@@ -145,6 +145,19 @@ export class Users implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  formatRoleName(name: string | undefined | null): string {
+  if (!name) return '';
+
+  return name
+    .trim()
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/\b(ar)\b/g, 'AR')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+
   closeModal() {
     this.isModalOpen = false;
     this.cdr.detectChanges();
@@ -211,11 +224,21 @@ export class Users implements OnInit, OnDestroy {
   }
 
   getUserStatus(user: CompanyUser): string {
-    const status = user?.status || '';
-    if (!status) return '--';
-    const lower = status.toLowerCase();
-    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  const status = user?.status;
+  if (!status) return '--';
+
+  switch (status.toUpperCase()) {
+    case 'ACTIVE':
+      return 'Active';
+    case 'INACTIVE':
+      return 'Inactive';
+    case 'INVITED':
+      return 'Invited';
+    default:
+      return status.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   }
+}
+
 
   isUserActive(user: CompanyUser): boolean {
     return (user?.status || '').toUpperCase() === 'ACTIVE';
