@@ -40,7 +40,7 @@ test('lists payments, filters results, toggles views, and opens payment details'
 
   await page.getByRole('button', { name: 'Approved' }).click();
   await expect(page.getByText('No approved payments found.')).toBeVisible();
-  await page.getByRole('button', { name: 'Drafts' }).click();
+  await page.getByRole('button', { name: 'Created' }).click();
 
   await page.locator('tbody tr').filter({ hasText: sampleCustomerName }).first().click();
   await expect(page).toHaveURL(new RegExp(`/admin/payments/details/MANUAL/${samplePaymentId}$`));

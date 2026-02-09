@@ -38,7 +38,7 @@ export class CompanyAddress implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private companyService: CompanyService,
-    private roleService: RoleService
+    private roleService: RoleService,
   ) {}
 
   ngOnInit() {
@@ -87,20 +87,16 @@ export class CompanyAddress implements OnInit, OnDestroy {
       ],
       addressCountry: ['', Validators.required],
       primaryContactName: ['', Validators.required],
-       position: ['', Validators.required],
+      position: ['', Validators.required],
       primaryContactEmail: [
         '',
         [Validators.required, Validators.pattern(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/)],
       ],
       primaryContactPhone: [
         '',
-        [
-          Validators.required,
-          Validators.pattern(/^[0-9]*$/),
-          Validators.minLength(10),
-          Validators.maxLength(15),
-        ],
+        [Validators.required, Validators.pattern(/^\(\d{3}\) \d{3}-\d{4}$/)],
       ],
+
       website: [''],
       primaryContactCountry: ['', Validators.required],
     });
@@ -125,9 +121,23 @@ export class CompanyAddress implements OnInit, OnDestroy {
   }
 
   onPhoneInput() {
-    let value = this.addressForm.get('primaryContactPhone')?.value || '';
-    value = value.replace(/\D/g, '').slice(0, 15);
-    this.addressForm.get('primaryContactPhone')?.setValue(value, { emitEvent: false });
+    const control = this.addressForm.get('primaryContactPhone');
+    if (!control) return;
+
+    let value = control.value || '';
+
+    // Remove non-digits
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+
+    let formatted = digits;
+
+    if (digits.length > 6) {
+      formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    } else if (digits.length > 3) {
+      formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    }
+
+    control.setValue(formatted, { emitEvent: false });
   }
 
   onEmailInput() {
@@ -136,6 +146,19 @@ export class CompanyAddress implements OnInit, OnDestroy {
       emitEvent: false,
     });
   }
+
+  formatRoleName(name: string | null | undefined): string {
+  if (!name) return '';
+
+  return name
+    .trim()
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/\b(ar)\b/g, 'AR')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 
   saveAddress() {
     this.submitted = true;
@@ -159,7 +182,7 @@ export class CompanyAddress implements OnInit, OnDestroy {
       .pipe(
         finalize(() => {
           this.isSaving = false;
-        })
+        }),
       )
       .subscribe({
         next: (res) => {

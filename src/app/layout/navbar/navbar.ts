@@ -214,7 +214,19 @@ export class Navbar implements OnInit, OnDestroy {
       (company) => String(company.id) === this.selectedCompanyId
     );
 
-    return selected?.legalName || selected?.tradeName || 'Select Company';
+    return this.getCompanyDisplay(selected) || 'Select Company';
+  }
+
+  getCompanyDisplay(company?: CompanyEntity): string {
+    if (!company) {
+      return '';
+    }
+    const name = company.legalName || company.tradeName || '';
+    const code = company.companyCode?.trim();
+    if (name && code) {
+      return `${name} - ${code}`;
+    }
+    return name || code || '';
   }
 
   private setTitle(url: string) {

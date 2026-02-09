@@ -45,7 +45,7 @@
           [class.active]="company.id ? company.id.toString() === selectedCompanyId : false"
           (click)="onCompanyChange(company.id ? company.id.toString() : '')"
         >
-          {{ company.legalName || company.tradeName }}
+          {{ getCompanyDisplay(company) }}
         </button>
       </div>
     </div>

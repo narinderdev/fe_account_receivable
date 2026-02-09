@@ -9,6 +9,7 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { Invoice, InvoicePage } from '../../models/invoice.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { CompanyService } from '../../services/company-service';
 import { InvoiceService } from '../../services/invoice-service';
 import { Loader } from '../../shared/loader/loader';
 import { InvoiceReportService } from 'src/app/services/invoice-report-service';
@@ -46,6 +47,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
+  private activeCompanyCode: string | null = null;
 
   readonly dateRangeOptions = [
     { label: 'Last 1 Month', value: 'LAST_1_MONTH' },
@@ -145,6 +147,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
     private invoiceReportService: InvoiceReportService,
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService,
+    private companyService: CompanyService,
   ) {}
 
   ngOnInit() {
@@ -161,8 +164,10 @@ export class InvoiceReport implements OnInit, OnDestroy {
         }
 
         this.activeCompanyId = nextCompanyId;
+        this.activeCompanyCode = null;
 
         if (this.activeCompanyId) {
+          this.loadCompanyMetadata(this.activeCompanyId);
           this.loadInvoiceData(this.activeCompanyId);
           this.loadStatusBreakdown(this.activeCompanyId, this.selectedMonths);
         } else {
@@ -180,6 +185,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
     this.selectedMonths = 6;
     this.pieChartLoading = false;
     this.barChartLoading = false;
+    this.activeCompanyCode = null;
     this.initializeStaticData();
     this.cdr.detectChanges();
   }
@@ -516,11 +522,13 @@ export class InvoiceReport implements OnInit, OnDestroy {
     const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
+    const contentStartY = this.drawPdfMetadata(pdf);
+
     let heightLeft = imgHeight;
-    let position = 0;
+    let position = contentStartY;
 
     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    heightLeft -= pageHeight - position;
 
     while (heightLeft > 0) {
       position = heightLeft - imgHeight;
@@ -529,7 +537,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
       heightLeft -= pageHeight;
     }
 
-    pdf.save('invoice-report-charts.pdf');
+    pdf.save(this.getExportFileName('pdf'));
   }
 
   exportToExcel() {
@@ -539,6 +547,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
 
     const statusData = [
       ['Invoice Reports - Export'],
+      ['Company Code:', this.getActiveCompanyCode() || 'N/A'],
       ['Generated On:', this.getCurrentDate()],
       ['Date Range:', this.getSelectedDateRangeLabel()],
       ['Status Period:', `${this.selectedMonths} Month(s)`],
@@ -573,7 +582,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
 
     XLSX.utils.book_append_sheet(wb, ws, 'Invoice Report');
 
-    XLSX.writeFile(wb, `invoice-report-${this.formatDateForFilename()}.xlsx`);
+    XLSX.writeFile(wb, this.getExportFileName('xlsx'));
   }
 
   exportToCSV() {
@@ -584,6 +593,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
 
     const csvData = [
       ['Invoice Reports - Export'],
+      ['Company Code:', this.getActiveCompanyCode() || 'N/A'],
       ['Generated On:', this.getCurrentDate()],
       ['Date Range:', this.getSelectedDateRangeLabel()],
       ['Status Period:', `${this.selectedMonths} Month(s)`],
@@ -622,7 +632,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', `invoice-report-${this.formatDateForFilename()}.csv`);
+    link.setAttribute('download', this.getExportFileName('csv'));
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -667,6 +677,66 @@ export class InvoiceReport implements OnInit, OnDestroy {
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${year}${month}${day}-${hours}${minutes}`;
+  }
+
+  private getExportFileName(extension: string): string {
+    const codeSegment = this.getCompanyCodeForFileName();
+    const base = codeSegment ? `invoice-report-${codeSegment}` : 'invoice-report';
+    return `${base}-${this.formatDateForFilename()}.${extension}`;
+  }
+
+  private getCompanyCodeForFileName(): string | null {
+    const code = this.getActiveCompanyCode();
+    if (!code) {
+      return null;
+    }
+    const sanitized = code.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '');
+    return sanitized || null;
+  }
+
+  getActiveCompanyCode(): string | null {
+    const trimmed = this.activeCompanyCode?.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  private drawPdfMetadata(pdf: jsPDF): number {
+    const lines = this.getExportMetadataLines();
+    if (!lines.length) {
+      return 0;
+    }
+    const margin = 10;
+    const lineHeight = 6;
+    pdf.setFontSize(10);
+    let currentY = margin;
+    lines.forEach((line) => {
+      pdf.text(line, margin, currentY);
+      currentY += lineHeight;
+    });
+    return currentY + 2;
+  }
+
+  private getExportMetadataLines(): string[] {
+    return [`Company Code: ${this.getActiveCompanyCode() || 'N/A'}`];
+  }
+
+  private loadCompanyMetadata(companyId: number) {
+    this.companyService
+      .getCompanyById(companyId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (this.activeCompanyId !== companyId) {
+            return;
+          }
+          const code = response?.data?.companyCode?.trim();
+          this.activeCompanyCode = code || null;
+        },
+        error: () => {
+          if (this.activeCompanyId === companyId) {
+            this.activeCompanyCode = null;
+          }
+        },
+      });
   }
 
   ngOnDestroy() {

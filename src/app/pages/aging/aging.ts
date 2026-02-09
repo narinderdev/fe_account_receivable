@@ -8,6 +8,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { CompanyService } from '../../services/company-service';
 import { Subject, takeUntil } from 'rxjs';
 import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
 import { AgingResponse, AgingFilters, AgingRowDto } from '../../models/aging.model';
@@ -57,12 +58,14 @@ export class Aging implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
+  private activeCompanyCode: string | null = null;
 
   constructor(
     private agingService: AgingService,
     private customerService: Customer,
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService,
+    private companyService: CompanyService,
   ) {}
 
   ngOnInit() {
@@ -75,8 +78,10 @@ export class Aging implements OnInit, OnDestroy {
       }
 
       this.activeCompanyId = nextId;
+      this.activeCompanyCode = null;
 
       if (this.activeCompanyId) {
+        this.loadCompanyMetadata(this.activeCompanyId);
         this.loadCustomers(this.activeCompanyId);
         this.loadAgingData(this.activeCompanyId);
       } else {
@@ -191,11 +196,13 @@ export class Aging implements OnInit, OnDestroy {
     const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
+    const contentStartY = this.drawPdfMetadata(pdf);
+
     let heightLeft = imgHeight;
-    let position = 0;
+    let position = contentStartY;
 
     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    heightLeft -= pageHeight - position;
 
     while (heightLeft > 0) {
       position = heightLeft - imgHeight;
@@ -204,7 +211,7 @@ export class Aging implements OnInit, OnDestroy {
       heightLeft -= pageHeight;
     }
 
-    pdf.save('aging-report.pdf');
+    pdf.save(this.getExportFileName('pdf'));
   }
 
   exportToExcel() {
@@ -215,6 +222,7 @@ export class Aging implements OnInit, OnDestroy {
     // Prepare data for export - use ALL rows, not just current page
     const exportData = [
       ['Customer Aging Report'],
+      ['Company Code:', this.getActiveCompanyCode() || 'N/A'],
       ['Generated On:', this.getCurrentDate()],
       ['Customer Filter:', this.getSelectedCustomerLabel()],
       ['Status Filter:', this.getSelectedStatusLabel()],
@@ -250,7 +258,7 @@ export class Aging implements OnInit, OnDestroy {
     XLSX.utils.sheet_add_aoa(ws, [totalsRow], { origin: -1 });
 
     XLSX.utils.book_append_sheet(wb, ws, 'Aging Report');
-    XLSX.writeFile(wb, `aging-report-${this.formatDateForFilename()}.xlsx`);
+    XLSX.writeFile(wb, this.getExportFileName('xlsx'));
   }
 
   exportToCSV() {
@@ -259,6 +267,7 @@ export class Aging implements OnInit, OnDestroy {
     // Prepare CSV data - use ALL rows, not just current page
     const csvData = [
       ['Customer Aging Report'],
+      ['Company Code:', this.getActiveCompanyCode() || 'N/A'],
       ['Generated On:', this.getCurrentDate()],
       ['Customer Filter:', this.getSelectedCustomerLabel()],
       ['Status Filter:', this.getSelectedStatusLabel()],
@@ -305,11 +314,31 @@ export class Aging implements OnInit, OnDestroy {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', `aging-report-${this.formatDateForFilename()}.csv`);
+    link.setAttribute('download', this.getExportFileName('csv'));
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  private drawPdfMetadata(pdf: jsPDF): number {
+    const lines = this.getExportMetadataLines();
+    if (!lines.length) {
+      return 0;
+    }
+    const margin = 10;
+    const lineHeight = 6;
+    pdf.setFontSize(10);
+    let currentY = margin;
+    lines.forEach((line) => {
+      pdf.text(line, margin, currentY);
+      currentY += lineHeight;
+    });
+    return currentY + 2;
+  }
+
+  private getExportMetadataLines(): string[] {
+    return [`Company Code: ${this.getActiveCompanyCode() || 'N/A'}`];
   }
 
   private calculateTotals() {
@@ -389,6 +418,47 @@ export class Aging implements OnInit, OnDestroy {
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${year}${month}${day}-${hours}${minutes}`;
+  }
+
+  private getExportFileName(extension: string): string {
+    const codeSegment = this.getCompanyCodeForFileName();
+    const dateSegment = this.formatDateForFilename();
+    const base = codeSegment ? `aging-report-${codeSegment}` : 'aging-report';
+    return `${base}-${dateSegment}.${extension}`;
+  }
+
+  private getCompanyCodeForFileName(): string | null {
+    const code = this.getActiveCompanyCode();
+    if (!code) {
+      return null;
+    }
+    const sanitized = code.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '');
+    return sanitized || null;
+  }
+
+  getActiveCompanyCode(): string | null {
+    const trimmed = this.activeCompanyCode?.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  private loadCompanyMetadata(companyId: number) {
+    this.companyService
+      .getCompanyById(companyId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (this.activeCompanyId !== companyId) {
+            return;
+          }
+          const code = response?.data?.companyCode?.trim();
+          this.activeCompanyCode = code || null;
+        },
+        error: () => {
+          if (this.activeCompanyId === companyId) {
+            this.activeCompanyCode = null;
+          }
+        },
+      });
   }
 
   private fetchWithFilters() {

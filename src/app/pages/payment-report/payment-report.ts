@@ -8,6 +8,7 @@ import * as XLSX from 'xlsx';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { CompanyService } from '../../services/company-service';
 import { Loader } from '../../shared/loader/loader';
 import { PaymentReportService } from 'src/app/services/payment-report-service';
 
@@ -44,6 +45,7 @@ export class PaymentReport implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
+  private activeCompanyCode: string | null = null;
 
   readonly yearOptions = this.generateYearOptions();
   readonly monthsOptions = [
@@ -128,6 +130,7 @@ export class PaymentReport implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService,
     private paymentReportService: PaymentReportService,
+    private companyService: CompanyService,
   ) {}
 
   ngOnInit() {
@@ -142,8 +145,10 @@ export class PaymentReport implements OnInit, OnDestroy {
         if (this.activeCompanyId === nextCompanyId) return;
 
         this.activeCompanyId = nextCompanyId;
+        this.activeCompanyCode = null;
 
         if (this.activeCompanyId) {
+          this.loadCompanyMetadata(this.activeCompanyId);
           this.loadPaymentData(this.activeCompanyId, this.selectedMonths);
           this.loadMonthlyPaymentData(this.activeCompanyId, this.selectedYear);
         } else {
@@ -168,6 +173,7 @@ export class PaymentReport implements OnInit, OnDestroy {
     this.barChartLoading = false;
     this.selectedYear = new Date().getFullYear();
     this.selectedMonths = 6;
+    this.activeCompanyCode = null;
     this.initializeStaticData();
   }
 
@@ -347,11 +353,13 @@ export class PaymentReport implements OnInit, OnDestroy {
     const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
+    const contentStartY = this.drawPdfMetadata(pdf);
+
     let heightLeft = imgHeight;
-    let position = 0;
+    let position = contentStartY;
 
     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    heightLeft -= pageHeight - position;
 
     while (heightLeft > 0) {
       position = heightLeft - imgHeight;
@@ -360,7 +368,7 @@ export class PaymentReport implements OnInit, OnDestroy {
       heightLeft -= pageHeight;
     }
 
-    pdf.save('payment-report-charts.pdf');
+    pdf.save(this.getExportFileName('pdf'));
   }
 
   exportToExcel() {
@@ -371,6 +379,7 @@ export class PaymentReport implements OnInit, OnDestroy {
     // Sheet 1: Payment Method Breakdown
     const methodData = [
       ['Payment Method Breakdown'],
+      ['Company Code:', this.getActiveCompanyCode() || 'N/A'],
       ['Generated On:', this.getCurrentDate()],
       ['Payment Method Period:', `${this.selectedMonths} Month(s)`],
       ['Total Payments:', this.totalPayments],
@@ -400,6 +409,7 @@ export class PaymentReport implements OnInit, OnDestroy {
 
     const monthlyData = [
       ['Payments Collected Over Time'],
+      ['Company Code:', this.getActiveCompanyCode() || 'N/A'],
       ['Generated On:', this.getCurrentDate()],
       ['Year:', this.selectedYear],
       [],
@@ -411,7 +421,7 @@ export class PaymentReport implements OnInit, OnDestroy {
     this.formatExcelSheet(wsMonthly, monthlyData.length, 2);
     XLSX.utils.book_append_sheet(wb, wsMonthly, 'Monthly Payments');
 
-    XLSX.writeFile(wb, `payment-report-${this.formatDateForFilename()}.xlsx`);
+    XLSX.writeFile(wb, this.getExportFileName('xlsx'));
   }
 
   exportToCSV() {
@@ -429,6 +439,7 @@ export class PaymentReport implements OnInit, OnDestroy {
 
     const csvData = [
       ['Payment Reports - Export'],
+      ['Company Code:', this.getActiveCompanyCode() || 'N/A'],
       ['Generated On:', this.getCurrentDate()],
       ['Payment Method Period:', `${this.selectedMonths} Month(s)`],
       ['Year:', this.selectedYear],
@@ -467,7 +478,7 @@ export class PaymentReport implements OnInit, OnDestroy {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', `payment-report-${this.formatDateForFilename()}.csv`);
+    link.setAttribute('download', this.getExportFileName('csv'));
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -512,6 +523,66 @@ export class PaymentReport implements OnInit, OnDestroy {
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${year}${month}${day}-${hours}${minutes}`;
+  }
+
+  private getExportFileName(extension: string): string {
+    const codeSegment = this.getCompanyCodeForFileName();
+    const base = codeSegment ? `payment-report-${codeSegment}` : 'payment-report';
+    return `${base}-${this.formatDateForFilename()}.${extension}`;
+  }
+
+  private getCompanyCodeForFileName(): string | null {
+    const code = this.getActiveCompanyCode();
+    if (!code) {
+      return null;
+    }
+    const sanitized = code.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '');
+    return sanitized || null;
+  }
+
+  getActiveCompanyCode(): string | null {
+    const trimmed = this.activeCompanyCode?.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  private drawPdfMetadata(pdf: jsPDF): number {
+    const lines = this.getExportMetadataLines();
+    if (!lines.length) {
+      return 0;
+    }
+    const margin = 10;
+    const lineHeight = 6;
+    pdf.setFontSize(10);
+    let currentY = margin;
+    lines.forEach((line) => {
+      pdf.text(line, margin, currentY);
+      currentY += lineHeight;
+    });
+    return currentY + 2;
+  }
+
+  private getExportMetadataLines(): string[] {
+    return [`Company Code: ${this.getActiveCompanyCode() || 'N/A'}`];
+  }
+
+  private loadCompanyMetadata(companyId: number) {
+    this.companyService
+      .getCompanyById(companyId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (this.activeCompanyId !== companyId) {
+            return;
+          }
+          const code = response?.data?.companyCode?.trim();
+          this.activeCompanyCode = code || null;
+        },
+        error: () => {
+          if (this.activeCompanyId === companyId) {
+            this.activeCompanyCode = null;
+          }
+        },
+      });
   }
 
   ngOnDestroy() {

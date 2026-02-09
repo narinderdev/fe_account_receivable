@@ -98,7 +98,9 @@
             <label>Position <span class="color">*</span></label>
             <select formControlName="position">
               <option value="">Select Role</option>
-              <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+              <option *ngFor="let role of roleOptions" [value]="role">
+                {{ formatRoleName(role) }}
+              </option>
             </select>
             <div class="error" *ngIf="submitted && addressForm.get('position')?.errors">
               <small *ngIf="addressForm.get('position')?.hasError('required')"
@@ -122,20 +124,20 @@
 
           <div class="form-field">
             <label>Contact Phone <span class="color">*</span></label>
-            <input type="text" formControlName="primaryContactPhone" (input)="onPhoneInput()" />
+            <input
+              type="text"
+              formControlName="primaryContactPhone"
+              placeholder="(123) 456-7890"
+              (input)="onPhoneInput()"
+            />
+
             <div class="error" *ngIf="submitted && addressForm.get('primaryContactPhone')?.errors">
-              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('required')"
-                >Phone is required</small
-              >
-              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('pattern')"
-                >Only digits allowed</small
-              >
-              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('minlength')"
-                >Must be at least 10 digits</small
-              >
-              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('maxlength')"
-                >Max 15 digits allowed</small
-              >
+              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('required')">
+                Phone is required
+              </small>
+              <small *ngIf="addressForm.get('primaryContactPhone')?.hasError('pattern')">
+                Enter a valid US phone number (XXX) XXX-XXXX
+              </small>
             </div>
           </div>
 
