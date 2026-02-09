@@ -9,8 +9,10 @@
       </div>
     </div>
 
-
-    <div class="users-table-wrapper" *ngIf="companyId && !isLoadingUsers && pagination.totalItems > 0">
+    <div
+      class="users-table-wrapper"
+      *ngIf="companyId && !isLoadingUsers && pagination.totalItems > 0"
+    >
       <table class="users-table">
         <thead>
           <tr>
@@ -29,7 +31,7 @@
                   class="user-initial"
                   [ngStyle]="{
                     backgroundColor: getInitialColor(i).background,
-                    color: getInitialColor(i).color
+                    color: getInitialColor(i).color,
                   }"
                 >
                   {{ getUserInitial(u) }}
@@ -53,14 +55,16 @@
       >
         <div class="pagination-info">
           Showing {{ pagination.currentPage * pagination.pageSize + 1 }} to
-          {{
-            Math.min((pagination.currentPage + 1) * pagination.pageSize, pagination.totalItems)
-          }}
+          {{ Math.min((pagination.currentPage + 1) * pagination.pageSize, pagination.totalItems) }}
           of {{ pagination.totalItems }} results
         </div>
 
         <div class="pagination-controls">
-          <button class="page-nav-btn" (click)="prevPage()" [disabled]="pagination.currentPage === 0">
+          <button
+            class="page-nav-btn"
+            (click)="prevPage()"
+            [disabled]="pagination.currentPage === 0"
+          >
             <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
           </button>
 
@@ -140,7 +144,9 @@
           <label>Role</label>
           <select formControlName="roleIds">
             <option value="">Select Role</option>
-            <option *ngFor="let r of roles" [value]="r.id">{{ r.name }}</option>
+            <option *ngFor="let r of roles" [value]="r.id">
+              {{ formatRoleName(r.name) }}
+            </option>
           </select>
           <div class="error" *ngIf="submitted && inviteForm.controls['roleIds'].errors">
             Role is required.

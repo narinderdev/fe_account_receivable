@@ -168,7 +168,7 @@ export class RolesDetail implements OnInit, OnDestroy {
       },
     },
     {
-      label: 'Ar-Code',
+      label: 'AR Code',
       permissions: {
         view: 'VIEW_AR_CODE',
         create: 'CREATE_AR_CODE',
