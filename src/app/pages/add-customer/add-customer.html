@@ -80,7 +80,7 @@
               <input
                 type="text"
                 formControlName="phoneNumber"
-                placeholder="Enter 10-digit phone number"
+                placeholder="(123) 456-7890"
                 (input)="onPhoneInput()"
               />
 
@@ -269,7 +269,7 @@
           </div>
 
           <div class="toggle-row">
-            <span>Allow this CUSTOMER to pay invoices via direct debit</span>
+            <span>Allow this customer to pay invoices via direct debit</span>
 
             <label class="switch">
               <input type="checkbox" formControlName="allowDirectDebit" />
@@ -393,7 +393,13 @@
           <div class="credit-settings-row">
             <div class="form-field credit-limit-field">
               <label>Credit Limit <span class="color">*</span></label>
-              <input type="number" formControlName="creditLimit" placeholder="5000.00" />
+              <input
+                type="text"
+                formControlName="creditLimit"
+                placeholder="$5,000.00"
+                (input)="onCreditLimitInput()"
+              />
+
               <div
                 class="error"
                 *ngIf="dunningSubmitted && dunningForm.controls['creditLimit'].errors"

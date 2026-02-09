@@ -143,7 +143,8 @@ export class AddCustomer implements OnInit, OnDestroy {
       ],
       customerType: ['', [Validators.required, Validators.pattern(/^[A-Za-z ]+$/)]],
       email: ['', [Validators.required, Validators.email]],
-      phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^\(\d{3}\) \d{3}-\d{4}$/)]],
+
       faceBook: [''],
       twitter: [''],
       linkedin: [''],
@@ -202,7 +203,8 @@ export class AddCustomer implements OnInit, OnDestroy {
     // DUNNING
     this.dunningForm = this.fb.group({
       placeOnCreditHold: [false],
-      creditLimit: ['', [Validators.required, Validators.min(0)]],
+      creditLimit: ['', [Validators.required, Validators.pattern(/^\$[\d,]+$/)]],
+
       dunningLevel: ['', Validators.required],
       pastDue: ['', Validators.required],
       paymentTerms: ['', Validators.required],
@@ -216,7 +218,16 @@ export class AddCustomer implements OnInit, OnDestroy {
   onPhoneInput() {
     let value = this.mainForm.get('phoneNumber')?.value || '';
     value = value.replace(/\D/g, '').slice(0, 10);
-    this.mainForm.get('phoneNumber')?.setValue(value, { emitEvent: false });
+
+    let formatted = value;
+
+    if (value.length > 6) {
+      formatted = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6)}`;
+    } else if (value.length > 3) {
+      formatted = `(${value.slice(0, 3)}) ${value.slice(3)}`;
+    }
+
+    this.mainForm.get('phoneNumber')?.setValue(formatted, { emitEvent: false });
   }
 
   limitPostalCode(event: Event) {
@@ -485,6 +496,27 @@ export class AddCustomer implements OnInit, OnDestroy {
     });
   }
 
+  onCreditLimitInput() {
+    const control = this.dunningForm.get('creditLimit');
+    if (!control) return;
+
+    let value = control.value || '';
+
+    // Remove everything except digits
+    const numericValue = value.replace(/[^\d]/g, '');
+
+    if (!numericValue) {
+      control.setValue('', { emitEvent: false });
+      return;
+    }
+
+    // Add commas
+    const formatted = Number(numericValue).toLocaleString('en-US');
+
+    // Add dollar sign
+    control.setValue(`$${formatted}`, { emitEvent: false });
+  }
+
   // DUNNING → finish
   saveDunningData() {
     if (this.isEditMode) return;
@@ -494,7 +526,12 @@ export class AddCustomer implements OnInit, OnDestroy {
 
     this.isSavingDunning = true;
 
-    this.customerService.saveCredit(this.createdCustomerId, this.dunningForm.value).subscribe({
+    const payload = {
+      ...this.dunningForm.value,
+      creditLimit: Number(this.dunningForm.value.creditLimit.replace(/[^\d]/g, '')),
+    };
+
+    this.customerService.saveCredit(this.createdCustomerId, payload).subscribe({
       next: () => {
         this.isSavingDunning = false;
         this.toastr.success('Customer added successfully.', 'Success');
