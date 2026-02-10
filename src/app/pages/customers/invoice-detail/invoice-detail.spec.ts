@@ -31,7 +31,7 @@ describe('InvoiceDetail', () => {
     it('maps invoice status to friendly values', () => {
       const instance = createComponent();
       instance.invoice = createInvoice({ status: 'PAID' });
-      expect(instance.getStatusText()).toBe('PAID');
+      expect(instance.getStatusText()).toBe('Paid');
       instance.invoice = createInvoice({ status: 'COMPLETED' as 'COMPLETED' });
       expect(instance.getStatusClass()).toBe('status-paid');
       instance.invoice = null;

@@ -137,7 +137,7 @@ test.describe('Add AR company onboarding wizard', () => {
     await expect(page.locator('[formcontrolname="postalCode"]')).toHaveValue('123456');
 
     await page.locator('[formcontrolname="primaryContactPhone"]').fill('123-456-789012');
-    await expect(page.locator('[formcontrolname="primaryContactPhone"]')).toHaveValue('123456789012');
+    await expect(page.locator('[formcontrolname="primaryContactPhone"]')).toHaveValue('(123) 456-7890');
 
     await page.locator('[formcontrolname="primaryContactEmail"]').fill('CONTACT@EXAMPLE.COM');
     await expect(page.locator('[formcontrolname="primaryContactEmail"]')).toHaveValue('contact@example.com');

@@ -102,7 +102,7 @@ describe('WriteOff', () => {
   it('formats statuses into readable labels', () => {
     const { component } = createComponent();
 
-    expect(component.formatStatus('DRAFT')).toBe('Draft');
+    expect(component.formatStatus('CREATED')).toBe('Created');
     expect(component.formatStatus('APPROVED')).toBe('Approved');
     expect(component.formatStatus(null)).toBe('—');
   });

@@ -167,6 +167,7 @@ const sampleInvoice = {
 
 const samplePayment = {
   id: 4001,
+  status: 'CREATED',
   bankDeposit: 1300,
   serviceFee: 0,
   paymentAmount: 1300,
