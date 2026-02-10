@@ -23,7 +23,7 @@ interface ArCodeOption {
   name: string;
 }
 
-type WriteOffStatus = 'DRAFT' | 'APPROVED';
+type WriteOffStatus = 'CREATED' | 'APPROVED';
 
 interface WriteOffRecord {
   id: number;
@@ -34,7 +34,7 @@ interface WriteOffRecord {
   status: WriteOffStatus;
 }
 
-type WriteOffTab = 'DRAFT' | 'APPROVED';
+type WriteOffTab = 'CREATED' | 'APPROVED';
 
 interface WriteOffTabState {
   records: WriteOffRecord[];
@@ -77,7 +77,7 @@ export class WriteOff implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   selectedInvoiceId: number | null = null;
-  activeTab: WriteOffTab = 'DRAFT';
+  activeTab: WriteOffTab = 'CREATED';
   private readonly defaultPageSize = 10;
   tabStates: Record<WriteOffTab, WriteOffTabState> = this.createInitialTabStates();
 
@@ -117,18 +117,18 @@ export class WriteOff implements OnInit, OnDestroy {
         }
         this.activeCompanyId = companyId;
         if (!companyId) {
-          this.activeTab = 'DRAFT';
+          this.activeTab = 'CREATED';
           this.resetTabStates('Select a company to view write-offs.');
           this.cdr.detectChanges();
           return;
         }
 
-        this.activeTab = 'DRAFT';
+        this.activeTab = 'CREATED';
         this.resetTabStates();
         this.cdr.detectChanges();
         this.loadCustomers(companyId, true);
         this.loadArCodes(true, companyId);
-        this.loadWriteOffs(companyId, 'DRAFT');
+        this.loadWriteOffs(companyId, 'CREATED');
         this.loadWriteOffs(companyId, 'APPROVED');
       });
   }
@@ -227,7 +227,7 @@ export class WriteOff implements OnInit, OnDestroy {
         this.toastr.success('Write-off created successfully.', 'Success');
         this.saving = false;
         this.closeModal();
-        this.loadWriteOffs(companyId, 'DRAFT');
+        this.loadWriteOffs(companyId, 'CREATED');
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -273,7 +273,7 @@ export class WriteOff implements OnInit, OnDestroy {
         this.approveModalOpen = false;
         this.writeOffToApprove = null;
         if (this.activeCompanyId) {
-          this.loadWriteOffs(this.activeCompanyId, 'DRAFT');
+          this.loadWriteOffs(this.activeCompanyId, 'CREATED');
           this.loadWriteOffs(this.activeCompanyId, 'APPROVED');
         } else {
           this.cdr.detectChanges();
@@ -305,7 +305,7 @@ export class WriteOff implements OnInit, OnDestroy {
         this.toastr.success('Write-off approved successfully.', 'Success');
         this.approvingWriteOffId = null;
         if (this.activeCompanyId) {
-          this.loadWriteOffs(this.activeCompanyId, 'DRAFT');
+          this.loadWriteOffs(this.activeCompanyId, 'CREATED');
           this.loadWriteOffs(this.activeCompanyId, 'APPROVED');
         } else {
           this.cdr.detectChanges();
@@ -337,7 +337,7 @@ export class WriteOff implements OnInit, OnDestroy {
     errorMessage: string | null = null
   ): Record<WriteOffTab, WriteOffTabState> {
     return {
-      DRAFT: this.buildInitialTabState(errorMessage),
+      CREATED: this.buildInitialTabState(errorMessage),
       APPROVED: this.buildInitialTabState(errorMessage),
     };
   }
@@ -522,8 +522,8 @@ export class WriteOff implements OnInit, OnDestroy {
     if (!status) return '—';
 
     switch (status) {
-      case 'DRAFT':
-        return 'Draft';
+      case 'CREATED':
+        return 'Created';
       case 'APPROVED':
         return 'Approved';
       default:

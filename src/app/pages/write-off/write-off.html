@@ -4,8 +4,8 @@
   </div>
 
   <div class="tabs" *ngIf="canViewWriteOff">
-    <button class="tab" [class.active]="activeTab === 'DRAFT'" (click)="setTab('DRAFT')">
-      Draft
+    <button class="tab" [class.active]="activeTab === 'CREATED'" (click)="setTab('CREATED')">
+      Created
     </button>
     <button class="tab" [class.active]="activeTab === 'APPROVED'" (click)="setTab('APPROVED')">
       Approved
@@ -24,8 +24,8 @@
 
       <div *ngIf="!activeTabState.error && activeTabState.records.length === 0" class="empty-text">
         {{
-          activeTab === 'DRAFT'
-            ? 'No draft write-offs have been created yet.'
+          activeTab === 'CREATED'
+            ? 'No write-offs have been created yet.'
             : 'No approved write-offs have been recorded yet.'
         }}
       </div>
@@ -39,7 +39,7 @@
               <th>Reason</th>
               <th>Date</th>
               <th>Status</th>
-              <th *ngIf="activeTab === 'DRAFT' && canApproveWriteOff">Actions</th>
+              <th *ngIf="activeTab === 'CREATED' && canApproveWriteOff">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -72,7 +72,7 @@
                 </span>
               </td>
 
-              <td *ngIf="activeTab === 'DRAFT' && canApproveWriteOff">
+              <td *ngIf="activeTab === 'CREATED' && canApproveWriteOff">
                 <button type="button" class="btn-approve" (click)="openApproveModal(record)">
                   Approve
                 </button>

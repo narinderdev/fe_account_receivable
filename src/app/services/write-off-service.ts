@@ -29,7 +29,7 @@ export class WriteOffService {
 
   getCompanyWriteOff(
     companyId: number,
-    status?: 'DRAFT' | 'APPROVED',
+    status?: 'CREATED' | 'APPROVED',
     page = 0,
     size = 10
   ): Observable<WriteOffPageResponse> {
