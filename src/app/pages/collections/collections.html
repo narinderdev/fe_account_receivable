@@ -34,6 +34,9 @@
       <button class="btn-primary" (click)="openDisputePopup()" *ngIf="canCreateDispute">
         New Dispute
       </button>
+      <button class="btn-primary" (click)="openWriteOffModal()" *ngIf="canCreateWriteOff">
+        New Write-Off
+      </button>
     </div>
   </div>
 
@@ -77,6 +80,15 @@
       *ngIf="canViewDisputes"
     >
       Disputes
+    </button>
+
+    <button
+      class="tab"
+      [class.active]="activeTab === 'writeOffs'"
+      (click)="setTab('writeOffs')"
+      *ngIf="canViewWriteOff"
+    >
+      Write-Offs
     </button>
   </div>
 
@@ -505,6 +517,10 @@
         </div>
       </div>
     </ng-container>
+  </div>
+
+  <div *ngIf="activeTab === 'writeOffs' && canViewWriteOff">
+    <app-write-off></app-write-off>
   </div>
 
   <!-- <div class="card" *ngIf="activeTab === 'reminders'">

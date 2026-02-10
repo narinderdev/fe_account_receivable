@@ -101,17 +101,6 @@
           Credit Memo
         </a>
 
-        <a
-          *ngIf="canViewWriteOff"
-          routerLink="write-off"
-          routerLinkActive="active"
-          #writeOffLink="routerLinkActive"
-          class="nav-item"
-        >
-          <img [src]="writeOffLink.isActive ? '/write1.svg' : '/write.svg'" class="nav-icon" />
-          Write-Off
-        </a>
-
         <!-- NEW SECURITY SECTION -->
         <div class="nav-item setup-parent" *ngIf="showSecurityLinks" (click)="toggleSecurity()">
           <img [src]="securityActive ? '/security1.svg' : '/security.svg'" class="nav-icon" />
@@ -308,20 +297,6 @@
             class="nav-icon"
           />
           Credit Memo
-        </a>
-
-        <a
-          *ngIf="canViewWriteOff"
-          routerLink="write-off"
-          routerLinkActive="active"
-          #mobileWriteOffLink="routerLinkActive"
-          (click)="closeMobileMenu()"
-        >
-          <img
-            [src]="mobileWriteOffLink.isActive ? '/write1.svg' : '/write.svg'"
-            class="nav-icon"
-          />
-          Write-Off
         </a>
 
         <!-- MOBILE SECURITY SECTION -->

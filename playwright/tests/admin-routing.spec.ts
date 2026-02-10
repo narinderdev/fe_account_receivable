@@ -36,7 +36,6 @@ const adminRouteCases = [
   { path: '/admin/collections/disputes/801', title: 'Collections' },
   { path: '/admin/ar-code', title: 'AR Codes' },
   { path: '/admin/credit-memo', title: 'Credit Memo' },
-  { path: '/admin/write-off', title: 'Write-Off' },
 ];
 
 test.describe('Admin routing smoke coverage', () => {

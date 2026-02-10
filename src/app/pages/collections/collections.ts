@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Customer } from '../../services/customer';
@@ -25,6 +25,7 @@ import {
 } from '../../models/collection.model';
 import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
 import { UserContextService } from '../../services/user-context.service';
+import { WriteOff } from '../write-off/write-off';
 
 interface CreditItem {
   customer: string;
@@ -38,14 +39,17 @@ interface ReminderItem {
   action: string;
 }
 
+type CollectionsTab = 'collections' | 'promise' | 'disputes' | 'followUps' | 'writeOffs';
+
 @Component({
   selector: 'app-collections',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, Spinner, Loader],
+  imports: [CommonModule, FormsModule, RouterModule, Spinner, Loader, WriteOff],
   templateUrl: './collections.html',
   styleUrls: ['./collections.css'],
 })
 export class Collections implements OnInit, OnDestroy {
+  @ViewChild(WriteOff) writeOffComponent?: WriteOff;
   customers: PendingCustomerSummary[] = [];
   selectedCustomerId: string = '';
 
@@ -69,7 +73,7 @@ export class Collections implements OnInit, OnDestroy {
   savingPromise = false;
   submitted = false;
 
-  activeTab: 'collections' | 'promise' | 'disputes' | 'followUps' = 'collections';
+  activeTab: CollectionsTab = 'collections';
 
   promiseToPayList: PromiseToPayRecord[] = [];
   loadingPromiseToPay = false;
@@ -112,6 +116,8 @@ export class Collections implements OnInit, OnDestroy {
   canViewPromise = false;
   canViewDisputes = false;
   canCreateDispute = false;
+  canViewWriteOff = false;
+  canCreateWriteOff = false;
   allFollowUpReminders: PendingCustomerSummary[] = [];
   allPromiseToPay: PromiseToPayRecord[] = [];
   allDisputes: DisputeRecord[] = [];
@@ -137,13 +143,39 @@ export class Collections implements OnInit, OnDestroy {
     this.canViewPromise = this.userContext.hasPermission('VIEW_PROMISE_TO_PAY');
     this.canViewDisputes = this.userContext.hasPermission('VIEW_DISPUTE');
     this.canCreateDispute = this.userContext.hasPermission('CREATE_DISPUTE');
-    this.activeTab = this.canViewReminders
-      ? 'collections'
-      : this.canViewPromise
-        ? 'promise'
-        : this.canViewDisputes
-          ? 'disputes'
-          : 'collections';
+    this.canViewWriteOff = this.userContext.hasPermission('VIEW_WRITE_OFF');
+    this.canCreateWriteOff = this.userContext.hasPermission('CREATE_WRITE_OFF');
+    this.activeTab = this.resolveDefaultTab();
+  }
+
+  private resolveDefaultTab(): CollectionsTab {
+    if (this.canViewReminders) {
+      return 'collections';
+    }
+    if (this.canViewPromise) {
+      return 'promise';
+    }
+    if (this.canViewDisputes) {
+      return 'disputes';
+    }
+    if (this.canViewWriteOff) {
+      return 'writeOffs';
+    }
+    return 'collections';
+  }
+
+  openWriteOffModal() {
+    if (!this.canCreateWriteOff) {
+      return;
+    }
+
+    if (this.activeTab !== 'writeOffs') {
+      this.setTab('writeOffs');
+    }
+
+    setTimeout(() => {
+      this.writeOffComponent?.openModal();
+    }, 0);
   }
 
   get isComponentLoading(): boolean {
@@ -173,12 +205,13 @@ export class Collections implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  setTab(tab: 'collections' | 'promise' | 'disputes' | 'followUps') {
+  setTab(tab: CollectionsTab) {
     if (
       (tab === 'collections' && !this.canViewReminders) ||
       (tab === 'promise' && !this.canViewPromise) ||
       (tab === 'disputes' && !this.canViewDisputes) ||
-      (tab === 'followUps' && !this.canViewReminders)
+      (tab === 'followUps' && !this.canViewReminders) ||
+      (tab === 'writeOffs' && !this.canViewWriteOff)
     ) {
       return;
     }

@@ -32,7 +32,6 @@ export class Sidebar {
   canViewArCodes = false;
   canViewGlCodes = false;
   canViewCreditMemo = false;
-  canViewWriteOff = false;
   showSetupLinks = false;
   showSecurityLinks = false;
   canViewSecurityReport = false;  
@@ -63,6 +62,9 @@ export class Sidebar {
       'CREATE_PROMISE_TO_PAY',
       'VIEW_DISPUTE',
       'CREATE_DISPUTE',
+      'VIEW_WRITE_OFF',
+      'CREATE_WRITE_OFF',
+      'APPROVE_WRITE_OFF',
     ];
     this.canViewCollections = collectionsPerms.some((perm) => this.userContext.hasPermission(perm));
     this.canViewCompany = this.userContext.hasPermission('VIEW_COMPANY');
@@ -75,7 +77,6 @@ export class Sidebar {
     this.canViewArCodes = canViewArCodes;
     this.canViewGlCodes = canViewGlCodes;
     this.canViewCreditMemo = this.userContext.hasPermission('VIEW_MEMOS');
-    this.canViewWriteOff = this.userContext.hasPermission('VIEW_WRITE_OFF');
     this.canViewSecurityReport = this.userContext.hasPermission('VIEW_SECURITY_REPORT');
 
 
