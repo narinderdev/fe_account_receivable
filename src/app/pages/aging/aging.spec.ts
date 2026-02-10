@@ -2,6 +2,7 @@ import { ChangeDetectorRef } from '@angular/core';
 import { AgingService } from '../../services/aging-service';
 import { Customer } from '../../services/customer';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { CompanyService } from '../../services/company-service';
 import { Subject } from 'rxjs';
 
 import { Aging } from './aging';
@@ -15,7 +16,8 @@ describe('Aging', () => {
     const companySelection = {
       selectedCompanyId$: new Subject<number | null>(),
     } as unknown as CompanySelectionService;
-    return new Aging(agingService, customerService, cdr, companySelection);
+    const companyService = createSpyObj<CompanyService>('CompanyService', ['getCompanyById']);
+    return new Aging(agingService, customerService, cdr, companySelection, companyService);
   };
 
   it('should create', () => {

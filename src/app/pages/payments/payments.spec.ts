@@ -10,10 +10,12 @@ import { Customer as CustomerService } from '../../services/customer';
 import { Payments } from './payments';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 
+type PaymentTabLiteral = 'CREATED' | 'APPROVED';
+
 interface TestPayment {
   id: number;
   type: 'MANUAL' | 'BANK';
-  tab: 'DRAFT' | 'APPROVED';
+  tab: PaymentTabLiteral;
   customerName: string;
   amount: number;
   status?: string;
@@ -76,13 +78,13 @@ function createPayment(overrides: Partial<TestPayment> = {}): TestPayment {
   return {
     id: 1,
     type: 'BANK',
-    tab: 'DRAFT',
+    tab: 'CREATED',
     date: '2024-01-01',
     amount: 100,
     customerName: 'Default Customer',
     description: 'ACH Credit',
     source: 'BANK',
-    status: 'DRAFT',
+    status: 'CREATED',
     ...overrides,
   };
 }

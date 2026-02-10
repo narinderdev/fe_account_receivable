@@ -129,11 +129,11 @@ describe('CreditMemo', () => {
     const { component } = createComponent();
     const internals = component as unknown as CreditMemoInternals;
 
-    expect(internals.mapStatusToTab('DRAFTED')).toBe('DRAFT');
+    expect(internals.mapStatusToTab('DRAFTED')).toBe('CREATED');
     expect(internals.mapStatusToTab('APPROVED')).toBe('APPROVED');
     expect(internals.mapStatusToTab('POSTED')).toBe('APPROVED');
     expect(internals.mapStatusToTab('ALLOWED')).toBe('APPROVED');
-    expect(internals.mapStatusToTab(undefined)).toBe('DRAFT');
+    expect(internals.mapStatusToTab(undefined)).toBe('CREATED');
   });
 
   it('toggles invoice selection state', () => {

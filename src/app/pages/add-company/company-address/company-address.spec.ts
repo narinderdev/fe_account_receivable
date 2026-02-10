@@ -81,7 +81,7 @@ describe('CompanyAddress', () => {
       instance.onEmailInput();
       expect(instance.addressForm.get('city')?.value).toBe('NYC');
       expect(instance.addressForm.get('stateProvince')?.value).toBe('CA');
-      expect(instance.addressForm.get('primaryContactPhone')?.value).toBe('123456');
+      expect(instance.addressForm.get('primaryContactPhone')?.value).toBe('(123) 456');
       expect(instance.addressForm.get('primaryContactEmail')?.value).toBe('user@test.com');
     });
   });
@@ -132,7 +132,7 @@ function createValidAddress() {
     primaryContactName: 'John',
     position: 'AR Manager',
     primaryContactEmail: 'john@test.com',
-    primaryContactPhone: '1234567890',
+    primaryContactPhone: '(123) 456-7890',
     website: 'https://example.com',
     primaryContactCountry: 'US',
   };

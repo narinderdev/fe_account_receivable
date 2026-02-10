@@ -22,7 +22,7 @@ test.describe('Credit memo board', () => {
     await seedAdminState(page);
   });
 
-  test('shows draft/approved tabs and approves a memo', async ({ page }) => {
+  test('shows created/approved tabs and approves a memo', async ({ page }) => {
     await setupCreditMemoRoutes(page);
     await page.goto('/admin/credit-memo');
 
@@ -32,7 +32,7 @@ test.describe('Credit memo board', () => {
     await page.getByRole('button', { name: 'Approved' }).click();
     await expect(page.getByText('No approved credit memos available.')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Draft' }).click();
+    await page.getByRole('button', { name: 'Created' }).click();
     await page.getByRole('button', { name: /^Approve$/ }).first().click();
     const approveHeading = page.getByRole('heading', { name: 'Approve Credit Memo' });
     await expect(approveHeading).toBeVisible();
