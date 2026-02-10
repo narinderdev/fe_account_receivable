@@ -49,7 +49,7 @@
       <div class="import-actions" *ngIf="canCreateInvoice">
         <button class="import-invoice-btn" (click)="openImportModal()">Import Invoice</button>
 
-        <button class="btn-new" routerLink="create">
+        <button class="btn-new" (click)="goToCreateInvoice()">
           <img src="/plus.svg" alt="Add Invoice" class="btn-icon" />
           New Invoice
         </button>
@@ -180,7 +180,7 @@
   </div>
 
   <!-- Import Invoice Modal -->
-  <div class="modal-overlay" *ngIf="isImportModalOpen">
+  <div class="modal-overlay" *ngIf="canCreateInvoice && isImportModalOpen">
     <div class="approve-modal import-modal">
       <div class="modal-header">
         <h2>Import Invoices</h2>

@@ -83,8 +83,18 @@ export class Invoices implements OnInit, OnDestroy {
     this.canApproveInvoice = this.userContext.hasPermission('APPROVE_INVOICE');
   }
 
+  goToCreateInvoice() {
+    if (!this.canCreateInvoice) {
+      this.toastr.warning('You do not have permission to create invoices.', 'Permission Denied');
+      return;
+    }
+
+    this.router.navigate(['/admin/invoices/create']);
+  }
+
   openImportModal() {
     if (!this.canCreateInvoice) {
+      this.toastr.warning('You do not have permission to import invoices.', 'Permission Denied');
       return;
     }
 
