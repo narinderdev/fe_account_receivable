@@ -49,12 +49,12 @@
         />
       </div>
 
-      <div class="action-buttons">
+      <div class="action-buttons" *ngIf="canApplyPayment">
         <button class="btn-bai" (click)="openBaiModal()" [disabled]="uploadingBai">
           Upload BAI File
         </button>
 
-        <button class="btn-receive" routerLink="receive-payment" *ngIf="canApplyPayment">
+        <button class="btn-receive" routerLink="receive-payment">
           Receive Payments
         </button>
       </div>
@@ -95,14 +95,14 @@
             <th>Description</th>
             <th>Source</th>
             <th>Payment Date</th>
-            <th>Actions</th>
+            <th *ngIf="canApprovePayment">Actions</th>
           </tr>
         </thead>
 
         <tbody>
           <!-- EMPTY STATE -->
           <tr *ngIf="payments.length === 0" class="no-data-row">
-            <td colspan="7">No payments found.</td>
+            <td [attr.colspan]="canApprovePayment ? 7 : 6">No payments found.</td>
           </tr>
 
           <!-- PAYMENT ROWS -->
@@ -131,11 +131,11 @@
             <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.description || '--' }}</td>
             <td (click)="openPaymentDetails(payment.id, payment.type)">{{ formatSource(payment.source) }}</td>
             <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.date | date: 'mediumDate' }}</td>
-            <td>
+            <td *ngIf="canApprovePayment">
               <button 
                 class="btn-approve-apply" 
                 (click)="approveAndApply(payment, $event)"
-                *ngIf="canApplyPayment && payment.status?.toUpperCase() === 'CREATED'"
+                *ngIf="payment.status?.toUpperCase() === 'CREATED'"
               >
                 Approve & Apply
               </button>

@@ -84,6 +84,7 @@ export class Roles implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_PAYMENTS',
         create: 'APPLY_PAYMENT',
+        approve:'APPROVE_PAYMENT'
       },
     },
     {

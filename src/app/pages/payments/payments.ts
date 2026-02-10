@@ -88,6 +88,7 @@ export class Payments implements OnInit, OnDestroy {
   Math = Math;
   isBaiModalOpen = false;
   uploadingBai = false;
+  canApprovePayment = false;
   approveModalOpen = false;
   approveModalLoading = false;
   approveModalSubmitting = false;
@@ -154,6 +155,7 @@ export class Payments implements OnInit, OnDestroy {
     private customerService: CustomerService,
   ) {
     this.canApplyPayment = this.userContext.hasPermission('APPLY_PAYMENT');
+    this.canApprovePayment = this.userContext.hasPermission('APPROVE_PAYMENT');
   }
 
   ngOnInit() {
@@ -316,6 +318,10 @@ export class Payments implements OnInit, OnDestroy {
   }
 
   openBaiModal() {
+    if (!this.canApplyPayment) {
+      this.toastr.warning('You do not have permission to upload BAI files.', 'Permission Denied');
+      return;
+    }
     if (!this.activeCompanyId) {
       this.toastr.warning('Please select an AR company from the navbar first.', 'Warning');
       return;
@@ -338,6 +344,12 @@ export class Payments implements OnInit, OnDestroy {
     const file = input.files?.[0];
 
     if (!file) {
+      return;
+    }
+
+    if (!this.canApplyPayment) {
+      this.toastr.warning('You do not have permission to upload BAI files.', 'Permission Denied');
+      input.value = '';
       return;
     }
 
