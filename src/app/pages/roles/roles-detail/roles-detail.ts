@@ -74,14 +74,6 @@ export class RolesDetail implements OnInit, OnDestroy {
       },
     },
     {
-      label: 'Write-Off',
-      permissions: {
-        view: 'VIEW_WRITE_OFF',
-        create: 'CREATE_WRITE_OFF',
-        approve: 'APPROVE_WRITE_OFF',
-      },
-    },
-    {
       label: 'Aging & Reports',
       permissions: {
         view: 'VIEW_AGING_REPORTS',
@@ -119,6 +111,15 @@ export class RolesDetail implements OnInit, OnDestroy {
       permissions: {
         view: 'VIEW_DISPUTE',
         create: 'CREATE_DISPUTE',
+      },
+      isSubRow: true,
+    },
+    {
+      label: 'Write-Off',
+      permissions: {
+        view: 'VIEW_WRITE_OFF',
+        create: 'CREATE_WRITE_OFF',
+        approve: 'APPROVE_WRITE_OFF',
       },
       isSubRow: true,
     },

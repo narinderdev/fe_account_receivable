@@ -52,7 +52,11 @@ test.describe('Write-Off workspace', () => {
   });
 
   test('creates and approves write-offs', async ({ page }) => {
-    await page.goto('/admin/write-off');
+    await page.goto('/admin/collections');
+
+    const writeOffTab = page.getByRole('button', { name: 'Write-Offs' });
+    await writeOffTab.click();
+    await expect(page.locator('.write-off-container')).toBeVisible();
 
     const draftRows = page.locator('.data-table tbody tr');
     await expect(draftRows).toHaveCount(1);
