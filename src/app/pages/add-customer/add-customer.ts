@@ -77,6 +77,7 @@ export class AddCustomer implements OnInit, OnDestroy {
   vatSubmitted = false;
   showVatForm = false;
   dunningSubmitted = false;
+  isCustomPaymentTerms = false;
 
   // Loading Flags
   isSavingMain = false;
@@ -153,6 +154,7 @@ export class AddCustomer implements OnInit, OnDestroy {
     // ADDRESS
     this.addressForm = this.fb.group({
       addressLine1: ['', Validators.required],
+      addressLine2: [''],
       city: ['', Validators.required],
       stateProvince: ['', Validators.required],
       postalCode: ['', [Validators.required, Validators.pattern(/^[0-9]{1,6}$/)]],
@@ -186,13 +188,6 @@ export class AddCustomer implements OnInit, OnDestroy {
     });
 
     // VAT
-    // this.vatForm = this.fb.group({
-    //   taxIdentificationNumber: ['', Validators.required],
-    //   taxAgencyName: ['', Validators.required],
-    //   enableVatCodes: [false],
-    //   vatCode: [''],
-    // });
-
     this.vatForm = this.fb.group({
       taxIdentificationNumber: [''],
       taxAgencyName: [''],
@@ -203,16 +198,39 @@ export class AddCustomer implements OnInit, OnDestroy {
     // DUNNING
     this.dunningForm = this.fb.group({
       placeOnCreditHold: [false],
-      creditLimit: ['', [Validators.required, Validators.pattern(/^\$[\d,]+$/)]],
-
+      creditLimit: ['', [Validators.required, Validators.min(1)]],
       dunningLevel: ['', Validators.required],
       pastDue: ['', Validators.required],
       paymentTerms: ['', Validators.required],
+      customPaymentTerms: [''],
       level1: ['', Validators.required],
       level2: ['', Validators.required],
       level3: ['', Validators.required],
       level4: ['', Validators.required],
     });
+
+    // Add value change listener for payment terms
+    this.dunningForm
+      .get('paymentTerms')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe((value) => {
+        this.handlePaymentTermsChange(value);
+      });
+  }
+
+  handlePaymentTermsChange(value: string) {
+    const customControl = this.dunningForm.get('customPaymentTerms');
+
+    if (value === 'Custom') {
+      this.isCustomPaymentTerms = true;
+      customControl?.setValidators([Validators.required]);
+    } else {
+      this.isCustomPaymentTerms = false;
+      customControl?.clearValidators();
+      customControl?.setValue('');
+    }
+
+    customControl?.updateValueAndValidity();
   }
 
   onPhoneInput() {
@@ -269,7 +287,23 @@ export class AddCustomer implements OnInit, OnDestroy {
         }
       }
 
-      if (data.dunning) this.dunningForm.patchValue(data.dunning);
+      // Handle dunning/credit data with payment terms
+      if (data.dunning) {
+        const dunningData = { ...data.dunning };
+
+        // Check if payment terms is a custom value (not in standard options)
+        const standardTerms = ['due on receipt', 'Net 30', 'Net60', 'Net90'];
+        if (dunningData.paymentTerms && !standardTerms.includes(dunningData.paymentTerms)) {
+          this.isCustomPaymentTerms = true;
+          this.dunningForm.patchValue({
+            ...dunningData,
+            paymentTerms: 'Custom',
+            customPaymentTerms: dunningData.paymentTerms,
+          });
+        } else {
+          this.dunningForm.patchValue(dunningData);
+        }
+      }
     });
   }
 
@@ -510,10 +544,8 @@ export class AddCustomer implements OnInit, OnDestroy {
       return;
     }
 
-    // Add commas
+    // Add commas and dollar sign
     const formatted = Number(numericValue).toLocaleString('en-US');
-
-    // Add dollar sign
     control.setValue(`$${formatted}`, { emitEvent: false });
   }
 
@@ -526,10 +558,17 @@ export class AddCustomer implements OnInit, OnDestroy {
 
     this.isSavingDunning = true;
 
+    const formValue = this.dunningForm.value;
+
     const payload = {
-      ...this.dunningForm.value,
-      creditLimit: Number(this.dunningForm.value.creditLimit.replace(/[^\d]/g, '')),
+      ...formValue,
+      creditLimit: Number(formValue.creditLimit.replace(/[^\d]/g, '')),
+      paymentTerms:
+        formValue.paymentTerms === 'Custom' ? formValue.customPaymentTerms : formValue.paymentTerms,
     };
+
+    // Remove customPaymentTerms from payload as it's not needed
+    delete payload.customPaymentTerms;
 
     this.customerService.saveCredit(this.createdCustomerId, payload).subscribe({
       next: () => {
@@ -593,13 +632,33 @@ export class AddCustomer implements OnInit, OnDestroy {
       : {};
     if (Object.keys(vt).length) payload['vat'] = vt;
 
-    const dn = this.dunningForm.dirty
-      ? this.getUpdatedFields(
-          this.dunningForm.value as GenericRecord,
-          (this.originalData?.dunning ?? {}) as GenericRecord,
-        )
-      : {};
-    if (Object.keys(dn).length) payload['dunningCredit'] = dn;
+    // Updated dunning handling
+    if (this.dunningForm.dirty) {
+      const formValue = this.dunningForm.value as GenericRecord;
+      const dunningPayload = this.getUpdatedFields(
+        formValue,
+        (this.originalData?.dunning ?? {}) as GenericRecord,
+      );
+
+      // Handle custom payment terms - send the custom value as paymentTerms
+      if (dunningPayload['paymentTerms'] === 'Custom') {
+        dunningPayload['paymentTerms'] = formValue['customPaymentTerms'];
+      }
+
+      // Remove customPaymentTerms field - it's not a backend field
+      delete dunningPayload['customPaymentTerms'];
+
+      // Handle credit limit formatting
+      if (dunningPayload['creditLimit']) {
+        dunningPayload['creditLimit'] = Number(
+          String(dunningPayload['creditLimit']).replace(/[^\d]/g, ''),
+        );
+      }
+
+      if (Object.keys(dunningPayload).length) {
+        payload['dunningCredit'] = dunningPayload;
+      }
+    }
 
     if (!Object.keys(payload).length) {
       // No changes detected - just navigate back without showing toaster
@@ -622,6 +681,18 @@ export class AddCustomer implements OnInit, OnDestroy {
     });
   }
 
+  hasAnyChanges(): boolean {
+    return (
+      this.mainForm.dirty ||
+      this.addressForm.dirty ||
+      this.applicationForm.dirty ||
+      this.statementForm.dirty ||
+      this.eftForm.dirty ||
+      this.vatForm.dirty ||
+      this.dunningForm.dirty
+    );
+  }
+
   private initializeCompanySelection() {
     this.selectedCompanyId = this.companySelection.getSelectedCompanyId();
     this.updateCompanyOptions(this.selectedCompanyId);
@@ -633,8 +704,6 @@ export class AddCustomer implements OnInit, OnDestroy {
   }
 
   private updateCompanyOptions(id: string | null) {
-    // this.companyOptions = id ? [{ id, label: `Lender ${id}` }] : [];
-
     const control = this.mainForm?.get('companyId');
     if (!control) {
       return;
