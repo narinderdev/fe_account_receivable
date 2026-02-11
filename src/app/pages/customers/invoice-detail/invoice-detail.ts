@@ -8,7 +8,7 @@ import { InvoiceWithItems } from '../../../models/invoice.model';
 @Component({
   selector: 'app-invoice-detail',
   standalone: true,
-  imports: [CommonModule, Loader],
+  imports: [CommonModule, Loader, RouterLink],
   templateUrl: './invoice-detail.html',
   styleUrl: './invoice-detail.css',
 })
