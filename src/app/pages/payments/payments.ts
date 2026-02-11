@@ -109,13 +109,13 @@ export class Payments implements OnInit, OnDestroy {
   // Two-step modal properties
   modalStep: number = 1;
   customerSearchTerm: string = '';
-  
+
   // Customer pagination
   customerCurrentPage = 0;
   customerPageSize = 5;
   customerTotalPages = 0;
   paginatedCustomers: CustomerEntity[] = [];
-  
+
   // Invoice pagination
   invoiceCurrentPage = 0;
   invoicePageSize = 5;
@@ -265,9 +265,7 @@ export class Payments implements OnInit, OnDestroy {
       next: (response) => {
         const pageData = response?.data;
         const content = pageData?.content ?? [];
-        const approvedOnly = content.filter(
-          (entry) => entry.status?.toUpperCase() === 'APPROVED',
-        );
+        const approvedOnly = content.filter((entry) => entry.status?.toUpperCase() === 'APPROVED');
         const mapped = this.sortPaymentsByDate(
           approvedOnly.map((payment) => this.mapApprovedPayment(payment)),
         );
@@ -623,6 +621,37 @@ export class Payments implements OnInit, OnDestroy {
     this.customerCurrentPage = 0;
     this.invoiceCurrentPage = 0;
     this.cdr.detectChanges();
+
+    // ADD THIS: Fetch customer details to get email
+    this.customerOptionsLoading = true;
+    this.customerService
+      .getCustomerById(customerId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.selectedCustomer = response?.data || null;
+          this.customerOptionsLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Failed to load customer details:', error);
+          this.customerOptionsLoading = false;
+          this.toastr.warning('Unable to load customer details.', 'Warning');
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  formatToTitleCase(value?: string | null): string {
+    if (!value) {
+      return '--';
+    }
+
+    return value
+      .toLowerCase()
+      .split('_')
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   private openBankApproveModal(bankTransaction: BankTransaction) {
@@ -775,7 +804,7 @@ export class Payments implements OnInit, OnDestroy {
 
   onCustomerSearch() {
     const term = this.customerSearchTerm.trim().toLowerCase();
-    
+
     if (!term) {
       this.filteredCustomerOptions = [...this.customerOptions];
     } else {
@@ -794,7 +823,7 @@ export class Payments implements OnInit, OnDestroy {
   updateCustomerPagination() {
     this.customerTotalPages = Math.max(
       1,
-      Math.ceil(this.filteredCustomerOptions.length / this.customerPageSize)
+      Math.ceil(this.filteredCustomerOptions.length / this.customerPageSize),
     );
 
     if (this.customerCurrentPage >= this.customerTotalPages) {
@@ -809,7 +838,7 @@ export class Payments implements OnInit, OnDestroy {
   updateInvoicePagination() {
     this.invoiceTotalPages = Math.max(
       1,
-      Math.ceil(this.approveInvoices.length / this.invoicePageSize)
+      Math.ceil(this.approveInvoices.length / this.invoicePageSize),
     );
 
     if (this.invoiceCurrentPage >= this.invoiceTotalPages) {
@@ -861,19 +890,20 @@ export class Payments implements OnInit, OnDestroy {
       }
 
       // Load invoices for step 2
-      const customerId = this.approveContext === 'BANK' 
-        ? this.selectedCustomer?.id 
-        : this.selectedManualPayment?.customerId ?? this.selectedManualPayment?.customer?.id;
+      const customerId =
+        this.approveContext === 'BANK'
+          ? this.selectedCustomer?.id
+          : (this.selectedManualPayment?.customerId ?? this.selectedManualPayment?.customer?.id);
 
       if (customerId) {
         // Set loading state and clear previous selections
         this.approveModalLoading = true;
         this.selectedInvoiceApplications = [];
-        
+
         // Change to step 2
         this.modalStep = 2;
         this.cdr.detectChanges();
-        
+
         // Load invoices
         this.loadInvoicesForApproval(customerId);
       }
@@ -1146,9 +1176,7 @@ export class Payments implements OnInit, OnDestroy {
     }
   }
 
-  private buildManualFilters(
-    dateRange: { fromDate: string; toDate: string } | null,
-  ): {
+  private buildManualFilters(dateRange: { fromDate: string; toDate: string } | null): {
     page: number;
     size: number;
     months?: number;
@@ -1180,9 +1208,11 @@ export class Payments implements OnInit, OnDestroy {
     return Number.isFinite(months) ? months : 3;
   }
 
-  private buildBankFilters(
-    dateRange: { fromDate: string; toDate: string } | null,
-  ): { months?: number; fromDate?: string; toDate?: string } {
+  private buildBankFilters(dateRange: { fromDate: string; toDate: string } | null): {
+    months?: number;
+    fromDate?: string;
+    toDate?: string;
+  } {
     if (this.isCustomPeriod) {
       if (!dateRange) {
         throw new Error('Custom date range is required for bank payment filtering.');
@@ -1218,7 +1248,8 @@ export class Payments implements OnInit, OnDestroy {
   private mapApprovedPayment(payment: Payment): PaymentListItem {
     const isBank = payment.source?.toUpperCase() === 'BANK' || Boolean(payment.bankTransaction);
     const type: PaymentType = isBank ? 'BANK' : 'MANUAL';
-    const id = payment.id ?? payment.paymentId ?? payment.bankTransaction?.id ?? payment.customerId ?? 0;
+    const id =
+      payment.id ?? payment.paymentId ?? payment.bankTransaction?.id ?? payment.customerId ?? 0;
     const customerName = isBank
       ? payment.bankTransaction?.customerName || payment.customerName || '--'
       : this.extractManualCustomerName(payment);
@@ -1234,7 +1265,7 @@ export class Payments implements OnInit, OnDestroy {
       source: payment.source || (isBank ? 'BANK' : 'MANUAL'),
       date: payment.paymentDate || payment.bankTransaction?.transactionDate,
       manualPayment: type === 'MANUAL' ? payment : undefined,
-      bankTransaction: type === 'BANK' ? payment.bankTransaction ?? undefined : undefined,
+      bankTransaction: type === 'BANK' ? (payment.bankTransaction ?? undefined) : undefined,
       paymentRecord: payment,
     };
   }
@@ -1295,10 +1326,7 @@ export class Payments implements OnInit, OnDestroy {
   }
 
   private updateLocalPaymentsCache() {
-    const combined = this.sortPaymentsByDate([
-      ...this.allPayments,
-      ...this.approvedAllPayments,
-    ]);
+    const combined = this.sortPaymentsByDate([...this.allPayments, ...this.approvedAllPayments]);
     localStorage.setItem('paymentsData', JSON.stringify(combined));
   }
 }

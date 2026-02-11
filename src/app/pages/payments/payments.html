@@ -375,7 +375,7 @@
             </div>
             <div class="detail-item">
               <span class="detail-label">Reference</span>
-              <span class="detail-value">{{ manual.paymentMethod || '--' }}</span>
+              <span class="detail-value">{{ formatToTitleCase(manual.paymentMethod) }}</span>
             </div>
           </div>
           <div class="details-grid">
@@ -389,7 +389,7 @@
             </div>
             <div class="detail-item">
               <span class="detail-label">Status</span>
-              <span class="detail-value">{{ manual.status || 'CREATED' }}</span>
+              <span class="detail-value">{{ formatToTitleCase(manual.status) || 'Created' }}</span>
             </div>
           </div>
           <div class="notes-section" *ngIf="manual.notes">
@@ -411,7 +411,7 @@
             </div>
             <div class="detail-item">
               <span class="detail-label">Reference</span>
-              <span class="detail-value">{{ bank.reference || '--' }}</span>
+              <span class="detail-value">{{ formatToTitleCase(bank.reference) }}</span>
             </div>
           </div>
           <div class="details-grid">
@@ -421,11 +421,11 @@
             </div>
             <div class="detail-item">
               <span class="detail-label">Transaction Type</span>
-              <span class="detail-value">{{ bank.transactionType || '--' }}</span>
+              <span class="detail-value">{{ bank.transactionType }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">Status</span>
-              <span class="detail-value">{{ bank.status || '--' }}</span>
+              <span class="detail-value">{{ formatToTitleCase(bank.status) }}</span>
             </div>
           </div>
           <div class="notes-section" *ngIf="bank.description || bank.systemNote">
