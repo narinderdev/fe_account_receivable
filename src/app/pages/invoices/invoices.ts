@@ -34,7 +34,7 @@ interface InvoiceState {
 @Component({
   selector: 'app-invoices',
   standalone: true,
-  imports: [RouterLink, CommonModule, Loader, Spinner, FormsModule],
+  imports: [CommonModule, Loader, Spinner, FormsModule],
   templateUrl: './invoices.html',
   styleUrl: './invoices.css',
 })

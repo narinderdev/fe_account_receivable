@@ -59,6 +59,7 @@ export class Aging implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   private activeCompanyCode: string | null = null;
+  private activeCompanyName: string | null = null;
 
   constructor(
     private agingService: AgingService,
@@ -79,6 +80,7 @@ export class Aging implements OnInit, OnDestroy {
 
       this.activeCompanyId = nextId;
       this.activeCompanyCode = null;
+      this.activeCompanyName = null;
 
       if (this.activeCompanyId) {
         this.loadCompanyMetadata(this.activeCompanyId);
@@ -93,6 +95,8 @@ export class Aging implements OnInit, OnDestroy {
         this.totalItems = 0;
         this.currentPage = 0;
         this.loading = false;
+        this.activeCompanyCode = null;
+        this.activeCompanyName = null;
         this.cdr.detectChanges();
       }
     });
@@ -322,23 +326,109 @@ export class Aging implements OnInit, OnDestroy {
   }
 
   private drawPdfMetadata(pdf: jsPDF): number {
-    const lines = this.getExportMetadataLines();
-    if (!lines.length) {
-      return 0;
-    }
+    const pageWidth = pdf.internal.pageSize.getWidth();
     const margin = 10;
-    const lineHeight = 6;
-    pdf.setFontSize(10);
     let currentY = margin;
-    lines.forEach((line) => {
-      pdf.text(line, margin, currentY);
-      currentY += lineHeight;
-    });
-    return currentY + 2;
+
+    // Draw header background - increased height to fit all text
+    pdf.setFillColor(59, 130, 246); // Blue background (#3B82F6)
+    pdf.rect(0, 0, pageWidth, 32, 'F'); // Increased from 28 to 32
+
+    // Set consistent small font size for all header text
+    pdf.setTextColor(255, 255, 255); // White text
+    pdf.setFontSize(10); // Same size for everything
+    pdf.setFont('helvetica', 'normal');
+
+    // Company Name
+    const companyName = this.getActiveCompanyName() || 'Customer Aging Report';
+    pdf.text(companyName, margin, currentY + 5);
+
+    // Report Title
+    pdf.text('Customer Aging Report', margin, currentY + 11);
+
+    // Company Code (if available)
+    const companyCode = this.getActiveCompanyCode();
+    if (companyCode) {
+      pdf.text(`Code: ${companyCode}`, margin, currentY + 17);
+    }
+
+    // Generated date - right aligned
+    const dateText = `Generated: ${this.getCurrentDate()}`;
+    const dateWidth = pdf.getTextWidth(dateText);
+    pdf.text(dateText, pageWidth - dateWidth - margin, currentY + 5);
+
+    // Reset to black for content
+    pdf.setTextColor(0, 0, 0);
+    currentY = 37; // Position after blue header (increased)
+
+    // Filter Information Section
+    pdf.setFillColor(249, 250, 251); // Light gray background (#F9FAFB)
+    pdf.rect(margin, currentY, pageWidth - 2 * margin, 20, 'F');
+
+    // Add subtle border
+    pdf.setDrawColor(229, 231, 235); // Border color (#E5E7EB)
+    pdf.setLineWidth(0.5);
+    pdf.rect(margin, currentY, pageWidth - 2 * margin, 20, 'S');
+
+    // Filter details
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(75, 85, 99); // Gray text (#4B5563)
+
+    const filterY = currentY + 5;
+    const col1X = margin + 4;
+    const col2X = pageWidth / 2;
+
+    // Left column
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Customer:', col1X, filterY);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(this.getSelectedCustomerLabel(), col1X + 20, filterY);
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Status:', col1X, filterY + 5);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(this.getSelectedStatusLabel(), col1X + 20, filterY + 5);
+
+    // Right column
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Total Records:', col2X, filterY);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(String(this.totalItems), col2X + 28, filterY);
+
+    // Total amount
+    const totals = this.calculateTotals();
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Total Due:', col2X, filterY + 5);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(
+      `$${totals.totalDue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      col2X + 28,
+      filterY + 5,
+    );
+
+    // Reset text color for table
+    pdf.setTextColor(0, 0, 0);
+
+    // Add spacing before table
+    return currentY + 25;
   }
 
   private getExportMetadataLines(): string[] {
-    return [`Company Code: ${this.getActiveCompanyCode() || 'N/A'}`];
+    const metadataLines = [
+      `Company Name: ${this.getActiveCompanyName() || 'N/A'}`,
+      'Report Name: Customer Aging Report',
+      `Generated On: ${this.getCurrentDate()}`,
+      `Status Filter: ${this.getSelectedStatusLabel()}`,
+      `Total Records: ${this.totalItems}`,
+    ];
+
+    const companyCode = this.getActiveCompanyCode();
+    if (companyCode) {
+      metadataLines.splice(1, 0, `Company Code: ${companyCode}`);
+    }
+
+    return metadataLines;
   }
 
   private calculateTotals() {
@@ -441,6 +531,11 @@ export class Aging implements OnInit, OnDestroy {
     return trimmed ? trimmed : null;
   }
 
+  getActiveCompanyName(): string | null {
+    const trimmed = this.activeCompanyName?.trim();
+    return trimmed ? trimmed : null;
+  }
+
   private loadCompanyMetadata(companyId: number) {
     this.companyService
       .getCompanyById(companyId)
@@ -450,12 +545,17 @@ export class Aging implements OnInit, OnDestroy {
           if (this.activeCompanyId !== companyId) {
             return;
           }
-          const code = response?.data?.companyCode?.trim();
+          const data = response?.data;
+          const code = data?.companyCode?.trim();
+          const tradeName = data?.tradeName?.trim();
+          const legalName = data?.legalName?.trim();
           this.activeCompanyCode = code || null;
+          this.activeCompanyName = tradeName || legalName || null;
         },
         error: () => {
           if (this.activeCompanyId === companyId) {
             this.activeCompanyCode = null;
+            this.activeCompanyName = null;
           }
         },
       });

@@ -48,6 +48,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   private activeCompanyCode: string | null = null;
+  private activeCompanyName: string | null = null;
 
   readonly dateRangeOptions = [
     { label: 'Last 1 Month', value: 'LAST_1_MONTH' },
@@ -165,6 +166,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
 
         this.activeCompanyId = nextCompanyId;
         this.activeCompanyCode = null;
+        this.activeCompanyName = null;
 
         if (this.activeCompanyId) {
           this.loadCompanyMetadata(this.activeCompanyId);
@@ -186,6 +188,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
     this.pieChartLoading = false;
     this.barChartLoading = false;
     this.activeCompanyCode = null;
+    this.activeCompanyName = null;
     this.initializeStaticData();
     this.cdr.detectChanges();
   }
@@ -246,62 +249,62 @@ export class InvoiceReport implements OnInit, OnDestroy {
   }
 
   loadStatusBreakdown(companyId: number, months: number) {
-  this.pieChartLoading = true;
-  this.cdr.detectChanges();
+    this.pieChartLoading = true;
+    this.cdr.detectChanges();
 
-  this.invoiceReportService.getInvoiceStatus(companyId, months).subscribe({
-    next: (response) => {
-      if (response.statusCode === 200 && response.data) {
-        const data = response.data;
+    this.invoiceReportService.getInvoiceStatus(companyId, months).subscribe({
+      next: (response) => {
+        if (response.statusCode === 200 && response.data) {
+          const data = response.data;
 
-        this.totalInvoices = data.total || 0;
-        this.statusCounts = [
-          {
-            status: 'Open',
-            count: data.open || 0,
-            percentage:
-              this.totalInvoices > 0 ? ((data.open || 0) / this.totalInvoices) * 100 : 0,
-          },
-          {
-            status: 'Partial',
-            count: data.partial || 0,
-            percentage:
-              this.totalInvoices > 0 ? ((data.partial || 0) / this.totalInvoices) * 100 : 0,
-          },
-          {
-            status: 'Paid',
-            count: data.paid || 0,
-            percentage:
-              this.totalInvoices > 0 ? ((data.paid || 0) / this.totalInvoices) * 100 : 0,
-          },
-          {
-            status: 'Written Off',
-            count: data.writtenOff || 0,
-            percentage:
-              this.totalInvoices > 0 ? ((data.writtenOff || 0) / this.totalInvoices) * 100 : 0,
-          },
-        ];
+          this.totalInvoices = data.total || 0;
+          this.statusCounts = [
+            {
+              status: 'Open',
+              count: data.open || 0,
+              percentage:
+                this.totalInvoices > 0 ? ((data.open || 0) / this.totalInvoices) * 100 : 0,
+            },
+            {
+              status: 'Partial',
+              count: data.partial || 0,
+              percentage:
+                this.totalInvoices > 0 ? ((data.partial || 0) / this.totalInvoices) * 100 : 0,
+            },
+            {
+              status: 'Paid',
+              count: data.paid || 0,
+              percentage:
+                this.totalInvoices > 0 ? ((data.paid || 0) / this.totalInvoices) * 100 : 0,
+            },
+            {
+              status: 'Written Off',
+              count: data.writtenOff || 0,
+              percentage:
+                this.totalInvoices > 0 ? ((data.writtenOff || 0) / this.totalInvoices) * 100 : 0,
+            },
+          ];
 
-        // Remove this line to show all statuses including zeros:
-        // this.statusCounts = this.statusCounts.filter((s) => s.count > 0);
+          // Remove this line to show all statuses including zeros:
+          // this.statusCounts = this.statusCounts.filter((s) => s.count > 0);
 
-        this.pieChartData.labels = this.statusCounts.map((s) => s.status);
-        this.pieChartData.datasets[0].data = this.statusCounts.map((s) => s.count);
+          this.pieChartData.labels = this.statusCounts.map((s) => s.status);
+          this.pieChartData.datasets[0].data = this.statusCounts.map((s) => s.count);
 
+          this.cdr.detectChanges();
+        }
+      },
+      error: (error) => {
+        console.error('Error loading status breakdown:', error);
+        this.pieChartLoading = false;
         this.cdr.detectChanges();
-      }
-    },
-    error: (error) => {
-      console.error('Error loading status breakdown:', error);
-      this.pieChartLoading = false;
-      this.cdr.detectChanges();
-    },
-    complete: () => {
-      this.pieChartLoading = false;
-      this.cdr.detectChanges();
-    },
-  });
-}
+      },
+      complete: () => {
+        this.pieChartLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
   handleMonthsChange(months: number) {
     this.selectedMonths = months;
@@ -552,7 +555,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
       ['Date Range:', this.getSelectedDateRangeLabel()],
       ['Status Period:', `${this.selectedMonths} Month(s)`],
       [],
-      ['INVOICE STATUS BREAKDOWN'],
+      ['Invoice Status Breakdown'],
       ['Total Invoices:', this.totalInvoices],
       ['Status', 'Count', 'Percentage'],
       ...this.statusCounts.map((item) => [
@@ -568,7 +571,7 @@ export class InvoiceReport implements OnInit, OnDestroy {
     const agingData = [
       [],
       [],
-      ['OVERDUE vs NOT DUE INVOICES'],
+      ['Invoices'],
       ['Age Range', 'Count'],
       ...agingLabels.map((label, index) => [label, agingValues[index] || 0]),
     ];
@@ -700,23 +703,103 @@ export class InvoiceReport implements OnInit, OnDestroy {
   }
 
   private drawPdfMetadata(pdf: jsPDF): number {
-    const lines = this.getExportMetadataLines();
-    if (!lines.length) {
-      return 0;
-    }
+    const pageWidth = pdf.internal.pageSize.getWidth();
     const margin = 10;
-    const lineHeight = 6;
-    pdf.setFontSize(10);
     let currentY = margin;
-    lines.forEach((line) => {
-      pdf.text(line, margin, currentY);
-      currentY += lineHeight;
-    });
-    return currentY + 2;
+
+    // Draw header background
+    pdf.setFillColor(59, 130, 246); // Blue background (#3B82F6)
+    pdf.rect(0, 0, pageWidth, 32, 'F');
+
+    // Set consistent small font size for all header text
+    pdf.setTextColor(255, 255, 255); // White text
+    pdf.setFontSize(10); // Same size for everything
+    pdf.setFont('helvetica', 'normal');
+
+    // Company Name
+    const companyName = this.getActiveCompanyName() || 'Invoice Status Report';
+    pdf.text(companyName, margin, currentY + 5);
+
+    // Report Title
+    pdf.text('Invoice Status Report', margin, currentY + 11);
+
+    // Company Code (if available)
+    const companyCode = this.getActiveCompanyCode();
+    if (companyCode) {
+      pdf.text(`Code: ${companyCode}`, margin, currentY + 17);
+    }
+
+    // Generated date - right aligned
+    const dateText = `Generated: ${this.getCurrentDate()}`;
+    const dateWidth = pdf.getTextWidth(dateText);
+    pdf.text(dateText, pageWidth - dateWidth - margin, currentY + 5);
+
+    // Reset to black for content
+    pdf.setTextColor(0, 0, 0);
+    currentY = 37; // Position after blue header
+
+    // Filter Information Section
+    pdf.setFillColor(249, 250, 251); // Light gray background (#F9FAFB)
+    pdf.rect(margin, currentY, pageWidth - 2 * margin, 20, 'F');
+
+    // Add subtle border
+    pdf.setDrawColor(229, 231, 235); // Border color (#E5E7EB)
+    pdf.setLineWidth(0.5);
+    pdf.rect(margin, currentY, pageWidth - 2 * margin, 20, 'S');
+
+    // Filter details
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(75, 85, 99); // Gray text (#4B5563)
+
+    const filterY = currentY + 5;
+    const col1X = margin + 4;
+    const col2X = pageWidth / 2;
+
+    // Left column
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Date Range:', col1X, filterY);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(this.getSelectedDateRangeLabel(), col1X + 24, filterY);
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Status Period:', col1X, filterY + 5);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`${this.selectedMonths} Month(s)`, col1X + 24, filterY + 5);
+
+    // Right column
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Total Invoices:', col2X, filterY);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(String(this.totalInvoices), col2X + 28, filterY);
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Status Filter:', col2X, filterY + 5);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('All Statuses', col2X + 28, filterY + 5);
+
+    // Reset text color for table
+    pdf.setTextColor(0, 0, 0);
+
+    // Add spacing before table
+    return currentY + 25;
   }
 
   private getExportMetadataLines(): string[] {
-    return [`Company Code: ${this.getActiveCompanyCode() || 'N/A'}`];
+    const metadataLines = [
+      `Company Name: ${this.getActiveCompanyName() || 'N/A'}`,
+      'Report Name: Invoice Status Report',
+      `Generated On: ${this.getCurrentDate()}`,
+      `Status Filter: ${this.getStatusFilterLabel()}`,
+      `Total Records: ${this.totalInvoices}`,
+    ];
+
+    const code = this.getActiveCompanyCode();
+    if (code) {
+      metadataLines.splice(1, 0, `Company Code: ${code}`);
+    }
+
+    return metadataLines;
   }
 
   private loadCompanyMetadata(companyId: number) {
@@ -728,15 +811,29 @@ export class InvoiceReport implements OnInit, OnDestroy {
           if (this.activeCompanyId !== companyId) {
             return;
           }
-          const code = response?.data?.companyCode?.trim();
+          const data = response?.data;
+          const code = data?.companyCode?.trim();
+          const tradeName = data?.tradeName?.trim();
+          const legalName = data?.legalName?.trim();
           this.activeCompanyCode = code || null;
+          this.activeCompanyName = tradeName || legalName || null;
         },
         error: () => {
           if (this.activeCompanyId === companyId) {
             this.activeCompanyCode = null;
+            this.activeCompanyName = null;
           }
         },
       });
+  }
+
+  getActiveCompanyName(): string | null {
+    const trimmed = this.activeCompanyName?.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  private getStatusFilterLabel(): string {
+    return 'All Statuses';
   }
 
   ngOnDestroy() {
