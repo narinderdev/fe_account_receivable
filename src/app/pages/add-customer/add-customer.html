@@ -138,6 +138,15 @@
             </div>
 
             <div class="form-field">
+              <label>Address Line 2</label>
+              <input
+                type="text"
+                formControlName="addressLine2"
+                placeholder="Apartment, suite, unit, building, floor, etc."
+              />
+            </div>
+
+            <div class="form-field">
               <label>City <span class="color">*</span></label>
               <input type="text" formControlName="city" placeholder="Enter city" />
               <div
@@ -396,7 +405,8 @@
               <input
                 type="text"
                 formControlName="creditLimit"
-                placeholder="$5,000.00"
+                placeholder="$5,000"
+                inputmode="numeric"
                 (input)="onCreditLimitInput()"
               />
 
@@ -408,7 +418,7 @@
                   Credit Limit is required.
                 </span>
                 <span *ngIf="dunningForm.controls['creditLimit'].hasError('min')">
-                  Credit Limit must be positive.
+                  Credit Limit must be greater than 0.
                 </span>
               </div>
             </div>
@@ -421,6 +431,7 @@
                 <option value="Net 30">Net 30</option>
                 <option value="Net60">Net 60</option>
                 <option value="Net90">Net 90</option>
+                <option value="Custom">Custom/Other</option>
               </select>
               <div
                 class="error"
@@ -428,6 +439,24 @@
               >
                 <span *ngIf="dunningForm.controls['paymentTerms'].hasError('required')">
                   Payment Terms are required.
+                </span>
+              </div>
+            </div>
+
+            <!-- Custom Payment Terms Input - now on the right of payment terms -->
+            <div class="form-field small-dropdown" *ngIf="isCustomPaymentTerms">
+              <label>Custom Payment Terms <span class="color">*</span></label>
+              <input
+                type="text"
+                formControlName="customPaymentTerms"
+                placeholder="e.g., Net 45, Net 15, 2/10 Net 30"
+              />
+              <div
+                class="error"
+                *ngIf="dunningSubmitted && dunningForm.controls['customPaymentTerms'].errors"
+              >
+                <span *ngIf="dunningForm.controls['customPaymentTerms'].hasError('required')">
+                  Please specify custom payment terms.
                 </span>
               </div>
             </div>
@@ -545,6 +574,7 @@
       <div class="actions">
         <button class="btn-cancel" routerLink="/admin/customer">Cancel</button>
 
+        <!-- ADD MODE: Show save buttons specific to each tab -->
         <ng-container *ngIf="!isEditMode">
           <button
             *ngIf="isActive('main')"
@@ -597,13 +627,13 @@
           </button>
         </ng-container>
 
+        <!-- EDIT MODE: Show Update button on ALL tabs -->
         <ng-container *ngIf="isEditMode">
           <button
-            *ngIf="isActive('dunning')"
             class="btn-continue"
             type="button"
             (click)="updateCustomer()"
-            [disabled]="isUpdatingCustomer"
+            [disabled]="isUpdatingCustomer || !hasAnyChanges()"
           >
             <ng-container *ngIf="!isUpdatingCustomer; else spinUpdating"> Update </ng-container>
 
