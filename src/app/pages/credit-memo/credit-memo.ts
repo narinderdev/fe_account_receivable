@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { Loader } from '../../shared/loader/loader';
@@ -13,6 +13,7 @@ import { ArCodeService } from '../../services/ar-code-service';
 import { CreditMemoService } from '../../services/credit-memo-service';
 import { CreditMemoEntity, CreateCreditMemoPayload } from '../../models/credit-memo.model';
 import { Subject, takeUntil } from 'rxjs';
+import { Router } from '@angular/router';
 
 type CreditMemoStatus = string;
 
@@ -67,6 +68,7 @@ interface CreditMemoTabState {
   styleUrl: './credit-memo.css',
 })
 export class CreditMemo implements OnInit, OnDestroy {
+  private currencyPipe = new CurrencyPipe('en-US');
   customers: CustomerOption[] = [];
   arCodes: ArCodeOption[] = [];
   creditMemoForm: FormGroup;
@@ -118,7 +120,8 @@ export class CreditMemo implements OnInit, OnDestroy {
     private customerService: CustomerService,
     private companySelection: CompanySelectionService,
     private arCodeService: ArCodeService,
-    private creditMemoService: CreditMemoService
+    private creditMemoService: CreditMemoService,
+    private router: Router,
   ) {
     this.canViewCreditMemos = this.userContext.hasPermission('VIEW_MEMOS');
     this.canCreateCreditMemo = this.userContext.hasPermission('CREATE_MEMOS');
@@ -127,7 +130,10 @@ export class CreditMemo implements OnInit, OnDestroy {
     this.canApplyCreditMemo = this.userContext.hasPermission('APPLY_CREDIT_MEMO');
     this.canApproveCreditMemo = this.userContext.hasPermission('APPROVE_MEMOS');
     this.showActionsColumn =
-      this.canUpdateCreditMemo || this.canDeleteCreditMemo || this.canApplyCreditMemo || this.canApproveCreditMemo;
+      this.canUpdateCreditMemo ||
+      this.canDeleteCreditMemo ||
+      this.canApplyCreditMemo ||
+      this.canApproveCreditMemo;
 
     this.creditMemoForm = this.fb.group({
       customerId: ['', Validators.required],
@@ -136,9 +142,11 @@ export class CreditMemo implements OnInit, OnDestroy {
       applyToInvoiceNow: [false],
     });
 
-    this.creditMemoForm.controls['applyToInvoiceNow'].valueChanges.subscribe((applyNow: boolean) => {
-      this.handleApplyToInvoiceToggle(Boolean(applyNow));
-    });
+    this.creditMemoForm.controls['applyToInvoiceNow'].valueChanges.subscribe(
+      (applyNow: boolean) => {
+        this.handleApplyToInvoiceToggle(Boolean(applyNow));
+      },
+    );
 
     this.applyForm = this.fb.group({
       applyAmount: ['', [Validators.required, Validators.min(0.01)]],
@@ -283,6 +291,37 @@ export class CreditMemo implements OnInit, OnDestroy {
     });
   }
 
+  formatAmountLive(event: Event) {
+    const input = event.target as HTMLInputElement;
+    let value = input.value;
+
+    // Remove everything except digits and decimal
+    value = value.replace(/[^\d.]/g, '');
+
+    // Prevent multiple decimals
+    const parts = value.split('.');
+    if (parts.length > 2) {
+      value = parts[0] + '.' + parts[1];
+    }
+
+    const numericValue = Number(value);
+
+    if (!value) {
+      this.creditMemoForm.get('amount')?.setValue('', { emitEvent: false });
+      return;
+    }
+
+    const formatted = numericValue.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+
+    const finalValue = `$${formatted}`;
+
+    // Update both input and form control without triggering loop
+    this.creditMemoForm.get('amount')?.setValue(finalValue, { emitEvent: false });
+  }
+
   private loadCreditMemos(companyId: number, status: CreditMemoTab, page?: number) {
     const currentState = this.tabStates[status];
     const targetPage = typeof page === 'number' ? page : currentState.currentPage;
@@ -291,42 +330,44 @@ export class CreditMemo implements OnInit, OnDestroy {
     this.setTabState(status, { loading: true, error: null });
     this.cdr.detectChanges();
 
-    this.creditMemoService.getCompanyCreditMemos(companyId, status, targetPage, pageSize).subscribe({
-      next: (response) => {
-        const pageData = response?.data;
-        const content = pageData?.content ?? [];
-        const totalPages = pageData?.totalPages ?? 0;
-        const totalItems = pageData?.totalElements ?? content.length;
-        const currentPage = pageData?.number ?? targetPage;
-        const size = pageData?.size ?? pageSize;
-        this.setTabState(status, {
-          records: content.map((memo) => this.transformCreditMemo(memo)),
-          loading: false,
-          error: null,
-          initialized: true,
-          currentPage,
-          totalPages,
-          totalItems,
-          pageSize: size,
-        });
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        const message = error?.error?.message || 'Unable to load credit memos.';
-        this.setTabState(status, {
-          records: [],
-          loading: false,
-          error: message,
-          initialized: true,
-          totalPages: 0,
-          totalItems: 0,
-          currentPage: 0,
-          pageSize,
-        });
-        this.toastr.error(message, 'Error');
-        this.cdr.detectChanges();
-      },
-    });
+    this.creditMemoService
+      .getCompanyCreditMemos(companyId, status, targetPage, pageSize)
+      .subscribe({
+        next: (response) => {
+          const pageData = response?.data;
+          const content = pageData?.content ?? [];
+          const totalPages = pageData?.totalPages ?? 0;
+          const totalItems = pageData?.totalElements ?? content.length;
+          const currentPage = pageData?.number ?? targetPage;
+          const size = pageData?.size ?? pageSize;
+          this.setTabState(status, {
+            records: content.map((memo) => this.transformCreditMemo(memo)),
+            loading: false,
+            error: null,
+            initialized: true,
+            currentPage,
+            totalPages,
+            totalItems,
+            pageSize: size,
+          });
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Unable to load credit memos.';
+          this.setTabState(status, {
+            records: [],
+            loading: false,
+            error: message,
+            initialized: true,
+            totalPages: 0,
+            totalItems: 0,
+            currentPage: 0,
+            pageSize,
+          });
+          this.toastr.error(message, 'Error');
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   private transformCreditMemo(memo: CreditMemoEntity): CreditMemoRecord {
@@ -381,7 +422,7 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   private handleApplyToInvoiceToggle(applyNow: boolean) {
     this.selectedInvoiceIds = [];
-    
+
     if (applyNow) {
       const customerId = Number(this.creditMemoForm.controls['customerId'].value);
       if (customerId) {
@@ -408,7 +449,8 @@ export class CreditMemo implements OnInit, OnDestroy {
         this.customerInvoices = response?.data ?? [];
         this.invoicesLoading = false;
         if (this.customerInvoices.length === 0) {
-          this.invoiceMessage = 'No invoices found for this customer. Credit will remain on-account.';
+          this.invoiceMessage =
+            'No invoices found for this customer. Credit will remain on-account.';
           this.invoiceMessageIsError = false;
         }
         this.cdr.detectChanges();
@@ -420,7 +462,7 @@ export class CreditMemo implements OnInit, OnDestroy {
         this.invoiceMessageIsError = true;
         this.toastr.error('Unable to load invoices for this customer.', 'Error');
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -488,6 +530,20 @@ export class CreditMemo implements OnInit, OnDestroy {
     }
   }
 
+  goToCreditMemoDetail(record: CreditMemoRecord, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!record?.id) {
+      this.toastr.error('Unable to open this credit memo.', 'Error');
+      return;
+    }
+    const statusParam = record.status ? String(record.status).toUpperCase() : undefined;
+    this.router.navigate(['/admin/credit-memo', record.id], {
+      queryParams: statusParam ? { status: statusParam } : undefined,
+    });
+  }
+
   prevPage() {
     if (this.lastCompanyId === null) {
       return;
@@ -504,7 +560,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     }
     this.loadCustomersFromService(true);
     this.loadArCodesFromService(true);
-    
+
     this.resetCreditMemoFormState();
     this.submitted = false;
     this.editingRecordIndex = null;
@@ -533,16 +589,16 @@ export class CreditMemo implements OnInit, OnDestroy {
     this.applyingRecordIndex = index;
     this.applyingRecord = record;
     this.applyForm.reset();
-    
+
     const appliedAmount = Number(record.appliedAmount || 0);
     const availableAmount = record.amount - appliedAmount;
     this.applyForm.controls['applyAmount'].setValidators([
       Validators.required,
       Validators.min(0.01),
-      Validators.max(availableAmount)
+      Validators.max(availableAmount),
     ]);
     this.applyForm.controls['applyAmount'].updateValueAndValidity();
-    
+
     this.applySubmitted = false;
     this.applying = false;
     this.applyModalOpen = true;
@@ -635,7 +691,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     if (!this.applyingRecord.id) {
       this.toastr.error(
         'Unable to apply this credit memo. Please refresh the page and try again.',
-        'Error'
+        'Error',
       );
       return;
     }
@@ -643,7 +699,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     const applyAmount = Number(this.applyForm.value.applyAmount);
 
     this.applying = true;
-    
+
     setTimeout(() => {
       const targetTab = this.activeTab;
       const records = this.tabStates[targetTab].records;
@@ -674,7 +730,9 @@ export class CreditMemo implements OnInit, OnDestroy {
     const formValue = this.creditMemoForm.getRawValue();
     const applyToInvoiceNow = Boolean(formValue.applyToInvoiceNow);
     const editingRecord =
-      this.editingRecordIndex !== null ? this.getRecordFromActiveTab(this.editingRecordIndex) : null;
+      this.editingRecordIndex !== null
+        ? this.getRecordFromActiveTab(this.editingRecordIndex)
+        : null;
 
     this.saving = true;
     this.cdr.detectChanges();
@@ -689,7 +747,7 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   private updateExistingCreditMemo(
     editingRecord: CreditMemoRecord,
-    formValue: Record<string, unknown>
+    formValue: Record<string, unknown>,
   ) {
     if (!this.canUpdateCreditMemo) {
       this.toastr.error('You do not have permission to update credit memos.', 'Permission denied');
@@ -723,10 +781,7 @@ export class CreditMemo implements OnInit, OnDestroy {
     }, 500);
   }
 
-  private createCreditMemoOnServer(
-    formValue: Record<string, unknown>,
-    applyToInvoiceNow: boolean
-  ) {
+  private createCreditMemoOnServer(formValue: Record<string, unknown>, applyToInvoiceNow: boolean) {
     if (!this.canCreateCreditMemo) {
       this.toastr.error('You do not have permission to create credit memos.', 'Permission denied');
       this.saving = false;
@@ -779,9 +834,10 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   private buildCreateMemoPayload(
     formValue: Record<string, unknown>,
-    applyToInvoiceNow: boolean
+    applyToInvoiceNow: boolean,
   ): CreateCreditMemoPayload {
-    const amount = Number(formValue['amount']);
+    const amount = Number(String(formValue['amount']).replace(/[^\d.]/g, ''));
+
     const arCodeId = Number(formValue['arCodeId']);
     const invoiceId =
       applyToInvoiceNow && this.selectedInvoiceIds.length > 0
@@ -810,10 +866,10 @@ export class CreditMemo implements OnInit, OnDestroy {
     if (!record) {
       return;
     }
-    
+
     this.loadCustomersFromService(true);
     this.loadArCodesFromService(true);
-    
+
     this.resetCreditMemoFormState();
     this.editingRecordIndex = index;
     this.creditMemoForm.patchValue({
@@ -900,7 +956,7 @@ export class CreditMemo implements OnInit, OnDestroy {
 
     const editingRecordId =
       this.editingRecordIndex !== null
-        ? this.getRecordFromActiveTab(this.editingRecordIndex)?.id ?? null
+        ? (this.getRecordFromActiveTab(this.editingRecordIndex)?.id ?? null)
         : null;
 
     setTimeout(() => {
@@ -908,11 +964,11 @@ export class CreditMemo implements OnInit, OnDestroy {
       if (this.editingRecordIndex !== null && index < this.editingRecordIndex) {
         this.editingRecordIndex = this.editingRecordIndex - 1;
       }
-      
+
       if (editingRecordId === record.id) {
         this.closeModal();
       }
-      
+
       this.toastr.success('Credit memo deleted successfully', 'Success');
       this.deleting = false;
       this.deletingMemoIds.delete(record.id as number);
@@ -1016,7 +1072,9 @@ export class CreditMemo implements OnInit, OnDestroy {
     };
   }
 
-  private createInitialTabStates(errorMessage: string | null = null): Record<CreditMemoTab, CreditMemoTabState> {
+  private createInitialTabStates(
+    errorMessage: string | null = null,
+  ): Record<CreditMemoTab, CreditMemoTabState> {
     return {
       CREATED: this.buildInitialTabState(errorMessage),
       APPROVED: this.buildInitialTabState(errorMessage),
@@ -1039,7 +1097,7 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   private updateTabRecords(
     tab: CreditMemoTab,
-    updater: (records: CreditMemoRecord[]) => CreditMemoRecord[]
+    updater: (records: CreditMemoRecord[]) => CreditMemoRecord[],
   ) {
     const updatedRecords = updater(this.tabStates[tab].records);
     this.setTabState(tab, { records: updatedRecords, initialized: true });
@@ -1051,6 +1109,10 @@ export class CreditMemo implements OnInit, OnDestroy {
       next[index] = record;
       return next;
     });
+  }
+
+  formatCurrency(amount: number): string {
+    return this.currencyPipe.transform(amount, 'USD', 'symbol', '1.2-2') || '$0.00';
   }
 
   private replaceRecordInActiveTab(index: number, record: CreditMemoRecord) {

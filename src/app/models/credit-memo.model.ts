@@ -14,6 +14,13 @@ export interface CreditMemoEntity {
     id?: number;
     name?: string | null;
     code?: string | null;
+    description?: string | null;
+    company?: {
+      id?: number;
+      legalName?: string | null;
+      tradeName?: string | null;
+      companyCode?: string | null;
+    } | null;
   } | null;
   customer?: CustomerEntity | null;
   status?: CreditMemoStatus | null;

@@ -24,10 +24,7 @@
         {{ activeTabState.error }}
       </div>
 
-      <div
-        *ngIf="!activeTabState.error && activeTabState.records.length === 0"
-        class="empty-text"
-      >
+      <div *ngIf="!activeTabState.error && activeTabState.records.length === 0" class="empty-text">
         {{
           activeTab === 'CREATED'
             ? 'No credit memos have been created yet.'
@@ -51,7 +48,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let record of activeTabState.records; let i = index">
+            <tr
+              *ngFor="let record of activeTabState.records; let i = index"
+              class="clickable-row"
+              (click)="goToCreditMemoDetail(record, $event)"
+            >
               <td>{{ record.creditMemoNo || 'N/A' }}</td>
               <td>
                 <div class="customer-info">
@@ -59,7 +60,7 @@
                     class="customer-initial"
                     [ngStyle]="{
                       backgroundColor: getInitialColor(i).background,
-                      color: getInitialColor(i).color
+                      color: getInitialColor(i).color,
                     }"
                   >
                     {{ getInitial(record.customerName) }}
@@ -67,20 +68,17 @@
                   <span class="customer-name">{{ record.customerName || 'Unknown' }}</span>
                 </div>
               </td>
-              <td>$ {{ record.amount | number : '1.2-2' }}</td>
+              <td>{{ record.amount | currency }}</td>
               <!-- <td>$ {{ record.appliedAmount || 0 | number : '1.2-2' }}</td> -->
               <td>{{ record.arCodeName || 'N/A' }}</td>
               <td>
                 <ng-container *ngIf="record.date; else noMemoDate">
-                  {{ record.date | date : 'MM/dd/yyyy' }}
+                  {{ record.date | date: 'MM/dd/yyyy' }}
                 </ng-container>
                 <ng-template #noMemoDate>N/A</ng-template>
               </td>
               <td>
-                <span
-                  class="status-badge"
-                  [ngClass]="getStatusClass(record.status)"
-                >
+                <span class="status-badge" [ngClass]="getStatusClass(record.status)">
                   {{ getStatusLabel(record.status) }}
                 </span>
               </td>
@@ -88,7 +86,7 @@
                 <button
                   type="button"
                   class="btn-approve"
-                  (click)="openApproveModal(record)"
+                  (click)="openApproveModal(record); $event.stopPropagation()"
                   [disabled]="approvingCreditMemoId === record.id"
                 >
                   <app-spinner *ngIf="approvingCreditMemoId === record.id"></app-spinner>
@@ -110,7 +108,7 @@
                     </svg>
                   </button> -->
 
-                  <!-- <div
+              <!-- <div
                     class="action-menu-dropdown"
                     *ngIf="activeMenuIndex === i"
                     (click)="$event.stopPropagation()"
@@ -260,30 +258,32 @@
         <div class="modal-body">
           <div class="form-row">
             <div class="form-field">
-              <label>Company <span class="color">*</span></label>
+              <label>Customer <span class="color">*</span></label>
               <select
                 #customerSelect
                 formControlName="customerId"
                 (change)="handleCustomerSelection(customerSelect.value)"
               >
-                <option value="">Select company</option>
+                <option value="">Select customer</option>
                 <option *ngFor="let customer of customers" [value]="customer.id">
                   {{ customer.name }}
                 </option>
               </select>
               <p class="error" *ngIf="submitted && creditMemoForm.controls['customerId'].invalid">
-                Company is required
+                Customer is required
               </p>
             </div>
 
             <div class="form-field">
               <label>Amount <span class="color">*</span></label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputmode="decimal"
                 formControlName="amount"
-                placeholder="Enter amount"
+                placeholder="$0.00"
+                (input)="formatAmountLive($event)"
               />
+
               <p class="error" *ngIf="submitted && creditMemoForm.controls['amount'].invalid">
                 <span *ngIf="creditMemoForm.controls['amount'].errors?.['required']"
                   >Amount is required</span
@@ -364,8 +364,8 @@
                       />
                     </td>
                     <td>{{ invoice.invoiceNumber }}</td>
-                    <td>{{ invoice.invoiceDate | date : 'MM/dd/yyyy' }}</td>
-                    <td>{{ invoice.dueDate | date : 'MM/dd/yyyy' }}</td>
+                    <td>{{ invoice.invoiceDate | date: 'MM/dd/yyyy' }}</td>
+                    <td>{{ invoice.dueDate | date: 'MM/dd/yyyy' }}</td>
                     <td>{{ invoice.totalAmount | currency }}</td>
                     <td>{{ invoice.balanceDue | currency }}</td>
                     <td>
@@ -431,8 +431,8 @@
           <div class="form-field">
             <label>Apply Amount <span class="color">*</span></label>
             <input
-              type="number"
-              step="0.01"
+              type="text"
+              inputmode="decimal"
               formControlName="applyAmount"
               placeholder="Enter amount to apply"
             />
