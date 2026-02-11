@@ -35,6 +35,7 @@ import { SetPassword } from './pages/set-password/set-password';
 import { VerifyOtp } from './pages/verify-otp/verify-otp';
 import { ArCodes } from './pages/ar-codes/ar-codes';
 import { CreditMemo } from './pages/credit-memo/credit-memo';
+import { CreditMemoDetail } from './pages/credit-memo/credit-memo-detail/credit-memo-detail';
 import { InvoicesReports } from './pages/invoices-reports/invoices-reports';
 import { PaymentsReports } from './pages/payments-reports/payments-reports';
 import { GlCode } from './pages/gl-code/gl-code';
@@ -123,6 +124,7 @@ export const routes: Routes = [
       { path: 'gl-code', component: GlCode },
       { path: 'accounts', component: Accounts },
       { path: 'credit-memo', component: CreditMemo },
+      { path: 'credit-memo/:creditMemoId', component: CreditMemoDetail },
     ],
   },
 ];
