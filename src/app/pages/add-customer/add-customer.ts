@@ -77,7 +77,6 @@ export class AddCustomer implements OnInit, OnDestroy {
   vatSubmitted = false;
   showVatForm = false;
   dunningSubmitted = false;
-  isCustomPaymentTerms = false;
 
   // Loading Flags
   isSavingMain = false;
@@ -183,8 +182,8 @@ export class AddCustomer implements OnInit, OnDestroy {
       bankName: ['', Validators.required],
       ibanAccountNumber: ['', Validators.required],
       bankIdentifierCode: ['', Validators.required],
-      enableAchPayments: [false],
-      allowDirectDebit: [false],
+      // enableAchPayments: [false],
+      // allowDirectDebit: [false],
     });
 
     // VAT
@@ -202,35 +201,12 @@ export class AddCustomer implements OnInit, OnDestroy {
       dunningLevel: ['', Validators.required],
       pastDue: ['', Validators.required],
       paymentTerms: ['', Validators.required],
-      customPaymentTerms: [''],
       level1: ['', Validators.required],
       level2: ['', Validators.required],
       level3: ['', Validators.required],
       level4: ['', Validators.required],
     });
 
-    // Add value change listener for payment terms
-    this.dunningForm
-      .get('paymentTerms')
-      ?.valueChanges.pipe(takeUntil(this.destroy$))
-      .subscribe((value) => {
-        this.handlePaymentTermsChange(value);
-      });
-  }
-
-  handlePaymentTermsChange(value: string) {
-    const customControl = this.dunningForm.get('customPaymentTerms');
-
-    if (value === 'Custom') {
-      this.isCustomPaymentTerms = true;
-      customControl?.setValidators([Validators.required]);
-    } else {
-      this.isCustomPaymentTerms = false;
-      customControl?.clearValidators();
-      customControl?.setValue('');
-    }
-
-    customControl?.updateValueAndValidity();
   }
 
   onPhoneInput() {
@@ -290,19 +266,18 @@ export class AddCustomer implements OnInit, OnDestroy {
       // Handle dunning/credit data with payment terms
       if (data.dunning) {
         const dunningData = { ...data.dunning };
+        const supportedTerms = ['Net 30', 'Net60', 'Net90'];
+        const formattedLimit = this.formatCreditLimitValue(dunningData.creditLimit);
+        const dunningFormValue: GenericRecord = {
+          ...dunningData,
+          creditLimit: formattedLimit,
+        };
 
-        // Check if payment terms is a custom value (not in standard options)
-        const standardTerms = ['due on receipt', 'Net 30', 'Net60', 'Net90'];
-        if (dunningData.paymentTerms && !standardTerms.includes(dunningData.paymentTerms)) {
-          this.isCustomPaymentTerms = true;
-          this.dunningForm.patchValue({
-            ...dunningData,
-            paymentTerms: 'Custom',
-            customPaymentTerms: dunningData.paymentTerms,
-          });
-        } else {
-          this.dunningForm.patchValue(dunningData);
+        if (dunningData.paymentTerms && !supportedTerms.includes(dunningData.paymentTerms)) {
+          dunningFormValue['paymentTerms'] = '';
         }
+
+        this.dunningForm.patchValue(dunningFormValue);
       }
     });
   }
@@ -536,17 +511,8 @@ export class AddCustomer implements OnInit, OnDestroy {
 
     let value = control.value || '';
 
-    // Remove everything except digits
-    const numericValue = value.replace(/[^\d]/g, '');
-
-    if (!numericValue) {
-      control.setValue('', { emitEvent: false });
-      return;
-    }
-
-    // Add commas and dollar sign
-    const formatted = Number(numericValue).toLocaleString('en-US');
-    control.setValue(`$${formatted}`, { emitEvent: false });
+    const formatted = this.formatCreditLimitValue(value);
+    control.setValue(formatted, { emitEvent: false });
   }
 
   // DUNNING → finish
@@ -559,16 +525,18 @@ export class AddCustomer implements OnInit, OnDestroy {
     this.isSavingDunning = true;
 
     const formValue = this.dunningForm.value;
+    const numericCreditLimit = this.normalizeCreditLimit(formValue.creditLimit);
+
+    if (numericCreditLimit === null) {
+      this.isSavingDunning = false;
+      return;
+    }
 
     const payload = {
       ...formValue,
-      creditLimit: Number(formValue.creditLimit.replace(/[^\d]/g, '')),
-      paymentTerms:
-        formValue.paymentTerms === 'Custom' ? formValue.customPaymentTerms : formValue.paymentTerms,
+      creditLimit: numericCreditLimit,
+      paymentTerms: formValue.paymentTerms,
     };
-
-    // Remove customPaymentTerms from payload as it's not needed
-    delete payload.customPaymentTerms;
 
     this.customerService.saveCredit(this.createdCustomerId, payload).subscribe({
       next: () => {
@@ -635,24 +603,17 @@ export class AddCustomer implements OnInit, OnDestroy {
     // Updated dunning handling
     if (this.dunningForm.dirty) {
       const formValue = this.dunningForm.value as GenericRecord;
+      const normalizedFormValue: GenericRecord = {
+        ...formValue,
+        creditLimit: this.normalizeCreditLimit(formValue['creditLimit'] as string | number | null),
+      };
       const dunningPayload = this.getUpdatedFields(
-        formValue,
+        normalizedFormValue,
         (this.originalData?.dunning ?? {}) as GenericRecord,
       );
 
-      // Handle custom payment terms - send the custom value as paymentTerms
-      if (dunningPayload['paymentTerms'] === 'Custom') {
-        dunningPayload['paymentTerms'] = formValue['customPaymentTerms'];
-      }
-
-      // Remove customPaymentTerms field - it's not a backend field
-      delete dunningPayload['customPaymentTerms'];
-
-      // Handle credit limit formatting
-      if (dunningPayload['creditLimit']) {
-        dunningPayload['creditLimit'] = Number(
-          String(dunningPayload['creditLimit']).replace(/[^\d]/g, ''),
-        );
+      if (dunningPayload['creditLimit'] === null) {
+        delete dunningPayload['creditLimit'];
       }
 
       if (Object.keys(dunningPayload).length) {
@@ -720,6 +681,36 @@ export class AddCustomer implements OnInit, OnDestroy {
       control.setValue(id, { emitEvent: false });
       control.markAsPristine();
     }
+  }
+
+  private formatCreditLimitValue(value: string | number | null | undefined): string {
+    if (value === null || value === undefined || value === '') {
+      return '';
+    }
+
+    const numeric =
+      typeof value === 'number' ? value : Number(String(value).replace(/[^\d]/g, ''));
+
+    if (!Number.isFinite(numeric) || numeric < 0) {
+      return '';
+    }
+
+    return `$${numeric.toLocaleString('en-US')}`;
+  }
+
+  private normalizeCreditLimit(value: string | number | null | undefined): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const numeric =
+      typeof value === 'number' ? value : Number(String(value).replace(/[^\d]/g, ''));
+
+    if (!Number.isFinite(numeric)) {
+      return null;
+    }
+
+    return numeric;
   }
 
   ngOnDestroy() {
