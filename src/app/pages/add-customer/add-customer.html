@@ -268,7 +268,7 @@
 
           <br />
 
-          <h2 class="section-title">ACH Mandate</h2>
+          <!-- <h2 class="section-title">ACH Mandate</h2>
 
           <div class="checkbox-group">
             <label class="checkbox-item">
@@ -284,7 +284,7 @@
               <input type="checkbox" formControlName="allowDirectDebit" />
               <span class="slider"></span>
             </label>
-          </div>
+          </div> -->
         </form>
       </div>
 
@@ -427,11 +427,9 @@
               <label>Payment Terms <span class="color">*</span></label>
               <select formControlName="paymentTerms">
                 <option value="" disabled selected>Select payment terms</option>
-                <option value="due on receipt">Due on receipt</option>
                 <option value="Net 30">Net 30</option>
                 <option value="Net60">Net 60</option>
                 <option value="Net90">Net 90</option>
-                <option value="Custom">Custom/Other</option>
               </select>
               <div
                 class="error"
@@ -439,24 +437,6 @@
               >
                 <span *ngIf="dunningForm.controls['paymentTerms'].hasError('required')">
                   Payment Terms are required.
-                </span>
-              </div>
-            </div>
-
-            <!-- Custom Payment Terms Input - now on the right of payment terms -->
-            <div class="form-field small-dropdown" *ngIf="isCustomPaymentTerms">
-              <label>Custom Payment Terms <span class="color">*</span></label>
-              <input
-                type="text"
-                formControlName="customPaymentTerms"
-                placeholder="e.g., Net 45, Net 15, 2/10 Net 30"
-              />
-              <div
-                class="error"
-                *ngIf="dunningSubmitted && dunningForm.controls['customPaymentTerms'].errors"
-              >
-                <span *ngIf="dunningForm.controls['customPaymentTerms'].hasError('required')">
-                  Please specify custom payment terms.
                 </span>
               </div>
             </div>
