@@ -32,9 +32,11 @@ export class Sidebar {
   canViewArCodes = false;
   canViewGlCodes = false;
   canViewCreditMemo = false;
+  canViewPaymentTerms = false;
   showSetupLinks = false;
   showSecurityLinks = false;
   canViewSecurityReport = false;  
+  canManageMfa = false;
 
   constructor(
     private router: Router,
@@ -77,18 +79,28 @@ export class Sidebar {
     this.canViewArCodes = canViewArCodes;
     this.canViewGlCodes = canViewGlCodes;
     this.canViewCreditMemo = this.userContext.hasPermission('VIEW_MEMOS');
+    this.canViewPaymentTerms =
+      this.userContext.hasPermission('VIEW_PAYMENT_TERMS') || this.userContext.isAdmin();
     this.canViewSecurityReport = this.userContext.hasPermission('VIEW_SECURITY_REPORT');
+    this.canManageMfa =
+      this.userContext.hasPermission('MANAGE_MFA') ||
+      this.userContext.hasPermission('VIEW_MFA') ||
+      this.canViewUsers ||
+      this.canViewRoles ||
+      this.userContext.isAdmin();
 
 
     // Security section visibility
-    this.showSecurityLinks = this.canViewUsers || this.canViewRoles || this.canViewSecurityReport;
+    this.showSecurityLinks =
+      this.canViewUsers || this.canViewRoles || this.canViewSecurityReport || this.canManageMfa;
 
     this.showSetupLinks =
       this.userContext.isAdmin() ||
       this.canViewCompany ||
       this.canViewArCodes ||
       this.canViewGlCodes ||
-      this.canViewAccounts;
+      this.canViewAccounts ||
+      this.canViewPaymentTerms;
   }
 
   toggleSetup() {
@@ -178,7 +190,8 @@ export class Sidebar {
     this.securityActive =
       this.router.url.includes('/admin/users') ||
       this.router.url.includes('/admin/roles') ||
-      this.router.url.includes('/admin/security-report');
+      this.router.url.includes('/admin/security-report') ||
+      this.router.url.includes('/admin/mfa');
     this.securityOpen = this.securityActive || this.securityOpen;
     this.mobileSecurityOpen = this.securityActive || this.mobileSecurityOpen;
   }

@@ -756,29 +756,75 @@ export class CreditMemo implements OnInit, OnDestroy {
       return;
     }
 
-    setTimeout(() => {
-      if (this.editingRecordIndex === null) {
-        this.saving = false;
-        this.cdr.detectChanges();
-        return;
-      }
-
-      const customer = this.customers.find((c) => c.id === Number(formValue['customerId']));
-      const arCode = this.arCodes.find((ac) => ac.id === Number(formValue['arCodeId']));
-
-      this.replaceRecordInActiveTab(this.editingRecordIndex, {
-        ...editingRecord,
-        customerId: Number(formValue['customerId']),
-        customerName: customer?.name || 'Unknown',
-        amount: Number(formValue['amount']),
-        arCodeId: Number(formValue['arCodeId']),
-        arCodeName: arCode?.name,
-      });
-
-      this.toastr.success('Credit memo updated successfully', 'Success');
-      this.closeModal();
+    if (!editingRecord.id) {
+      this.toastr.error('Unable to update this credit memo without an identifier.', 'Error');
+      this.saving = false;
       this.cdr.detectChanges();
-    }, 500);
+      return;
+    }
+
+    const customerId = Number(formValue['customerId']);
+    const arCodeId = Number(formValue['arCodeId']);
+    const updatedAmount = this.parseAmountValue(formValue['amount']);
+
+    if (!Number.isFinite(customerId) || customerId <= 0 || !Number.isFinite(arCodeId)) {
+      this.toastr.error('Select a valid customer and AR code before saving.', 'Error');
+      this.saving = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (updatedAmount === null || updatedAmount <= 0) {
+      this.toastr.error('Enter a valid amount before saving.', 'Error');
+      this.saving = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const applyToInvoiceNow = Boolean(formValue['applyToInvoiceNow']);
+    const payload = this.buildMemoPayload(formValue, applyToInvoiceNow, editingRecord.currency);
+
+    this.creditMemoService
+      .updateMemo(editingRecord.id, payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          const customer = this.customers.find((c) => c.id === customerId);
+          const arCode = this.arCodes.find((ac) => ac.id === arCodeId);
+          const updatedMemo = response?.data ? this.transformCreditMemo(response.data) : null;
+
+          if (this.editingRecordIndex !== null) {
+            const replacement: CreditMemoRecord = updatedMemo
+              ? updatedMemo
+              : {
+                  ...editingRecord,
+                  customerId,
+                  customerName: customer?.name || editingRecord.customerName || 'Unknown',
+                  amount: payload.amount,
+                  arCodeId,
+                  arCodeName: arCode?.name || editingRecord.arCodeName,
+                  linkedInvoiceId: payload.invoiceId ?? editingRecord.linkedInvoiceId,
+                  currency: payload.currency ?? editingRecord.currency,
+                };
+            this.replaceRecordInActiveTab(this.editingRecordIndex, replacement);
+          }
+
+          if (!updatedMemo && this.lastCompanyId) {
+            this.loadCreditMemos(this.lastCompanyId, this.activeTab);
+          }
+
+          this.toastr.success(response?.message || 'Credit memo updated successfully', 'Success');
+          this.closeModal();
+          this.saving = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Unable to update credit memo.';
+          this.toastr.error(message, 'Error');
+          this.saving = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   private createCreditMemoOnServer(formValue: Record<string, unknown>, applyToInvoiceNow: boolean) {
@@ -797,7 +843,7 @@ export class CreditMemo implements OnInit, OnDestroy {
       return;
     }
 
-    const payload = this.buildCreateMemoPayload(formValue, applyToInvoiceNow);
+    const payload = this.buildMemoPayload(formValue, applyToInvoiceNow, CREDIT_MEMO_CURRENCY);
 
     this.creditMemoService
       .createMemo(payload, customerId)
@@ -832,22 +878,22 @@ export class CreditMemo implements OnInit, OnDestroy {
       });
   }
 
-  private buildCreateMemoPayload(
+  private buildMemoPayload(
     formValue: Record<string, unknown>,
     applyToInvoiceNow: boolean,
+    currencyOverride?: string | null,
   ): CreateCreditMemoPayload {
-    const amount = Number(String(formValue['amount']).replace(/[^\d.]/g, ''));
-
+    const amount = this.parseAmountValue(formValue['amount']) ?? 0;
     const arCodeId = Number(formValue['arCodeId']);
     const invoiceId =
       applyToInvoiceNow && this.selectedInvoiceIds.length > 0
         ? this.selectedInvoiceIds[0]
-        : undefined; // API currently supports linking a single invoice per memo.
+        : undefined;
 
     const payload: CreateCreditMemoPayload = {
-      creditReason: invoiceId ? CREDIT_REASON_APPLIED : CREDIT_REASON_ON_ACCOUNT,
+      creditReason: this.resolveCreditReason(invoiceId),
       amount,
-      currency: CREDIT_MEMO_CURRENCY,
+      currency: currencyOverride || CREDIT_MEMO_CURRENCY,
       arCodeId,
     };
 
@@ -856,6 +902,10 @@ export class CreditMemo implements OnInit, OnDestroy {
     }
 
     return payload;
+  }
+
+  private resolveCreditReason(invoiceId?: number): string {
+    return typeof invoiceId === 'number' ? CREDIT_REASON_APPLIED : CREDIT_REASON_ON_ACCOUNT;
   }
 
   editCreditMemo(index: number) {
@@ -872,10 +922,16 @@ export class CreditMemo implements OnInit, OnDestroy {
 
     this.resetCreditMemoFormState();
     this.editingRecordIndex = index;
+    const formattedAmount = this.formatAmountForInput(record.amount);
     this.creditMemoForm.patchValue({
-      customerId: record.customerId,
-      amount: record.amount,
-      arCodeId: record.arCodeId,
+      customerId: record.customerId ?? '',
+      amount:
+        formattedAmount ||
+        (typeof record.amount === 'number' && Number.isFinite(record.amount)
+          ? record.amount.toString()
+          : ''),
+      arCodeId: record.arCodeId ?? '',
+      applyToInvoiceNow: false,
     });
     if (record.customerId) {
       this.handleCustomerSelection(record.customerId);
@@ -1113,6 +1169,42 @@ export class CreditMemo implements OnInit, OnDestroy {
 
   formatCurrency(amount: number): string {
     return this.currencyPipe.transform(amount, 'USD', 'symbol', '1.2-2') || '$0.00';
+  }
+
+  private formatAmountForInput(value: number | string | null | undefined): string {
+    const parsed = this.parseAmountValue(value);
+    if (parsed === null) {
+      return '';
+    }
+
+    return `$${parsed.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  }
+
+  private parseAmountValue(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+
+    if (typeof value === 'string') {
+      const cleaned = value.replace(/[^\d.]/g, '');
+      if (!cleaned) {
+        return null;
+      }
+
+      const segments = cleaned.split('.');
+      const whole = segments.shift() ?? '';
+      const decimals = segments.join('');
+      const normalizedWhole = whole || '0';
+      const normalized = decimals.length > 0 ? `${normalizedWhole}.${decimals}` : normalizedWhole;
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    return null;
   }
 
   private replaceRecordInActiveTab(index: number, record: CreditMemoRecord) {

@@ -234,6 +234,32 @@
   border-bottom: 1px solid #3b82f6;
 }
 
+.btn-edit {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  /* padding: 0.5rem 0.75rem; */
+  margin-right: 10px;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.btn-edit:hover:not(:disabled) {
+  border-bottom: 1px solid #3b82f6;
+}
+
+.btn-edit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actions-cell {
+  /* display: flex; */
+  gap: 0.5rem;
+  align-items: center;
+}
+
 /* Actions Menu */
 .actions {
   position: relative;

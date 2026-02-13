@@ -44,6 +44,7 @@ export interface UpdateCreditMemoPayload {
   amount?: number;
   currency?: string;
   arCodeId?: number;
+  invoiceId?: number;
 }
 
 export interface ApplyCreditMemoPayload {

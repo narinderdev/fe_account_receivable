@@ -7,6 +7,7 @@ import {
   CreateCreditMemoResponse,
   CreditMemoBalanceResponse,
   CreditMemoPageResponse,
+  UpdateCreditMemoPayload,
 } from '../models/credit-memo.model';
 import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
 
@@ -67,4 +68,11 @@ export class CreditMemoService {
         }
       );
     }
+
+  updateMemo(creditMemoId: number, data: UpdateCreditMemoPayload): Observable<CreateCreditMemoResponse> {
+    const headers = getAuthHeaders();
+    return this.http.put<CreateCreditMemoResponse>(`${this.baseUrl}/credit-memos/${creditMemoId}`, data, {
+      headers,
+    });
+  }
 }

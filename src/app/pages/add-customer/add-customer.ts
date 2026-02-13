@@ -14,6 +14,7 @@ import { ToastrService } from 'ngx-toastr';
 import { CustomerEntity } from '../../models/customer.model';
 import { Subject, takeUntil } from 'rxjs';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { PaymentTermsService, PaymentTermDto } from '../../services/payment-terms.service';
 
 type TabKey =
   | 'main'
@@ -88,6 +89,8 @@ export class AddCustomer implements OnInit, OnDestroy {
   isSavingDunning = false;
   isUpdatingCustomer = false;
   selectedCompanyId: string | null = null;
+  paymentTermOptions: string[] = [];
+  paymentTermsLoading = false;
 
   private titleMap: Record<TabKey, string> = {
     main: 'Company – Basic Info',
@@ -111,6 +114,7 @@ export class AddCustomer implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private toastr: ToastrService,
     private companySelection: CompanySelectionService,
+    private paymentTermsService: PaymentTermsService,
   ) {}
 
   ngOnInit() {
@@ -266,19 +270,16 @@ export class AddCustomer implements OnInit, OnDestroy {
       // Handle dunning/credit data with payment terms
       if (data.dunning) {
         const dunningData = { ...data.dunning };
-        const supportedTerms = ['Net 30', 'Net60', 'Net90'];
         const formattedLimit = this.formatCreditLimitValue(dunningData.creditLimit);
         const dunningFormValue: GenericRecord = {
           ...dunningData,
           creditLimit: formattedLimit,
         };
 
-        if (dunningData.paymentTerms && !supportedTerms.includes(dunningData.paymentTerms)) {
-          dunningFormValue['paymentTerms'] = '';
-        }
-
         this.dunningForm.patchValue(dunningFormValue);
       }
+
+      this.loadPaymentTermsForCompany(data.companyId);
     });
   }
 
@@ -657,10 +658,12 @@ export class AddCustomer implements OnInit, OnDestroy {
   private initializeCompanySelection() {
     this.selectedCompanyId = this.companySelection.getSelectedCompanyId();
     this.updateCompanyOptions(this.selectedCompanyId);
+    this.loadPaymentTermsForCompany(this.selectedCompanyId);
 
     this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
       this.selectedCompanyId = id;
       this.updateCompanyOptions(id);
+      this.loadPaymentTermsForCompany(id);
     });
   }
 
@@ -680,6 +683,63 @@ export class AddCustomer implements OnInit, OnDestroy {
     if (currentValue !== id) {
       control.setValue(id, { emitEvent: false });
       control.markAsPristine();
+    }
+  }
+
+  private loadPaymentTermsForCompany(companyIdValue: string | number | null | undefined) {
+    const resolved = companyIdValue ?? this.selectedCompanyId;
+    const companyId = typeof resolved === 'string' ? Number(resolved) : resolved;
+
+    if (!companyId || Number.isNaN(companyId)) {
+      this.paymentTermOptions = [];
+      this.ensurePaymentTermSelection();
+      return;
+    }
+
+    this.paymentTermsLoading = true;
+    this.paymentTermsService
+      .getPaymentTerms(companyId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          const terms = response?.data ?? [];
+          this.paymentTermOptions = this.mapPaymentTerms(terms);
+          this.paymentTermsLoading = false;
+          this.ensurePaymentTermSelection();
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.paymentTermsLoading = false;
+          this.paymentTermOptions = [];
+          this.ensurePaymentTermSelection();
+          this.toastr.warning(
+            'Unable to load payment terms for this company. Please try again.',
+            'Payment Terms',
+          );
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private mapPaymentTerms(list: PaymentTermDto[]): string[] {
+    const unique = new Set<string>();
+    list.forEach((term) => {
+      const trimmed = term.name?.trim();
+      if (trimmed) {
+        unique.add(trimmed);
+      }
+    });
+    return Array.from(unique);
+  }
+
+  private ensurePaymentTermSelection() {
+    const control = this.dunningForm?.get('paymentTerms');
+    if (!control) {
+      return;
+    }
+    const value = control.value;
+    if (value && !this.paymentTermOptions.includes(value)) {
+      control.setValue('');
     }
   }
 

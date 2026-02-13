@@ -25,6 +25,17 @@ import {
 } from '../models/company-users.model';
 import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
 
+export interface GlobalCompanyConfig {
+  paymentTerms?: string[];
+}
+
+export interface GlobalCompanyResponse {
+  statusCode?: number;
+  status?: string;
+  message?: string;
+  data?: GlobalCompanyConfig;
+}
+
 type CompanyBankAccountSource = CompanyEntity['bankAccounts'][number] & EditableBankAccount;
 type CompanyUserSource = CompanyEntity['users'][number] & EditableCompanyUser;
 type AddressFieldKey = keyof CompanyAddressInput;
@@ -94,6 +105,11 @@ export class CompanyService {
       `${this.baseUrl}/api/companies/user/${resolvedUserId}?page=${page}&size=${size}`,
       { headers }
     );
+  }
+
+  getGlobalCompanySettings(): Observable<GlobalCompanyResponse> {
+    const headers = getAuthHeadersWithNgrok(true);
+    return this.http.get<GlobalCompanyResponse>(`${this.baseUrl}/companies/global`, { headers });
   }
 
   createCompany(
