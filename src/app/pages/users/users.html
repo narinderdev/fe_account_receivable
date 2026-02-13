@@ -20,6 +20,7 @@
             <th>Email</th>
             <th>Role</th>
             <th>Status</th>
+            <th class="actions-header">Actions</th>
           </tr>
         </thead>
 
@@ -45,6 +46,20 @@
               <span class="status-badge" [ngClass]="getStatusClass(u)">
                 {{ getUserStatus(u) }}
               </span>
+            </td>
+            <td class="actions-cell">
+              <button
+                type="button"
+                class="approve-btn"
+                *ngIf="isUserPending(u); else noAction"
+                (click)="approvePendingUser(u)"
+                [disabled]="approvingUserId === u.id"
+              >
+                <app-spinner *ngIf="approvingUserId === u.id" class="btn-spinner"></app-spinner>
+                <span *ngIf="approvingUserId !== u.id">Approve</span>
+                <span *ngIf="approvingUserId === u.id">Approving...</span>
+              </button>
+              <ng-template #noAction>--</ng-template>
             </td>
           </tr>
         </tbody>

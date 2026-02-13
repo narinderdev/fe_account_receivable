@@ -127,6 +127,45 @@
   color: #6b7280;
 }
 
+.actions-header {
+  width: 140px;
+  text-align: center;
+}
+
+.actions-cell {
+  text-align: center;
+}
+
+.approve-btn {
+  border: 1px solid #059669;
+  background: #ecfdf5;
+  color: #047857;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.approve-btn:hover:not(:disabled) {
+  background: #d1fae5;
+  border-color: #047857;
+}
+
+.approve-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.approve-btn .btn-spinner {
+  width: 16px;
+  height: 16px;
+}
+
 .pagination-wrapper {
   display: flex;
   justify-content: space-between;
