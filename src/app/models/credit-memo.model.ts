@@ -36,7 +36,9 @@ export interface CreateCreditMemoPayload {
   amount: number;
   currency: string;
   arCodeId: number;
+  creditMemoDate?: string;
   invoiceId?: number;
+  referenceInvoiceIds?: number[];
 }
 
 export interface UpdateCreditMemoPayload {
