@@ -20,11 +20,12 @@ export class CreditMemoService {
 
   createMemo(
     data: CreateCreditMemoPayload,
-    customerId: number
+    customerId: number,
+    userId: number
   ): Observable<CreateCreditMemoResponse> {
     const headers = getAuthHeaders();
     return this.http.post<CreateCreditMemoResponse>(
-      `${this.baseUrl}/credit-memos/customer/${customerId}`,
+      `${this.baseUrl}/credit-memos/customer/${customerId}/${userId}`,
       data,
       {
         headers,

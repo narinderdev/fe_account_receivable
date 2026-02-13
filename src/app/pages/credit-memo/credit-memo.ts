@@ -135,16 +135,24 @@ export class CreditMemo implements OnInit, OnDestroy {
       this.canApplyCreditMemo ||
       this.canApproveCreditMemo;
 
+    const today = this.buildMemoDateString();
     this.creditMemoForm = this.fb.group({
       customerId: ['', Validators.required],
       amount: ['', [Validators.required, Validators.min(0.01)]],
       arCodeId: ['', Validators.required],
+      creditMemoDate: [today, Validators.required],
       applyToInvoiceNow: [false],
+      linkReferenceInvoice: [false],
     });
 
     this.creditMemoForm.controls['applyToInvoiceNow'].valueChanges.subscribe(
       (applyNow: boolean) => {
         this.handleApplyToInvoiceToggle(Boolean(applyNow));
+      },
+    );
+    this.creditMemoForm.controls['linkReferenceInvoice'].valueChanges.subscribe(
+      (linkReference: boolean) => {
+        this.handleApplyToInvoiceToggle(Boolean(linkReference));
       },
     );
 
@@ -392,7 +400,9 @@ export class CreditMemo implements OnInit, OnDestroy {
       customerId: '',
       amount: '',
       arCodeId: '',
+      creditMemoDate: this.buildMemoDateString(),
       applyToInvoiceNow: false,
+      linkReferenceInvoice: false,
     });
 
     this.customerInvoices = [];
@@ -414,24 +424,40 @@ export class CreditMemo implements OnInit, OnDestroy {
       return;
     }
 
-    const applyToInvoiceNow = this.creditMemoForm.controls['applyToInvoiceNow'].value;
-    if (applyToInvoiceNow) {
+    if (this.isInvoiceSelectionEnabled()) {
       this.fetchCustomerInvoices(customerId);
     }
   }
 
-  private handleApplyToInvoiceToggle(applyNow: boolean) {
+  private handleApplyToInvoiceToggle(_: boolean) {
     this.selectedInvoiceIds = [];
 
-    if (applyNow) {
-      const customerId = Number(this.creditMemoForm.controls['customerId'].value);
-      if (customerId) {
-        this.fetchCustomerInvoices(customerId);
-      }
-    } else {
+    if (!this.isInvoiceSelectionEnabled()) {
       this.customerInvoices = [];
+      this.invoicesLoading = false;
       this.invoiceMessage = null;
+      this.invoiceMessageIsError = false;
+      return;
     }
+
+    const customerId = Number(this.creditMemoForm.controls['customerId'].value);
+    if (Number.isFinite(customerId) && customerId > 0) {
+      this.fetchCustomerInvoices(customerId);
+    }
+  }
+
+  get invoiceSectionVisible(): boolean {
+    return this.isInvoiceSelectionEnabled();
+  }
+
+  private isInvoiceSelectionEnabled(): boolean {
+    if (!this.creditMemoForm) {
+      return false;
+    }
+
+    const applyNow = Boolean(this.creditMemoForm.controls['applyToInvoiceNow'].value);
+    const linkReference = Boolean(this.creditMemoForm.controls['linkReferenceInvoice'].value);
+    return applyNow || linkReference;
   }
 
   private fetchCustomerInvoices(customerId: number) {
@@ -845,8 +871,16 @@ export class CreditMemo implements OnInit, OnDestroy {
 
     const payload = this.buildMemoPayload(formValue, applyToInvoiceNow, CREDIT_MEMO_CURRENCY);
 
+    const userId = this.userContext.getUserId();
+    if (userId === null || userId === undefined) {
+      this.toastr.error('Unable to determine current user. Please sign in again.', 'Error');
+      this.saving = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.creditMemoService
-      .createMemo(payload, customerId)
+      .createMemo(payload, customerId, userId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
@@ -883,18 +917,30 @@ export class CreditMemo implements OnInit, OnDestroy {
     applyToInvoiceNow: boolean,
     currencyOverride?: string | null,
   ): CreateCreditMemoPayload {
+    const linkReferenceInvoice = Boolean(formValue['linkReferenceInvoice']);
     const amount = this.parseAmountValue(formValue['amount']) ?? 0;
     const arCodeId = Number(formValue['arCodeId']);
+    const selectedInvoices = Array.isArray(this.selectedInvoiceIds)
+      ? [...this.selectedInvoiceIds]
+      : [];
     const invoiceId =
-      applyToInvoiceNow && this.selectedInvoiceIds.length > 0
-        ? this.selectedInvoiceIds[0]
+      applyToInvoiceNow && selectedInvoices.length > 0
+        ? selectedInvoices[0]
         : undefined;
+
+    const creditMemoDateInput = typeof formValue['creditMemoDate'] === 'string'
+      ? formValue['creditMemoDate']
+      : this.buildMemoDateString();
+    const referenceInvoiceIds =
+      linkReferenceInvoice && selectedInvoices.length > 0 ? selectedInvoices : [];
 
     const payload: CreateCreditMemoPayload = {
       creditReason: this.resolveCreditReason(invoiceId),
       amount,
       currency: currencyOverride || CREDIT_MEMO_CURRENCY,
       arCodeId,
+      creditMemoDate: creditMemoDateInput || this.buildMemoDateString(),
+      referenceInvoiceIds,
     };
 
     if (typeof invoiceId === 'number') {
@@ -902,6 +948,28 @@ export class CreditMemo implements OnInit, OnDestroy {
     }
 
     return payload;
+  }
+
+  private buildMemoDateString(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private formatExistingDate(date: string | Date | null | undefined): string {
+    if (!date) {
+      return this.buildMemoDateString();
+    }
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) {
+      return this.buildMemoDateString();
+    }
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private resolveCreditReason(invoiceId?: number): string {
@@ -931,7 +999,9 @@ export class CreditMemo implements OnInit, OnDestroy {
           ? record.amount.toString()
           : ''),
       arCodeId: record.arCodeId ?? '',
+      creditMemoDate: record.date ? this.formatExistingDate(record.date) : this.buildMemoDateString(),
       applyToInvoiceNow: false,
+      linkReferenceInvoice: false,
     });
     if (record.customerId) {
       this.handleCustomerSelection(record.customerId);

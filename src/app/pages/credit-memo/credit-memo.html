@@ -311,16 +311,36 @@
             </div>
           </div>
 
-          <div class="form-field">
-            <label>AR Code <span class="color">*</span></label>
-            <select formControlName="arCodeId">
-              <option value="">Select AR Code</option>
-              <option *ngFor="let arCode of arCodes" [value]="arCode.id">
-                {{ arCode.name }}
-              </option>
-            </select>
-            <p class="error" *ngIf="submitted && creditMemoForm.controls['arCodeId'].invalid">
-              AR Code is required
+          <div class="form-row">
+            <div class="form-field">
+              <label>AR Code <span class="color">*</span></label>
+              <select formControlName="arCodeId">
+                <option value="">Select AR Code</option>
+                <option *ngFor="let arCode of arCodes" [value]="arCode.id">
+                  {{ arCode.name }}
+                </option>
+              </select>
+              <p class="error" *ngIf="submitted && creditMemoForm.controls['arCodeId'].invalid">
+                AR Code is required
+              </p>
+            </div>
+
+            <div class="form-field">
+              <label>Credit Memo Date <span class="color">*</span></label>
+              <input type="date" formControlName="creditMemoDate" />
+              <p class="error" *ngIf="submitted && creditMemoForm.controls['creditMemoDate'].invalid">
+                Credit memo date is required
+              </p>
+            </div>
+          </div>
+
+          <div class="form-field checkbox-field">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="linkReferenceInvoice" />
+              <span class="checkbox-text">Add to reference invoice</span>
+            </label>
+            <p class="helper-text">
+              Select invoice(s) to include in the reference list without affecting balances.
             </p>
           </div>
 
@@ -332,7 +352,7 @@
             <p class="helper-text">Leave unchecked to create an on-account credit.</p>
           </div>
 
-          <div class="invoices-section" *ngIf="creditMemoForm.controls['applyToInvoiceNow'].value">
+          <div class="invoices-section" *ngIf="invoiceSectionVisible">
             <div class="section-header">
               <h3>Company Invoices</h3>
               <p class="helper-text" *ngIf="invoicesLoading">
