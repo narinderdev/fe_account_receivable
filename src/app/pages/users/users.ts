@@ -29,6 +29,7 @@ export class Users implements OnInit, OnDestroy {
   submitted = false;
   isSavingInvite = false;
   isLoadingUsers = false;
+  approvingUserId: number | null = null;
 
   roles: Role[] = [];
   users: CompanyUser[] = [];
@@ -224,21 +225,29 @@ export class Users implements OnInit, OnDestroy {
   }
 
   getUserStatus(user: CompanyUser): string {
-  const status = user?.status;
-  if (!status) return '--';
+    const status = user?.status;
+    if (!status) {
+      return '--';
+    }
 
-  switch (status.toUpperCase()) {
-    case 'ACTIVE':
-      return 'Active';
-    case 'INACTIVE':
-      return 'Inactive';
-    case 'INVITED':
-      return 'Invited';
-    default:
-      return status.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    switch (status.toUpperCase()) {
+      case 'ACTIVE':
+        return 'Active';
+      case 'INACTIVE':
+        return 'Inactive';
+      case 'INVITED':
+        return 'Invited';
+      default: {
+        const normalized = status.toLowerCase().replace(/_/g, ' ');
+        return normalized.replace(/\b\w/g, (c) => c.toUpperCase());
+      }
+    }
   }
-}
 
+  isUserPending(user: CompanyUser): boolean {
+    const status = (user?.status || '').toUpperCase();
+    return status.includes('PENDING');
+  }
 
   isUserActive(user: CompanyUser): boolean {
     return (user?.status || '').toUpperCase() === 'ACTIVE';
@@ -250,6 +259,35 @@ export class Users implements OnInit, OnDestroy {
 
   isUserInvited(user: CompanyUser): boolean {
     return (user?.status || '').toUpperCase() === 'INVITED';
+  }
+
+  approvePendingUser(user: CompanyUser): void {
+    if (!this.companyId || !user?.id) {
+      return;
+    }
+    if (this.approvingUserId === user.id) {
+      return;
+    }
+
+    this.approvingUserId = user.id;
+    this.cdr.detectChanges();
+
+    this.companyService
+      .approveCompanyUser(this.companyId, user.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.toastr.success(response?.message || 'User approved successfully.', 'Success');
+          this.approvingUserId = null;
+          this.loadUsers();
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Unable to approve user.';
+          this.toastr.error(message, 'Error');
+          this.approvingUserId = null;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   getUserInitial(user: CompanyUser): string {

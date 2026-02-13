@@ -177,6 +177,15 @@ export class CompanyService {
     });
   }
 
+  approveCompanyUser(companyId: number, userId: number): Observable<InviteUserResponse> {
+    const headers = getAuthHeaders();
+    return this.http.post<InviteUserResponse>(
+      `${this.baseUrl}/api/companies/${companyId}/users/${userId}/approve`,
+      null,
+      { headers },
+    );
+  }
+
   getCompanyById(id: number): Observable<CompanyResponse> {
     const headers = getAuthHeadersWithNgrok();
     return this.http.get<CompanyResponse>(`${this.baseUrl}/api/companies/${id}`, { headers });
