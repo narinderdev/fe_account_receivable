@@ -77,10 +77,17 @@
             <label>Default Terms <span class="color">*</span></label>
             <select formControlName="defaultPaymentTerms">
               <option value="">Choose</option>
-              <option value="Due on Receipt">Due on Receipt</option>
-              <option value="Net 30">Net 30</option>
-              <option value="Net 60">Net 60</option>
-              <option value="Net 90">Net 90</option>
+              <option value="" disabled *ngIf="paymentTermsLoading">Loading payment terms...</option>
+              <option
+                value=""
+                disabled
+                *ngIf="!paymentTermsLoading && paymentTermsOptions.length === 0"
+              >
+                No payment terms available
+              </option>
+              <ng-container *ngIf="paymentTermsOptions.length > 0">
+                <option *ngFor="let term of paymentTermsOptions" [value]="term">{{ term }}</option>
+              </ng-container>
             </select>
             <div
               class="error"

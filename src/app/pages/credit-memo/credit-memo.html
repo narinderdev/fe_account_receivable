@@ -43,7 +43,9 @@
               <th>AR Code</th>
               <th>Date</th>
               <th>Status</th>
-              <th *ngIf="activeTab === 'CREATED' && canApproveCreditMemo">Actions</th>
+              <th *ngIf="activeTab === 'CREATED' && (canApproveCreditMemo || canUpdateCreditMemo)">
+                Actions
+              </th>
               <!-- <th *ngIf="showActionsColumn">Actions</th> -->
             </tr>
           </thead>
@@ -82,11 +84,24 @@
                   {{ getStatusLabel(record.status) }}
                 </span>
               </td>
-              <td *ngIf="activeTab === 'CREATED' && canApproveCreditMemo">
+              <td
+                *ngIf="activeTab === 'CREATED' && (canApproveCreditMemo || canUpdateCreditMemo)"
+                class="actions-cell"
+              >
                 <button
+                  *ngIf="canUpdateCreditMemo"
+                  type="button"
+                  class="btn-edit"
+                  (click)="$event.stopPropagation(); editCreditMemo(i)"
+                >
+                  Edit
+                </button>
+
+                <button
+                  *ngIf="canApproveCreditMemo"
                   type="button"
                   class="btn-approve"
-                  (click)="openApproveModal(record); $event.stopPropagation()"
+                  (click)="$event.stopPropagation(); openApproveModal(record)"
                   [disabled]="approvingCreditMemoId === record.id"
                 >
                   <app-spinner *ngIf="approvingCreditMemoId === record.id"></app-spinner>
@@ -263,6 +278,7 @@
                 #customerSelect
                 formControlName="customerId"
                 (change)="handleCustomerSelection(customerSelect.value)"
+                [disabled]="editingRecordIndex !== null"
               >
                 <option value="">Select customer</option>
                 <option *ngFor="let customer of customers" [value]="customer.id">

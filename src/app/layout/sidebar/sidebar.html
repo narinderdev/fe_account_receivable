@@ -152,8 +152,16 @@
             routerLink="accounts"
             routerLinkActive="active"
             class="sub-nav-item"
-            >Accounts</a
+          >Accounts</a
           >
+          <a
+            *ngIf="canViewPaymentTerms"
+            routerLink="payment-terms"
+            routerLinkActive="active"
+            class="sub-nav-item"
+          >
+            Payment Terms
+          </a>
           <a
             *ngIf="canViewArCodes"
             routerLink="ar-code"
@@ -326,8 +334,16 @@
             routerLink="roles"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-            >Roles</a
+          >Roles</a
           >
+          <a
+            *ngIf="canManageMfa"
+            routerLink="mfa"
+            routerLinkActive="active"
+            (click)="closeMobileMenu()"
+          >
+            MFA
+          </a>
           <a
             *ngIf="canViewSecurityReport"
             routerLink="security-report"
@@ -371,8 +387,16 @@
             routerLink="accounts"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-            >Accounts</a
+          >Accounts</a
           >
+          <a
+            *ngIf="canViewPaymentTerms"
+            routerLink="payment-terms"
+            routerLinkActive="active"
+            (click)="closeMobileMenu()"
+          >
+            Payment Terms
+          </a>
           <a
             *ngIf="canViewArCodes"
             routerLink="ar-code"

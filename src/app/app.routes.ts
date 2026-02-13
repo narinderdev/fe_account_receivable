@@ -34,6 +34,7 @@ import { CompanyGuard } from './guards/company.guard';
 import { SetPassword } from './pages/set-password/set-password';
 import { VerifyOtp } from './pages/verify-otp/verify-otp';
 import { ArCodes } from './pages/ar-codes/ar-codes';
+import { PaymentTerms } from './pages/payment-terms/payment-terms';
 import { CreditMemo } from './pages/credit-memo/credit-memo';
 import { CreditMemoDetail } from './pages/credit-memo/credit-memo-detail/credit-memo-detail';
 import { InvoicesReports } from './pages/invoices-reports/invoices-reports';
@@ -42,6 +43,8 @@ import { GlCode } from './pages/gl-code/gl-code';
 import { InvoiceReport } from './pages/invoice-report/invoice-report';
 import { PaymentReport } from './pages/payment-report/payment-report';
 import { SecurityReport } from './pages/security-report/security-report';
+import { MfaComponent } from './pages/mfa/mfa';
+import { VerifyAuthenticatorComponent } from './pages/verify-authenticator/verify-authenticator';
 import { Accounts } from './pages/accounts/accounts';
 
 export const routes: Routes = [
@@ -50,6 +53,7 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'signup', component: Signup },
   { path: 'verify-otp', component: VerifyOtp },
+  { path: 'verify-authenticator', component: VerifyAuthenticatorComponent },
   { path: 'set-password', component: SetPassword },
   {
     path: 'admin',
@@ -119,10 +123,12 @@ export const routes: Routes = [
       { path: 'collections', component: Collections },
       { path: 'collections/disputes/:disputeId', component: DisputeDetails },
       { path: 'security-report', component: SecurityReport },
+      { path: 'mfa', component: MfaComponent },
 
       { path: 'ar-code', component: ArCodes },
       { path: 'gl-code', component: GlCode },
       { path: 'accounts', component: Accounts },
+      { path: 'payment-terms', component: PaymentTerms },
       { path: 'credit-memo', component: CreditMemo },
       { path: 'credit-memo/:creditMemoId', component: CreditMemoDetail },
     ],

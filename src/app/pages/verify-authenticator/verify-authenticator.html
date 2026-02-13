@@ -1,0 +1,77 @@
+<form class="otp-form" (ngSubmit)="submit()">
+  <div class="otp-container">
+    <div class="otp-card">
+      <div class="card-header">
+        <div class="icon-wrapper">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <div class="pill">
+          <span class="pill-icon">2</span>
+          <span>Authenticator Code</span>
+        </div>
+      </div>
+
+      <div class="card-content">
+        <h2 class="title">Enter Your 6-Digit Code</h2>
+        <p class="subtitle">
+          Open your authenticator app and enter the code to verify
+        </p>
+
+        <div class="otp-inputs">
+          <input
+            #otpInput
+            *ngFor="let _ of code; let i = index; trackBy: trackByIndex"
+            type="text"
+            maxlength="1"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            (input)="handleInput($event, i)"
+            (keydown)="handleKeyDown($event, i)"
+            (paste)="handlePaste($event, i)"
+            [class.filled]="code[i]"
+          />
+        </div>
+
+        <div class="hint-section">
+          <div class="timer-wrapper">
+            <svg class="timer-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Code refreshes every 30 seconds</span>
+          </div>
+        </div>
+
+        <div class="error-container" [class.visible]="errorMessage">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ errorMessage || '&nbsp;' }}</span>
+        </div>
+
+        <button class="btn-verify" type="submit" [disabled]="loading">
+          <ng-container *ngIf="!loading; else loadingTpl">
+            <span>Verify & Continue</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </ng-container>
+          <ng-template #loadingTpl>
+            <app-spinner></app-spinner>
+            <span>Verifying...</span>
+          </ng-template>
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+  </div>
+</form>

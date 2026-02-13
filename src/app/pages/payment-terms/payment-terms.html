@@ -1,0 +1,118 @@
+<div class="page-shell">
+  <div class="page-header">
+    <button type="button" class="btn-primary" (click)="openModal()">+ Add Payment Term</button>
+  </div>
+
+  <div class="table-card">
+    <div class="loader-row" *ngIf="loading">Loading payment terms...</div>
+    <div class="error-box" *ngIf="!loading && error">{{ error }}</div>
+
+    <table *ngIf="!loading && !error && paymentTerms.length > 0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Days</th>
+          <th class="actions-head">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let term of paymentTerms; trackBy: trackByTermId">
+          <td>
+            <div class="name-cell">
+              <span class="initial" [style.background]="'#DBEAFE'" [style.color]="'#1D4ED8'">
+                {{ term.name.charAt(0) }}
+              </span>
+              <div>
+                <div class="name">{{ term.name }}</div>
+                <div class="sub">{{ term.active ? 'Active' : 'Inactive' }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ term.days }} days</td>
+          <td class="actions">
+            <span class="btn-right"
+              ><img
+                src="/editIcn.svg"
+                class="action-icon"
+                alt="Edit"
+                (click)="editPaymentTerm(term); $event.stopPropagation()"
+            /></span>
+            <span
+              ><img
+                src="/deleteIcn.svg"
+                class="action-icon delete"
+                alt="Delete"
+                (click)="openDeleteModal(term); $event.stopPropagation()"
+            /></span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="empty" *ngIf="!loading && !error && paymentTerms.length === 0">
+      No payment terms created yet.
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="modalOpen">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ editingTerm ? 'Edit Payment Term' : 'New Payment Term' }}</h2>
+      <button type="button" class="btn-close" (click)="closeModal()" [disabled]="saving">
+        &times;
+      </button>
+    </div>
+    <form [formGroup]="paymentTermForm" (ngSubmit)="savePaymentTerm()">
+      <div class="modal-body">
+        <!-- <div class="info-banner">Payment terms define when invoices become due.</div> -->
+        <div class="form-field">
+          <label>Term Name <span class="required">*</span></label>
+          <input type="text" placeholder="Enter payment term name" formControlName="name" />
+          <p class="error" *ngIf="submitted && paymentTermForm.controls['name'].invalid">
+            Name is required.
+          </p>
+        </div>
+
+        <div class="form-field">
+          <label>Net Days <span class="required">*</span></label>
+          <input type="number" min="0" placeholder="e.g. 30" formControlName="netDays" />
+          <p class="error" *ngIf="submitted && paymentTermForm.controls['netDays'].invalid">
+            Enter a valid number of days.
+          </p>
+        </div>
+
+        <!-- <div class="form-field checkbox-field">
+          <label>
+            <input type="checkbox" formControlName="active" />
+            Active by default
+          </label>
+        </div> -->
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving">
+          Cancel
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="saving">
+          <ng-container *ngIf="!saving">Save Payment Term</ng-container>
+          <ng-container *ngIf="saving">Saving...</ng-container>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="deleteModalOpen">
+  <div class="confirm-modal">
+    <h3>Delete Payment Term</h3>
+    <p>Are you sure you want to delete {{ deleteTarget?.name }}?</p>
+    <div class="confirm-actions">
+      <button type="button" class="btn-secondary" (click)="closeDeleteModal()" [disabled]="deleting">
+        Cancel
+      </button>
+      <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="deleting">
+        {{ deleting ? 'Deleting...' : 'Delete' }}
+      </button>
+    </div>
+  </div>
+</div>

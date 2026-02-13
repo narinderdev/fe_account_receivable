@@ -30,6 +30,9 @@ export class FinancialArSettings implements OnInit, OnDestroy {
   companyId!: number;
   companyData: CompanyEntity | null = null;
   isSaving = false;
+  private readonly fallbackPaymentTerms = ['Due on Receipt', 'Net 30', 'Net 60', 'Net 90'];
+  paymentTermsOptions: string[] = [...this.fallbackPaymentTerms];
+  paymentTermsLoading = false;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -56,6 +59,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     }
 
     this.buildForm();
+    this.loadPaymentTerms();
 
     if (this.isEditMode) {
       const existingFinancial = this.companyData?.financialSettings || this.companyData?.financial;
@@ -364,6 +368,46 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       ...raw,
       defaultCreditLimit: this.parseCreditLimit(raw.defaultCreditLimit),
     };
+  }
+
+  private loadPaymentTerms() {
+    this.paymentTermsLoading = true;
+    this.companyService
+      .getGlobalCompanySettings()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          const terms = response?.data?.paymentTerms ?? [];
+          this.setPaymentTermOptions(terms.length ? terms : this.fallbackPaymentTerms);
+          this.paymentTermsLoading = false;
+        },
+        error: () => {
+          this.setPaymentTermOptions(this.fallbackPaymentTerms);
+          this.paymentTermsLoading = false;
+          this.toastr.warning(
+            'Unable to load payment terms from server. Showing defaults.',
+            'Warning',
+          );
+        },
+      });
+  }
+
+  private setPaymentTermOptions(options: string[]) {
+    const uniqueTerms = Array.from(
+      new Set(
+        options
+          .map((term) => term?.trim())
+          .filter((term): term is string => !!term && term.length > 0),
+      ),
+    );
+
+    const control = this.financialForm?.get('defaultPaymentTerms');
+    const currentValue = control?.value;
+    if (currentValue && !uniqueTerms.includes(currentValue)) {
+      uniqueTerms.unshift(currentValue);
+    }
+
+    this.paymentTermsOptions = uniqueTerms;
   }
 
   private parseCreditLimit(value: unknown): number {
