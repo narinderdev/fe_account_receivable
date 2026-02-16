@@ -143,6 +143,7 @@ function createCompanyStub(): CompanyEntity {
       addressLine1: '123 Main St',
       city: 'New York',
       stateProvince: 'NY',
+      county: 'Kings',
       postalCode: '10001',
       addressCountry: 'USA',
       primaryContactName: 'John Doe',

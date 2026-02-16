@@ -249,6 +249,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
       'addressLine1',
       'city',
       'stateProvince',
+      'county',
       'postalCode',
       'addressCountry',
       'primaryContactName',
@@ -259,7 +260,7 @@ export class FinancialArSettings implements OnInit, OnDestroy {
     ];
     if (!this.hasValues(addressSource, addressFields)) {
       this.toastr.error(
-        'Please fill all required fields in the Address Info tab.',
+        'Please fill all required fields in the Company Address tab.',
         'Missing fields',
       );
       return false;

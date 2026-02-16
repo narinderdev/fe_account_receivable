@@ -78,6 +78,7 @@ export interface CreateInvoiceRequest {
   isGenerated: boolean;
   invoiceDate: string;
   dueDate: string;
+  county: string | null;
   note: string | null;
   items: InvoiceItemInput[];
 }

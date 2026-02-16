@@ -70,6 +70,7 @@ const demoCompany = {
     addressLine1: '123 Main Street',
     city: 'Metropolis',
     stateProvince: 'NY',
+    county: 'Kings',
     postalCode: '12345',
     addressCountry: 'USA',
     primaryContactName: 'Alex Admin',

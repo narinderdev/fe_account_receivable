@@ -81,6 +81,10 @@ export class CompanyAddress implements OnInit, OnDestroy {
         '',
         [Validators.required, Validators.pattern(/^[A-Za-z\s]+$/), this.wordLimitValidator(100)],
       ],
+      county: [
+        '',
+        [Validators.required, Validators.pattern(/^[A-Za-z\s]+$/), this.wordLimitValidator(100)],
+      ],
       postalCode: [
         '',
         [Validators.required, Validators.pattern(/^[0-9]*$/), Validators.maxLength(6)],
@@ -112,6 +116,12 @@ export class CompanyAddress implements OnInit, OnDestroy {
     let value = this.addressForm.get('stateProvince')?.value || '';
     value = value.replace(/[0-9]/g, '');
     this.addressForm.get('stateProvince')?.setValue(value, { emitEvent: false });
+  }
+
+  onCountyInput() {
+    let value = this.addressForm.get('county')?.value || '';
+    value = value.replace(/[0-9]/g, '');
+    this.addressForm.get('county')?.setValue(value, { emitEvent: false });
   }
 
   onPostalInput() {

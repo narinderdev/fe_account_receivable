@@ -72,15 +72,18 @@ describe('CompanyAddress', () => {
       instance.addressForm.patchValue({
         city: 'NYC123',
         stateProvince: 'CA99',
+        county: 'Kings123',
         primaryContactPhone: '12-34-56abc',
         primaryContactEmail: 'USER@TEST.COM',
       });
       instance.onCityInput();
       instance.onStateInput();
+      instance.onCountyInput();
       instance.onPhoneInput();
       instance.onEmailInput();
       expect(instance.addressForm.get('city')?.value).toBe('NYC');
       expect(instance.addressForm.get('stateProvince')?.value).toBe('CA');
+      expect(instance.addressForm.get('county')?.value).toBe('Kings');
       expect(instance.addressForm.get('primaryContactPhone')?.value).toBe('(123) 456');
       expect(instance.addressForm.get('primaryContactEmail')?.value).toBe('user@test.com');
     });
@@ -127,6 +130,7 @@ function createValidAddress() {
     addressLine1: '123 St',
     city: 'Metropolis',
     stateProvince: 'State',
+    county: 'Metro County',
     postalCode: '123456',
     addressCountry: 'US',
     primaryContactName: 'John',
@@ -176,6 +180,7 @@ function createCompanyStub(): CompanyEntity {
       addressLine1: '',
       city: '',
       stateProvince: '',
+      county: '',
       postalCode: '',
       addressCountry: '',
       primaryContactName: '',

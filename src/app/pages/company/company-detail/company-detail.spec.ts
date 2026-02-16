@@ -48,6 +48,7 @@ describe('CompanyDetail', () => {
       addressLine1: '123 Main',
       city: 'Austin',
       stateProvince: 'TX',
+      county: 'Travis',
       postalCode: '78701',
       addressCountry: 'USA',
       primaryContactName: 'Jane Doe',

@@ -18,6 +18,7 @@ const defaultAddressInfo = {
   addressLine1: '742 Evergreen Terrace',
   city: 'Springfield',
   stateProvince: 'Illinois',
+  county: 'Shelby County',
   postalCode: '62704',
   addressCountry: 'USA',
   primaryContactName: 'Lisa Simpson',
@@ -83,7 +84,7 @@ test.describe('Add AR company onboarding wizard', () => {
 
   test('basic info step enforces validations and saves the shell company', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Basic Info' })).toBeEnabled();
-    await expect(page.getByRole('button', { name: 'Address Info' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Company Address' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Financial AR Settings' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Banks & Payment' })).toHaveCount(0);
 
@@ -123,6 +124,7 @@ test.describe('Add AR company onboarding wizard', () => {
     await expect(page.locator('.error', { hasText: 'Address Line 1 is required' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'City is required' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Postal Code is required' })).toBeVisible();
+    await expect(page.locator('.error', { hasText: 'County is required' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Contact name is required' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Email is required' })).toBeVisible();
     await expect(page.locator('.error', { hasText: 'Phone is required' })).toBeVisible();
@@ -226,6 +228,7 @@ async function setupOnboardingApiMocks(page: Page) {
           addressLine1: null,
           city: null,
           stateProvince: null,
+          county: null,
           postalCode: null,
           addressCountry: null,
           primaryContactName: null,
@@ -297,6 +300,7 @@ async function fillCompanyAddressForm(page: Page, data = defaultAddressInfo) {
   await page.locator('[formcontrolname="addressLine1"]').fill(data.addressLine1);
   await page.locator('[formcontrolname="city"]').fill(data.city);
   await page.locator('[formcontrolname="stateProvince"]').fill(data.stateProvince);
+  await page.locator('[formcontrolname="county"]').fill(data.county);
   await page.locator('[formcontrolname="postalCode"]').fill(data.postalCode);
   await page.locator('select[formcontrolname="addressCountry"]').selectOption(data.addressCountry);
   await page.locator('[formcontrolname="primaryContactName"]').fill(data.primaryContactName);

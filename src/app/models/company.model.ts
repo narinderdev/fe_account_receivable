@@ -29,6 +29,7 @@ export interface CompanyAddress {
   addressLine1: string | null;
   city: string | null;
   stateProvince: string | null;
+  county: string | null;
   postalCode: string | null;
   addressCountry: string | null;
   primaryContactName: string | null;
@@ -87,6 +88,7 @@ export interface CompanyEntity {
   addressLine1?: string | null;
   city?: string | null;
   stateProvince?: string | null;
+  county?: string | null;
   postalCode?: string | null;
   addressCountry?: string | null;
   primaryContactName?: string | null;
@@ -194,6 +196,7 @@ export interface CreateCompanyResponse {
       addressLine1: string | null;
       city: string | null;
       stateProvince: string | null;
+      county: string | null;
       postalCode: string | null;
       addressCountry: string | null;
       primaryContactName: string | null;

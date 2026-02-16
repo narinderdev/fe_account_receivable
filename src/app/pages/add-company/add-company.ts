@@ -19,7 +19,7 @@ export class AddCompany implements OnInit {
 
   tabs = [
     { key: 'step-1', label: 'Basic Info' },
-    { key: 'step-2', label: 'Address Info' },
+    { key: 'step-2', label: 'Company Address' },
     { key: 'step-3', label: 'Financial AR Settings' },
   ];
 

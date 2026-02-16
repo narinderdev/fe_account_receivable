@@ -58,6 +58,7 @@ export class CompanyService {
     'addressLine1',
     'city',
     'stateProvince',
+    'county',
     'postalCode',
     'addressCountry',
     'primaryContactName',
