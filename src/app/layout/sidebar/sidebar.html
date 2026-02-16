@@ -116,6 +116,14 @@
             >Roles</a
           >
           <a
+            *ngIf="canManageMfa"
+            routerLink="mfa"
+            routerLinkActive="active"
+            class="sub-nav-item"
+          >
+            MFA
+          </a>
+          <a
             *ngIf="canViewSecurityReport"
             routerLink="security-report"
             routerLinkActive="active"

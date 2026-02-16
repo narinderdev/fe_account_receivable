@@ -6,6 +6,7 @@ const defaultStorage = {
   hasCompanies: 'true',
   selectedCompanyId: '1',
   signupUserId: '101',
+  authToken: 'demo-token',
   logintoken: 'demo-token',
   userContext: JSON.stringify({
     userId: 1,
