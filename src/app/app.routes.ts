@@ -33,6 +33,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { CompanyGuard } from './guards/company.guard';
 import { SetPassword } from './pages/set-password/set-password';
 import { VerifyOtp } from './pages/verify-otp/verify-otp';
+import { VerifyAccountComponent } from './pages/verify-account/verify-account';
 import { ArCodes } from './pages/ar-codes/ar-codes';
 import { PaymentTerms } from './pages/payment-terms/payment-terms';
 import { CreditMemo } from './pages/credit-memo/credit-memo';
@@ -53,6 +54,7 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'signup', component: Signup },
   { path: 'verify-otp', component: VerifyOtp },
+  { path: 'verify-account', component: VerifyAccountComponent },
   { path: 'verify-authenticator', component: VerifyAuthenticatorComponent },
   { path: 'set-password', component: SetPassword },
   {

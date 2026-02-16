@@ -5,8 +5,17 @@ import { Router, RouterModule } from '@angular/router';
 import { LoginService } from '../../services/login-service';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
-import { finalize } from 'rxjs';
+import { catchError, finalize, switchMap, throwError, map } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
+import { AuthService } from '../../services/auth.service';
+import {
+  extractAuthMetadata,
+  storeAuthToken,
+  storeLoginEmail,
+  storeMfaState,
+  storePasswordMetadata,
+  storeTechnicianId,
+} from '../../utils/auth-metadata.util';
 
 @Component({
   selector: 'app-login',
@@ -26,7 +35,8 @@ export class Login {
     private loginService: LoginService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
-    private userContext: UserContextService
+    private userContext: UserContextService,
+    private authService: AuthService
   ) {
     this.form = this.fb.group({
       email: [
@@ -56,7 +66,7 @@ export class Login {
     // Ensure email is lowercase before submission
     const emailControl = this.form.get('email');
     if (emailControl && emailControl.value) {
-      emailControl.setValue(emailControl.value.toLowerCase());
+      emailControl.setValue(emailControl.value.trim().toLowerCase());
     }
 
     if (!this.form.valid) {
@@ -67,9 +77,9 @@ export class Login {
     if (this.loading) {
       return;
     }
-
+    const normalizedEmail = String(this.form.value.email || '').trim().toLowerCase();
     const payload = {
-      email: this.form.value.email,
+      email: normalizedEmail,
       password: this.form.value.password,
     };
 
@@ -79,75 +89,83 @@ export class Login {
     this.loginService
       .login(payload)
       .pipe(
+        switchMap((response) => {
+          const statusCode = response?.statusCode;
+          const message = response?.message || 'Login successful.';
+          const isSuccess = statusCode === 200 || statusCode === 201;
+
+          if (!isSuccess) {
+            this.toastr.error(message || 'Login failed.');
+            return throwError(() => this.markErrorHandled(new Error(message || 'Login failed.')));
+          }
+
+          const metadata = extractAuthMetadata(response);
+          storeLoginEmail(normalizedEmail);
+          storeMfaState(metadata.mfaEnabled, metadata.mfaToken);
+          storePasswordMetadata(metadata.passwordExpired, metadata.daysUntilPasswordExpiry);
+          storeTechnicianId(metadata.technicianId);
+          if (metadata.token) {
+            storeAuthToken(metadata.token);
+          }
+
+          const user = response?.data?.user;
+          if (user?.id) {
+            localStorage.setItem('signupUserId', String(user.id));
+          }
+
+          this.userContext.setFromLogin(user);
+
+          const userCompanies = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
+          if (userCompanies.length > 0) {
+            localStorage.setItem('hasCompanies', 'true');
+          } else {
+            localStorage.removeItem('hasCompanies');
+          }
+
+          this.toastr.success(message);
+
+          return this.authService.sendEmailMfaCode().pipe(
+            map(() => normalizedEmail),
+            catchError((error) => {
+              const sendMessage = error?.error?.message || 'Unable to send verification code.';
+              this.toastr.error(sendMessage);
+              return throwError(() => this.markErrorHandled(error));
+            })
+          );
+        }),
         finalize(() => {
           this.loading = false;
           this.cdr.detectChanges();
         })
       )
       .subscribe({
-        next: (response) => {
-          const statusCode = response?.statusCode;
-          const message = response?.message || 'Login successful.';
-
-          if (statusCode === 200 || statusCode === 201) {
-            this.toastr.success(message);
-
-            const token = response?.data?.token;
-            const user = response?.data?.user;
-
-            if (token) {
-              localStorage.setItem('logintoken', token);
-            }
-
-            if (user?.id) {
-              localStorage.setItem('signupUserId', String(user.id));
-            }
-
-            localStorage.setItem('isLoggedIn', 'true');
-            this.userContext.setFromLogin(user);
-
-            const userCompanies = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
-            if (userCompanies.length > 0) {
-              localStorage.setItem('hasCompanies', 'true');
-            } else {
-              localStorage.removeItem('hasCompanies');
-            }
-
-            const nextUrl =
-              userCompanies.length > 0 ? this.getLandingRoute() : '/admin/ar-company/add/step-1';
-            this.router.navigate([nextUrl]);
-          } else {
-            this.toastr.error(message || 'Login failed.');
-          }
+        next: (email) => {
+          this.router.navigate(['/verify-account'], {
+            queryParams: { email },
+          });
         },
         error: (err) => {
-          const backendMessage = err?.error?.message || 'An error occurred. Please try again.';
-          this.toastr.error(backendMessage);
+          if (!this.wasErrorHandled(err)) {
+            const backendMessage = err?.error?.message || err?.message || 'An error occurred. Please try again.';
+            this.toastr.error(backendMessage);
+          }
           console.error('Login error:', err);
         },
       });
   }
 
-  private getLandingRoute(): string {
-    if (this.userContext.isAdmin()) {
-      return '/admin/dashboard';
+  private markErrorHandled<T extends object>(error: T): T {
+    if (error && typeof error === 'object') {
+      (error as Record<string, unknown>)['__handled'] = true;
     }
+    return error;
+  }
 
-    const permissions = this.userContext.getPermissions();
-    const permissionRoutes = [
-      { permission: 'VIEW_DASHBOARD', path: '/admin/dashboard' },
-      { permission: 'VIEW_CUSTOMERS', path: '/admin/customer' },
-      { permission: 'VIEW_INVOICES', path: '/admin/invoices' },
-      { permission: 'VIEW_PAYMENTS', path: '/admin/payments' },
-      { permission: 'VIEW_AGING_REPORTS', path: '/admin/ar-reports' },
-      { permission: 'VIEW_PROMISE_TO_PAY', path: '/admin/collections' },
-      { permission: 'VIEW_COMPANY', path: '/admin/ar-company' },
-      { permission: 'VIEW_BANK_ACCOUNT', path: '/admin/accounts' },
-      { permission: 'VIEW_USER', path: '/admin/users' },
-      { permission: 'VIEW_ROLES', path: '/admin/roles' },
-    ];
-
-    const match = permissionRoutes.find((entry) => permissions.includes(entry.permission));
-    return match ? match.path : '/admin/dashboard';
+  private wasErrorHandled(error: unknown): boolean {
+    return Boolean(
+      error &&
+        typeof error === 'object' &&
+        Boolean((error as Record<string, unknown>)['__handled'])
+    );
   }
 }

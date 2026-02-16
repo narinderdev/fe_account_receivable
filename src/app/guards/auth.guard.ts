@@ -12,12 +12,11 @@ import {
 export class AuthGuard implements CanActivate, CanActivateChild {
   constructor(private router: Router) {}
 
-  private isLoggedIn(): boolean {
-    return localStorage.getItem('isLoggedIn') === 'true';
-  }
-
-  private hasSignupUser(): boolean {
-    return !!localStorage.getItem('signupUserId');
+  private hasAuthToken(): boolean {
+    if (typeof localStorage === 'undefined') {
+      return false;
+    }
+    return Boolean(localStorage.getItem('authToken') ?? localStorage.getItem('logintoken'));
   }
 
   private redirectToLogin(): UrlTree {
@@ -25,7 +24,7 @@ export class AuthGuard implements CanActivate, CanActivateChild {
   }
 
   canActivate(): boolean | UrlTree {
-    if (this.isLoggedIn() || this.hasSignupUser()) {
+    if (this.hasAuthToken()) {
       return true;
     }
     return this.redirectToLogin();

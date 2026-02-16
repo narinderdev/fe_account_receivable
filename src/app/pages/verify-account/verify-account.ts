@@ -1,54 +1,65 @@
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
   Component,
   ElementRef,
   QueryList,
   ViewChildren,
   ChangeDetectorRef,
-  Inject,
   OnInit,
-  PLATFORM_ID,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { finalize } from 'rxjs';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { finalize } from 'rxjs';
 
 import { AuthService } from '../../services/auth.service';
 import { Spinner } from '../../shared/spinner/spinner';
 import {
   extractAuthMetadata,
   storeAuthToken,
+  storeLoginEmail,
   storePasswordMetadata,
   storeTechnicianId,
 } from '../../utils/auth-metadata.util';
 
 @Component({
-  selector: 'app-verify-authenticator',
+  selector: 'app-verify-account',
   standalone: true,
   imports: [CommonModule, FormsModule, Spinner, RouterModule],
-  templateUrl: './verify-authenticator.html',
-  styleUrls: ['./verify-authenticator.css'],
+  templateUrl: './verify-account.html',
+  styleUrls: ['./verify-account.css'],
 })
-export class VerifyAuthenticatorComponent implements OnInit {
+export class VerifyAccountComponent implements OnInit {
   code: string[] = Array(6).fill('');
   loading = false;
+  resendLoading = false;
+  email = '';
   errorMessage = '';
-  private isBrowser = false;
 
   @ViewChildren('otpInput') inputs!: QueryList<ElementRef<HTMLInputElement>>;
 
   constructor(
+    private route: ActivatedRoute,
     private router: Router,
     private authService: AuthService,
     private toastr: ToastrService,
-    private cdr: ChangeDetectorRef,
-    @Inject(PLATFORM_ID) platformId: object
-  ) {
-    this.isBrowser = isPlatformBrowser(platformId);
-  }
+    private cdr: ChangeDetectorRef
+  ) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.route.queryParams.subscribe((params) => {
+      const emailParam = (params['email'] || '').toLowerCase();
+      const storedEmail = localStorage.getItem('loginEmail') || '';
+      this.email = emailParam || storedEmail;
+
+      if (!this.email) {
+        this.toastr.warning('Please log in to continue.');
+        this.router.navigate(['/login']);
+      } else {
+        storeLoginEmail(this.email);
+      }
+    });
+  }
 
   trackByIndex(index: number): number {
     return index;
@@ -116,9 +127,7 @@ export class VerifyAuthenticatorComponent implements OnInit {
   checkAndAutoSubmit() {
     const allFilled = this.code.every((digit) => digit !== '');
     if (allFilled) {
-      setTimeout(() => {
-        this.submit();
-      }, 300);
+      setTimeout(() => this.submit(), 250);
     }
   }
 
@@ -139,19 +148,11 @@ export class VerifyAuthenticatorComponent implements OnInit {
       return;
     }
 
-    const mfaToken = this.isBrowser ? localStorage.getItem('mfa_token') || '' : '';
-    if (!mfaToken) {
-      this.errorMessage = 'Missing MFA token. Please log in again.';
-      this.toastr.error(this.errorMessage);
-      this.router.navigate(['/login']);
-      return;
-    }
-
     this.loading = true;
     this.cdr.detectChanges();
 
     this.authService
-      .verifyLoginMfa(otp, mfaToken)
+      .verifyEmailMfaCode(otp)
       .pipe(
         finalize(() => {
           this.loading = false;
@@ -160,30 +161,55 @@ export class VerifyAuthenticatorComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          const statusCode = response?.statusCode;
-          const isSuccess = statusCode === 200 || statusCode === 201;
-          const message = response?.message || (isSuccess ? 'Verification successful.' : 'Invalid code.');
+          const metadata = extractAuthMetadata(response);
+          if (metadata.token) {
+            storeAuthToken(metadata.token);
+          }
+          storePasswordMetadata(metadata.passwordExpired, metadata.daysUntilPasswordExpiry);
+          storeTechnicianId(metadata.technicianId);
+          if (metadata.mfaToken) {
+            localStorage.setItem('mfa_token', metadata.mfaToken);
+          }
 
-          if (isSuccess) {
-            const metadata = extractAuthMetadata(response);
-            if (metadata.token) {
-              storeAuthToken(metadata.token);
-            }
-            storePasswordMetadata(metadata.passwordExpired, metadata.daysUntilPasswordExpiry);
-            storeTechnicianId(metadata.technicianId);
-            if (this.isBrowser) {
-              localStorage.removeItem('mfa_token');
-            }
-            this.toastr.success(message);
-            this.router.navigate(['/admin/dashboard']);
+          const requiresAuthenticator = localStorage.getItem('mfaEnabled') === 'true';
+
+          this.toastr.success(response?.message || 'Email verified.');
+          if (requiresAuthenticator) {
+            this.router.navigate(['/verify-authenticator']);
           } else {
-            this.errorMessage = message;
-            this.toastr.error(message);
+            localStorage.removeItem('mfa_token');
+            this.router.navigate(['/admin/dashboard']);
           }
         },
         error: (error) => {
           const message = error?.error?.message || 'Invalid code. Please try again.';
           this.errorMessage = message;
+          this.toastr.error(message);
+        },
+      });
+  }
+
+  resendCode() {
+    if (this.resendLoading) {
+      return;
+    }
+    this.resendLoading = true;
+    this.cdr.detectChanges();
+
+    this.authService
+      .sendEmailMfaCode()
+      .pipe(
+        finalize(() => {
+          this.resendLoading = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.toastr.success('Verification code sent.');
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Unable to send code. Please try again.';
           this.toastr.error(message);
         },
       });

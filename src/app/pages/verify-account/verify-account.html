@@ -1,0 +1,42 @@
+<div class="otp-container">
+  <div class="otp-card">
+    <h1 class="title">Verify Your Email</h1>
+    <p class="subtitle">
+      Enter the 6-digit code sent to
+      <span class="email">{{ email }}</span>
+    </p>
+
+    <form (submit)="$event.preventDefault()">
+      <div class="otp-inputs">
+        <input
+          #otpInput
+          *ngFor="let value of code; let idx = index; trackBy: trackByIndex"
+          type="text"
+          maxlength="1"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          (input)="handleInput($event, idx)"
+          (keydown)="handleKeyDown($event, idx)"
+          (paste)="handlePaste($event, idx)"
+        />
+      </div>
+
+      <span class="error">{{ errorMessage }}</span>
+
+      <button type="button" class="btn-verify" [disabled]="loading" (click)="submit()">
+        <app-spinner *ngIf="loading"></app-spinner>
+        Verify Email
+      </button>
+
+      <button type="button" class="link-button" [disabled]="resendLoading" (click)="resendCode()">
+        <app-spinner *ngIf="resendLoading"></app-spinner>
+        Resend Code
+      </button>
+    </form>
+
+    <p class="login-hint">
+      Wrong email?
+      <a routerLink="/login">Back to Login</a>
+    </p>
+  </div>
+</div>

@@ -1,12 +1,34 @@
 import { HttpHeaders } from '@angular/common/http';
 
-const TOKEN_STORAGE_KEY = 'logintoken';
+const PRIMARY_TOKEN_KEY = 'authToken';
+const LEGACY_TOKEN_KEYS = ['logintoken'];
+
+function resolveToken(): string | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
+  const direct = localStorage.getItem(PRIMARY_TOKEN_KEY);
+  if (direct) {
+    return direct;
+  }
+
+  for (const key of LEGACY_TOKEN_KEYS) {
+    const legacy = localStorage.getItem(key);
+    if (legacy) {
+      return legacy;
+    }
+  }
+
+  return null;
+}
 
 function buildAuthorizationHeaders(): Record<string, string> {
-  const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-  return {
-    Authorization: `Bearer ${token}`,
-  };
+  const token = resolveToken();
+  return token
+    ? {
+        Authorization: `Bearer ${token}`,
+      }
+    : {};
 }
 
 export function getAuthHeaders(): HttpHeaders {
