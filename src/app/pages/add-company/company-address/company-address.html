@@ -77,6 +77,18 @@
               >
             </div>
           </div>
+
+          <div class="form-field">
+            <label>County <span class="color">*</span></label>
+            <input type="text" formControlName="county" (input)="onCountyInput()" />
+            <div class="error" *ngIf="submitted && addressForm.get('county')?.errors">
+              <small *ngIf="addressForm.get('county')?.hasError('required')">County is required</small>
+              <small *ngIf="addressForm.get('county')?.hasError('pattern')">Digits not allowed</small>
+              <small *ngIf="addressForm.get('county')?.hasError('wordLimit')"
+                >Max 100 words allowed</small
+              >
+            </div>
+          </div>
         </div>
 
         <!-- PRIMARY CONTACT -->

@@ -26,6 +26,7 @@ interface InvoiceDraft {
   isGenerated: boolean;
   invoiceDate: string;
   dueDate: string;
+  county: string;
   note: string;
   items: InvoiceItemDraft[];
 }
@@ -35,6 +36,7 @@ interface CreateInvoicePayload {
   isGenerated: boolean;
   invoiceDate: string;
   dueDate: string;
+  county: string | null;
   note: string | null;
   items: Array<{
     itemName: string;
@@ -68,6 +70,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
     isGenerated: false,
     invoiceDate: this.today,
     dueDate: '',
+    county: '',
     note: '',
     items: [
       {
@@ -394,6 +397,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
       isGenerated: !!this.invoice.isGenerated,
       invoiceDate: this.invoice.invoiceDate,
       dueDate: this.invoice.dueDate,
+      county: this.invoice.county?.trim() || null,
       note: this.invoice.note || null,
 
       items: this.invoice.items.map((item: InvoiceItemDraft) => ({

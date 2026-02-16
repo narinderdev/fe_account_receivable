@@ -240,6 +240,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       'addressLine1',
       'city',
       'stateProvince',
+      'county',
       'postalCode',
       'addressCountry',
       'primaryContactName',
@@ -249,7 +250,7 @@ export class BanksAndPayments implements OnInit, OnDestroy {
       'primaryContactCountry',
     ];
     if (!this.hasValues(addressSource, addressFields)) {
-      this.toastr.error('Please fill all required fields in the Address Info tab.');
+      this.toastr.error('Please fill all required fields in the Company Address tab.');
       return false;
     }
 
