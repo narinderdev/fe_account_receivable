@@ -1,24 +1,35 @@
 import { CommonModule } from '@angular/common';
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SignupService } from '../../services/signup-service';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
-import { finalize } from 'rxjs';
+import { Subject, finalize, takeUntil } from 'rxjs';
+import { PasswordRulesComponent } from '../../shared/password-rules/password-rules.component';
+import {
+  PasswordRule,
+  evaluatePasswordRules,
+  passwordComplexityValidator,
+} from '../../utils/password-rules.util';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, Spinner, RouterModule],
+  imports: [ReactiveFormsModule, CommonModule, Spinner, RouterModule, PasswordRulesComponent],
   templateUrl: './signup.html',
   styleUrl: './signup.css',
 })
-export class Signup {
+export class Signup implements OnDestroy {
   form: FormGroup;
   loading: boolean = false;
   passwordVisible = false;
   confirmPasswordVisible = false;
+  passwordRules: PasswordRule[] = evaluatePasswordRules('');
+  showPasswordRules = false;
+  readonly passwordRulesHelperId = 'signup-password-rules-helper';
+  private passwordFieldFocused = false;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -42,8 +53,7 @@ export class Signup {
           '',
           [
             Validators.required,
-            Validators.minLength(12),
-            Validators.pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[@$!%*?&]).{12,}$/),
+            passwordComplexityValidator(),
           ],
         ],
         confirmPassword: ['', Validators.required],
@@ -52,6 +62,21 @@ export class Signup {
         validators: [this.passwordMatchValidator],
       }
     );
+
+    const passwordControl = this.form.get('password');
+    if (passwordControl) {
+      this.passwordRules = evaluatePasswordRules(passwordControl.value);
+      passwordControl.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+        this.passwordRules = evaluatePasswordRules(value);
+        const hasValue = Boolean((value ?? '').length);
+        this.updatePasswordRulesVisibility(hasValue);
+      });
+    }
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   passwordMatchValidator(form: FormGroup) {
@@ -65,6 +90,11 @@ export class Signup {
       this.passwordVisible = !this.passwordVisible;
     } else {
       this.confirmPasswordVisible = !this.confirmPasswordVisible;
+    }
+
+    if (field === 'password') {
+      this.passwordFieldFocused = true;
+      this.updatePasswordRulesVisibility(true);
     }
   }
 
@@ -139,5 +169,24 @@ export class Signup {
           console.error('Sign Up Error:', err);
         },
       });
+  }
+
+  onPasswordFocus() {
+    this.passwordFieldFocused = true;
+    const hasValue = Boolean(this.form.get('password')?.value);
+    this.updatePasswordRulesVisibility(hasValue);
+  }
+
+  onPasswordBlur() {
+    this.passwordFieldFocused = false;
+    this.updatePasswordRulesVisibility(Boolean(this.form.get('password')?.value));
+  }
+
+  onPasswordInput(value: string) {
+    this.updatePasswordRulesVisibility(Boolean(value?.length));
+  }
+
+  private updatePasswordRulesVisibility(hasValue: boolean) {
+    this.showPasswordRules = this.passwordFieldFocused || hasValue;
   }
 }
