@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { LoginService } from '../../services/login-service';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
-import { catchError, finalize, switchMap, throwError, map } from 'rxjs';
+import { catchError, finalize, map, switchMap, throwError } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
 import { AuthService } from '../../services/auth.service';
 import {
@@ -168,4 +168,5 @@ export class Login {
         Boolean((error as Record<string, unknown>)['__handled'])
     );
   }
+
 }

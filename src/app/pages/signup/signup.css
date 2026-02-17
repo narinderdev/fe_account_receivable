@@ -140,6 +140,74 @@ input:focus {
   text-decoration: underline;
 }
 
+.password-group {
+  position: relative;
+}
+
+.password-section {
+  position: relative;
+}
+
+.password-field {
+  width: 100%;
+}
+
+.password-checklist {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 16px);
+  width: 240px;
+  max-width: 240px;
+  z-index: 2;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  border-radius: 6px;
+}
+
+.password-toggle-btn img {
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.password-toggle {
+  display: none;
+}
+
+.password-group .input-icon-left {
+  left: 14px;
+}
+
+.password-group input {
+  padding-right: 44px;
+}
+
+@media (max-width: 768px) {
+  .password-checklist {
+    position: static;
+    width: 100%;
+    max-width: none;
+    margin-top: 16px;
+  }
+}
+
 /* Terms text */
 .terms-text {
   margin-top: -8px;
