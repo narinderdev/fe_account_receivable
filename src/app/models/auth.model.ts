@@ -56,3 +56,10 @@ export interface SetPasswordRequest {
 }
 
 export type SetPasswordResponse = ApiResponse<null>;
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export type ChangePasswordResponse = ApiResponse<null>;

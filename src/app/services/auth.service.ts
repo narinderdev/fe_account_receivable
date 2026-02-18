@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
+import { ChangePasswordRequest, ChangePasswordResponse } from '../models/auth.model';
 
 export interface MfaSetupData {
   secret?: string;
@@ -63,5 +64,14 @@ export class AuthService {
       code,
       mfa_token: token,
     });
+  }
+
+  changePassword(payload: ChangePasswordRequest): Observable<ChangePasswordResponse> {
+    const headers = getAuthHeaders();
+    return this.http.post<ChangePasswordResponse>(
+      `${this.baseUrl}/auth/change-password`,
+      payload,
+      { headers }
+    );
   }
 }

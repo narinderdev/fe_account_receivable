@@ -165,7 +165,12 @@ export class VerifyAccountComponent implements OnInit {
           if (metadata.token) {
             storeAuthToken(metadata.token);
           }
-          storePasswordMetadata(metadata.passwordExpired, metadata.daysUntilPasswordExpiry);
+          storePasswordMetadata(
+            metadata.passwordExpired,
+            metadata.daysUntilPasswordExpiry,
+            metadata.passwordDaysRemaining,
+            { preserveDaysIfMissing: true }
+          );
           storeTechnicianId(metadata.technicianId);
           if (metadata.mfaToken) {
             localStorage.setItem('mfa_token', metadata.mfaToken);

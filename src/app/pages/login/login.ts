@@ -102,7 +102,11 @@ export class Login {
           const metadata = extractAuthMetadata(response);
           storeLoginEmail(normalizedEmail);
           storeMfaState(metadata.mfaEnabled, metadata.mfaToken);
-          storePasswordMetadata(metadata.passwordExpired, metadata.daysUntilPasswordExpiry);
+          storePasswordMetadata(
+            metadata.passwordExpired,
+            metadata.daysUntilPasswordExpiry,
+            metadata.passwordDaysRemaining
+          );
           storeTechnicianId(metadata.technicianId);
           if (metadata.token) {
             storeAuthToken(metadata.token);
