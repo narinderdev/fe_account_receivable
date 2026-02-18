@@ -68,6 +68,11 @@ export interface InviteUserRequest {
   roleIds: number[];
 }
 
+export interface AssignRoleRequest {
+  userId: number;
+  roleId: number;
+}
+
 // Response for POST /api/companies/{id}/users
 export interface InviteUserResponse {
   statusCode: number;

@@ -19,6 +19,7 @@ import {
 } from '../models/company.model';
 import { environment } from '../../environments/environment';
 import {
+  AssignRoleRequest,
   CompanyUsersResponse,
   InviteUserRequest,
   InviteUserResponse,
@@ -183,6 +184,15 @@ export class CompanyService {
     return this.http.post<InviteUserResponse>(
       `${this.baseUrl}/api/companies/${companyId}/users/${userId}/approve`,
       null,
+      { headers },
+    );
+  }
+
+  assignRoleToUser(payload: AssignRoleRequest): Observable<InviteUserResponse> {
+    const headers = getAuthHeaders();
+    return this.http.post<InviteUserResponse>(
+      `${this.baseUrl}/api/companies/user/assign-role`,
+      payload,
       { headers },
     );
   }
