@@ -461,3 +461,77 @@
 .cancelBtn:hover {
   opacity: 0.9;
 }
+
+.assign-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef3c7;
+  color: #92400e;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.assign-role-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(250, 204, 21, 0.3);
+}
+
+.assign-role-chip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.chip-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fbbf24;
+  display: inline-block;
+}
+
+.assign-role-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.selected-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.pill-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.pill-value {
+  display: flex;
+  flex-direction: column;
+  color: #111827;
+  font-weight: 500;
+}
+
+.pill-email {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.assign-role-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: -8px;
+}

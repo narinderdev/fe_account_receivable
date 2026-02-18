@@ -3,7 +3,6 @@
     <app-loader [visible]="isLoadingUsers"></app-loader>
 
     <div class="actions" *ngIf="companyId && canInviteUser">
-      <!-- <h2 class="section-title">Invite Users</h2> -->
       <div class="invite-user" *ngIf="canInviteUser">
         <button class="invite-user-btn" type="button" (click)="openImportModal()">Import User</button>
         <button class="invite-user-btn" type="button" (click)="openModal()">Invite User</button>
@@ -42,7 +41,17 @@
               </div>
             </td>
             <td>{{ u.email }}</td>
-            <td>{{ getUserRole(u) }}</td>
+            <td>
+              <ng-container *ngIf="hasAssignedRole(u); else assignRoleTpl">
+                {{ getUserRole(u) }}
+              </ng-container>
+              <ng-template #assignRoleTpl>
+                <button type="button" class="assign-role-chip" (click)="openAssignRoleModal(u)">
+                  <span class="chip-indicator"></span>
+                  Click to Assign Role
+                </button>
+              </ng-template>
+            </td>
             <td>
               <span class="status-badge" [ngClass]="getStatusClass(u)">
                 {{ getUserStatus(u) }}
@@ -65,6 +74,7 @@
           </tr>
         </tbody>
       </table>
+
       <div
         class="pagination-wrapper"
         *ngIf="pagination.totalPages > 1 && pagination.totalItems > 0"
@@ -103,6 +113,15 @@
             <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
           </button>
         </div>
+      </div>
+    </div>
+
+    <p
+      *ngIf="companyId && !isLoadingUsers && pagination.totalItems === 0"
+      class="section-description"
+    >
+      No users found for this company.
+    </p>
   </div>
 
   <div *ngIf="isImportModalOpen" class="modal-overlay">
@@ -148,14 +167,74 @@
       </div>
     </div>
   </div>
-</div>
 
-    <p
-      *ngIf="companyId && !isLoadingUsers && pagination.totalItems === 0"
-      class="section-description"
-    >
-      No users found for this company.
-    </p>
+  <div *ngIf="isAssignRoleModalOpen" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Assign Role</h3>
+          <p class="modal-subtitle">
+            Choose a role before approving
+            {{ userPendingRole ? getUserName(userPendingRole) : 'this user' }}.
+          </p>
+        </div>
+        <button type="button" class="close-btn" aria-label="Close" (click)="closeAssignRoleModal()">
+          &times;
+        </button>
+      </div>
+
+      <form
+        [formGroup]="assignRoleForm"
+        class="modal-body assign-role-form"
+        (ngSubmit)="submitAssignRole()"
+      >
+        <div class="selected-user-pill" *ngIf="userPendingRole">
+          <span class="pill-label">User</span>
+          <div class="pill-value">
+            {{ getUserName(userPendingRole) }}
+            <span class="pill-email">{{ userPendingRole.email }}</span>
+          </div>
+        </div>
+
+        <div class="modal-form-field">
+          <label for="assignRoleSelect">Role</label>
+          <select id="assignRoleSelect" formControlName="roleId">
+            <option value="">Select Role</option>
+            <option *ngFor="let role of assignableRoles" [value]="role.id">
+              {{ formatRoleName(role.name) }}
+            </option>
+          </select>
+          <div class="helper-text" *ngIf="assignableRoles.length === 0">
+            No roles available. Create a role first.
+          </div>
+          <div class="error" *ngIf="assignRoleSubmitted && assignRoleForm.controls['roleId'].errors">
+            Role is required.
+          </div>
+        </div>
+
+        <div class="assign-role-error" *ngIf="assignRoleError">{{ assignRoleError }}</div>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="cancelBtn"
+            (click)="closeAssignRoleModal()"
+            [disabled]="isAssigningRole"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="sendBtn"
+            [disabled]="isAssigningRole || assignableRoles.length === 0"
+          >
+            <app-spinner *ngIf="isAssigningRole"></app-spinner>
+            <span *ngIf="!isAssigningRole">Assign Role</span>
+            <span *ngIf="isAssigningRole">Assigning...</span>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div *ngIf="isModalOpen" class="modal-overlay">

@@ -11,6 +11,7 @@ import { CompanyService } from '../../services/company-service';
 import { RoleService } from '../../services/role-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
 import { UserContextService } from '../../services/user-context.service';
@@ -27,15 +28,22 @@ export class Users implements OnInit, OnDestroy {
   isModalOpen = false;
   isImportModalOpen = false;
   inviteForm!: FormGroup;
+  assignRoleForm!: FormGroup;
   submitted = false;
+  assignRoleSubmitted = false;
   isSavingInvite = false;
   isLoadingUsers = false;
   approvingUserId: number | null = null;
   isImporting = false;
   selectedImportFile: File | null = null;
   importError = '';
+  isAssignRoleModalOpen = false;
+  isAssigningRole = false;
+  assignRoleError = '';
+  userPendingRole: CompanyUser | null = null;
 
   roles: Role[] = [];
+  assignableRoles: Role[] = [];
   users: CompanyUser[] = [];
   private allUsers: CompanyUser[] = [];
   pagination = this.createPagination();
@@ -65,6 +73,10 @@ export class Users implements OnInit, OnDestroy {
       email: ['', [Validators.required, Validators.email]],
       roleIds: ['', Validators.required],
       // status: ['', Validators.required],
+    });
+
+    this.assignRoleForm = this.fb.group({
+      roleId: ['', Validators.required],
     });
 
     this.listenForCompanySelection();
@@ -102,32 +114,44 @@ export class Users implements OnInit, OnDestroy {
     this.isLoadingUsers = true;
     this.cdr.detectChanges();
 
-    this.companyService.getUsers(this.companyId).subscribe({
-      next: (res) => {
-        this.allUsers = res.data || [];
-        this.pagination = this.createPagination();
-        this.users = this.applyPagination(this.allUsers, 0);
-        this.isLoadingUsers = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load users', err);
-        this.allUsers = [];
-        this.users = [];
-        this.pagination = this.createPagination();
-        this.isLoadingUsers = false;
-        this.cdr.detectChanges();
-      },
-    });
+    this.companyService
+      .getUsers(this.companyId)
+      .pipe(
+        finalize(() => {
+          this.isLoadingUsers = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: (res) => {
+          const list = Array.isArray(res?.data) ? res.data : [];
+          this.allUsers = list;
+          this.pagination = this.createPagination();
+          this.users = this.applyPagination(this.allUsers, 0);
+        },
+        error: (err) => {
+          console.error('Failed to load users', err);
+          this.allUsers = [];
+          this.users = [];
+          this.pagination = this.createPagination();
+        },
+      });
   }
 
   loadRoles(companyId: number) {
     this.roleService.getRoles(companyId).subscribe({
       next: (res) => {
-        this.roles = res?.data || [];
+        const roleList = Array.isArray(res?.data) ? res.data : [];
+        this.roles = roleList;
+        this.assignableRoles = this.filterAssignableRoles(roleList);
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Failed to load roles', err),
+      error: (err) => {
+        console.error('Failed to load roles', err);
+        this.roles = [];
+        this.assignableRoles = [];
+        this.cdr.detectChanges();
+      },
     });
   }
 
@@ -151,16 +175,16 @@ export class Users implements OnInit, OnDestroy {
   }
 
   formatRoleName(name: string | undefined | null): string {
-  if (!name) return '';
+    if (!name) return '';
 
-  return name
-    .trim()
-    .replace(/_/g, ' ')
-    .replace(/\s+/g, ' ')
-    .toLowerCase()
-    .replace(/\b(ar)\b/g, 'AR')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
+    return name
+      .trim()
+      .replace(/_/g, ' ')
+      .replace(/\s+/g, ' ')
+      .toLowerCase()
+      .replace(/\b(ar)\b/g, 'AR')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
 
 
   closeModal() {
@@ -298,9 +322,10 @@ export class Users implements OnInit, OnDestroy {
       ?.map((entry) => entry?.role?.name)
       .filter((name): name is string => !!name);
     if (assignments && assignments.length) {
-      return assignments.join(', ');
+      return assignments.map((name) => this.formatRoleName(name)).join(', ');
     }
-    return user?.role?.name || '--';
+    const fallback = user?.role?.name;
+    return fallback ? this.formatRoleName(fallback) : '--';
   }
 
   getUserStatus(user: CompanyUser): string {
@@ -347,6 +372,11 @@ export class Users implements OnInit, OnDestroy {
     if (this.approvingUserId === user.id) {
       return;
     }
+    if (!this.hasAssignedRole(user)) {
+      this.toastr.warning('Please assign a role before approving this user.');
+      this.openAssignRoleModal(user);
+      return;
+    }
 
     this.approvingUserId = user.id;
     this.cdr.detectChanges();
@@ -367,6 +397,100 @@ export class Users implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  hasAssignedRole(user: CompanyUser): boolean {
+    const assignedFromUserRoles = user?.userRoles?.some((entry) => !!entry?.role?.id);
+    if (assignedFromUserRoles) {
+      return true;
+    }
+    return !!user?.role?.id;
+  }
+
+  openAssignRoleModal(user: CompanyUser): void {
+    if (!this.companyId) {
+      this.toastr.error('Please select a company first.');
+      return;
+    }
+    if (!user?.id) {
+      this.toastr.error('Unable to determine the selected user.');
+      return;
+    }
+
+    const existingRoleId = this.getPrimaryRoleId(user);
+    const availableRole = this.assignableRoles.find((role) => role.id === existingRoleId);
+    this.assignRoleForm.reset({
+      roleId: availableRole ? String(availableRole.id) : '',
+    });
+    this.assignRoleSubmitted = false;
+    this.assignRoleError = '';
+    this.userPendingRole = user;
+    this.isAssignRoleModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeAssignRoleModal(): void {
+    this.isAssignRoleModalOpen = false;
+    this.userPendingRole = null;
+    this.assignRoleSubmitted = false;
+    this.assignRoleError = '';
+    this.assignRoleForm.reset({ roleId: '' });
+    this.cdr.detectChanges();
+  }
+
+  submitAssignRole(): void {
+    this.assignRoleSubmitted = true;
+    if (this.assignRoleForm.invalid || !this.userPendingRole?.id) {
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const payload = {
+      userId: this.userPendingRole.id,
+      roleId: Number(this.assignRoleForm.value.roleId),
+    };
+
+    this.isAssigningRole = true;
+    this.assignRoleError = '';
+    this.cdr.detectChanges();
+
+    this.companyService
+      .assignRoleToUser(payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.toastr.success(response?.message || 'Role assigned successfully.', 'Success');
+          this.isAssigningRole = false;
+          this.closeAssignRoleModal();
+          this.loadUsers();
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Unable to assign role.';
+          this.assignRoleError = message;
+          this.toastr.error(message, 'Error');
+          this.isAssigningRole = false;
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private getPrimaryRoleId(user: CompanyUser): number | null {
+    const fromAssignments = user?.userRoles?.find((entry) => entry?.role?.id)?.role?.id;
+    if (fromAssignments) {
+      return fromAssignments;
+    }
+    return user?.role?.id ?? null;
+  }
+
+  private filterAssignableRoles(source: Role[]): Role[] {
+    return source.filter((role) => !this.isAdminRoleName(role?.name));
+  }
+
+  private isAdminRoleName(name: string | undefined | null): boolean {
+    if (!name) {
+      return false;
+    }
+    return name.trim().toLowerCase() === 'admin';
   }
 
   getUserInitial(user: CompanyUser): string {
