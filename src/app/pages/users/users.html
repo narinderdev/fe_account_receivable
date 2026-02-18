@@ -4,8 +4,9 @@
 
     <div class="actions" *ngIf="companyId && canInviteUser">
       <!-- <h2 class="section-title">Invite Users</h2> -->
-      <div class="invite-user">
-        <button class="invite-user-btn" (click)="openModal()">Invite User</button>
+      <div class="invite-user" *ngIf="canInviteUser">
+        <button class="invite-user-btn" type="button" (click)="openImportModal()">Import User</button>
+        <button class="invite-user-btn" type="button" (click)="openModal()">Invite User</button>
       </div>
     </div>
 
@@ -102,8 +103,52 @@
             <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
           </button>
         </div>
+  </div>
+
+  <div *ngIf="isImportModalOpen" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Import Users</h3>
+          <p class="modal-subtitle">Upload a CSV file with multiple users to invite.</p>
+        </div>
+        <button type="button" class="close-btn" aria-label="Close" (click)="closeImportModal()">
+          &times;
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-field file-field">
+          <label for="userImportInput">CSV File</label>
+          <input
+            id="userImportInput"
+            type="file"
+            accept=".csv,text/csv"
+            (change)="handleImportFile($event)"
+          />
+          <p class="helper-text">Download template or drag-and-drop your CSV.</p>
+          <div class="error" *ngIf="importError">{{ importError }}</div>
+          <div class="file-pill" *ngIf="selectedImportFile">
+            {{ selectedImportFile.name }}
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="cancelBtn" (click)="closeImportModal()">Cancel</button>
+          <button
+            type="button"
+            class="sendBtn"
+            [disabled]="isImporting || !selectedImportFile"
+            (click)="submitImport()"
+          >
+            <app-spinner *ngIf="isImporting"></app-spinner>
+            <span *ngIf="!isImporting">Import Users</span>
+            <span *ngIf="isImporting">Uploading...</span>
+          </button>
+        </div>
       </div>
     </div>
+  </div>
+</div>
 
     <p
       *ngIf="companyId && !isLoadingUsers && pagination.totalItems === 0"

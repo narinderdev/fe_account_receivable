@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { finalize, Subject, takeUntil } from 'rxjs';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -12,6 +12,7 @@ import {
   passwordComplexityValidator,
 } from '../../utils/password-rules.util';
 import { AuthService } from '../../services/auth.service';
+import { AuthSessionService } from '../../services/auth-session.service';
 
 @Component({
   selector: 'app-change-password',
@@ -40,7 +41,7 @@ export class ChangePassword implements OnDestroy {
     private authService: AuthService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private authSession: AuthSessionService
   ) {
     this.form = this.fb.group(
       {
@@ -133,10 +134,8 @@ export class ChangePassword implements OnDestroy {
       .subscribe({
         next: (response) => {
           const message = response?.message || 'Password updated successfully.';
-          this.toastr.success(message);
-          this.form.reset();
-          this.submitted = false;
-          this.router.navigate(['/admin/dashboard']);
+          this.toastr.success(`${message} Please log in again.`);
+          this.authSession.signOut();
         },
         error: (error) => {
           const message =
@@ -151,4 +150,3 @@ export class ChangePassword implements OnDestroy {
     this.showPasswordRules = this.passwordFieldFocused || hasValue;
   }
 }
-

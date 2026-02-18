@@ -25,11 +25,15 @@ import { Loader } from '../../shared/loader/loader';
 })
 export class Users implements OnInit, OnDestroy {
   isModalOpen = false;
+  isImportModalOpen = false;
   inviteForm!: FormGroup;
   submitted = false;
   isSavingInvite = false;
   isLoadingUsers = false;
   approvingUserId: number | null = null;
+  isImporting = false;
+  selectedImportFile: File | null = null;
+  importError = '';
 
   roles: Role[] = [];
   users: CompanyUser[] = [];
@@ -162,6 +166,81 @@ export class Users implements OnInit, OnDestroy {
   closeModal() {
     this.isModalOpen = false;
     this.cdr.detectChanges();
+  }
+
+  openImportModal() {
+    if (!this.canInviteUser) {
+      return;
+    }
+    if (!this.companyId) {
+      this.toastr.error('Please select a company first.');
+      return;
+    }
+    this.importError = '';
+    this.selectedImportFile = null;
+    this.isImporting = false;
+    this.isImportModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeImportModal() {
+    this.isImportModalOpen = false;
+    this.importError = '';
+    this.selectedImportFile = null;
+    this.isImporting = false;
+    this.cdr.detectChanges();
+  }
+
+  handleImportFile(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      this.selectedImportFile = null;
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      this.importError = 'Please upload a CSV file.';
+      this.selectedImportFile = null;
+      return;
+    }
+    this.importError = '';
+    this.selectedImportFile = file;
+  }
+
+  submitImport() {
+    if (!this.companyId) {
+      this.importError = 'Select a company before importing.';
+      return;
+    }
+    if (!this.selectedImportFile || this.isImporting) {
+      this.importError = this.importError || 'Please choose a CSV file.';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', this.selectedImportFile);
+
+    this.isImporting = true;
+    this.importError = '';
+    this.cdr.detectChanges();
+
+    this.companyService.importUsers(this.companyId, formData).subscribe({
+      next: (response) => {
+        const message = response?.message || 'Users imported successfully.';
+        this.toastr.success(message);
+        this.isImporting = false;
+        this.closeImportModal();
+        this.loadUsers();
+      },
+      error: (error) => {
+        const message =
+          error?.error?.message || 'Unable to import users. Please verify your file.';
+        this.importError = message;
+        this.toastr.error(message);
+        this.isImporting = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   sendInvite() {
