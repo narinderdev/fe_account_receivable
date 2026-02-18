@@ -6,6 +6,7 @@ type AuthLikeResponse = {
   mfaEnabled?: boolean | string | number;
   passwordExpired?: boolean | string;
   daysUntilPasswordExpiry?: number | string | null;
+  passwordDaysRemaining?: number | string | null;
   technicianId?: string | number | null;
 };
 
@@ -15,6 +16,7 @@ type Metadata = {
   mfaEnabled: boolean;
   passwordExpired: boolean | null;
   daysUntilPasswordExpiry: number | null;
+  passwordDaysRemaining: number | null;
   technicianId: string | number | null;
 };
 
@@ -75,11 +77,19 @@ export function extractAuthMetadata(payload: unknown): Metadata {
     userRecord['daysUntilPasswordExpiry'] ??
     sourceRecord['daysUntilPasswordExpiry'] ??
     null;
+  const daysRemainingRaw =
+    dataRecord['passwordDaysRemaining'] ??
+    userRecord['passwordDaysRemaining'] ??
+    sourceRecord['passwordDaysRemaining'] ??
+    nestedUser?.['passwordDaysRemaining'] ??
+    null;
   const technicianId =
     (userRecord['technicianId'] as string | number | null | undefined) ??
     (dataRecord['technicianId'] as string | number | null | undefined) ??
     (sourceRecord['technicianId'] as string | number | null | undefined) ??
     null;
+  const normalizedDaysUntil = toNumber(daysRaw);
+  const normalizedDaysRemaining = toNumber(daysRemainingRaw);
 
   return {
     token,
@@ -89,7 +99,8 @@ export function extractAuthMetadata(payload: unknown): Metadata {
       passwordExpiredRaw === null || passwordExpiredRaw === undefined
         ? null
         : toBoolean(passwordExpiredRaw),
-    daysUntilPasswordExpiry: toNumber(daysRaw),
+    daysUntilPasswordExpiry: normalizedDaysUntil ?? normalizedDaysRemaining,
+    passwordDaysRemaining: normalizedDaysRemaining ?? normalizedDaysUntil,
     technicianId: technicianId ?? null,
   };
 }
@@ -105,10 +116,21 @@ export function storeAuthToken(token: string | null | undefined) {
   }
 }
 
-export function storePasswordMetadata(passwordExpired: boolean | null, daysUntil: number | null) {
+type StorePasswordMetadataOptions = {
+  preserveDaysIfMissing?: boolean;
+};
+
+export function storePasswordMetadata(
+  passwordExpired: boolean | null,
+  daysUntil: number | null,
+  passwordDaysRemaining?: number | null,
+  options?: StorePasswordMetadataOptions
+) {
   if (typeof localStorage === 'undefined') {
     return;
   }
+
+  const preserveDays = Boolean(options?.preserveDaysIfMissing);
   if (passwordExpired !== null && passwordExpired !== undefined) {
     localStorage.setItem('passwordExpired', String(!!passwordExpired));
   } else {
@@ -117,8 +139,19 @@ export function storePasswordMetadata(passwordExpired: boolean | null, daysUntil
 
   if (daysUntil !== null && daysUntil !== undefined) {
     localStorage.setItem('daysUntilPasswordExpiry', String(daysUntil));
-  } else {
+  } else if (!preserveDays) {
     localStorage.removeItem('daysUntilPasswordExpiry');
+  }
+
+  const daysRemainingValue =
+    passwordDaysRemaining !== null && passwordDaysRemaining !== undefined
+      ? passwordDaysRemaining
+      : daysUntil;
+
+  if (daysRemainingValue !== null && daysRemainingValue !== undefined) {
+    localStorage.setItem('passwordDaysRemaining', String(daysRemainingValue));
+  } else if (!preserveDays) {
+    localStorage.removeItem('passwordDaysRemaining');
   }
 }
 

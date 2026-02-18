@@ -169,7 +169,12 @@ export class VerifyAuthenticatorComponent implements OnInit {
             if (metadata.token) {
               storeAuthToken(metadata.token);
             }
-            storePasswordMetadata(metadata.passwordExpired, metadata.daysUntilPasswordExpiry);
+            storePasswordMetadata(
+              metadata.passwordExpired,
+              metadata.daysUntilPasswordExpiry,
+              metadata.passwordDaysRemaining,
+              { preserveDaysIfMissing: true }
+            );
             storeTechnicianId(metadata.technicianId);
             if (this.isBrowser) {
               localStorage.removeItem('mfa_token');

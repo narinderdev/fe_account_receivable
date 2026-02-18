@@ -20,6 +20,7 @@ import { CompanySelectionService } from '../../services/company-selection.servic
 import { Subject, takeUntil } from 'rxjs';
 import { DashboardSummaryData, DashboardInvoiceResponse } from '../../models/dashboard.model';
 import { Loader } from 'src/app/shared/loader/loader';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
@@ -59,6 +60,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   private graphReqSeq = 0;
+  passwordDaysRemaining: number | null = null;
 
   // Computed property to show loader
   get isLoading(): boolean {
@@ -71,6 +73,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService,
     private ngZone: NgZone,
+    private router: Router,
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.initializeYearOptions();
@@ -80,6 +83,10 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
      INIT
   ========================= */
   ngOnInit(): void {
+    if (this.isBrowser) {
+      this.loadPasswordReminder();
+    }
+
     this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
       const parsed = id ? Number(id) : NaN;
       const nextId = Number.isFinite(parsed) ? parsed : null;
@@ -124,6 +131,22 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
         this.updateChart();
       }
     });
+  }
+
+  private loadPasswordReminder(): void {
+    const raw =
+      localStorage.getItem('passwordDaysRemaining') ??
+      localStorage.getItem('daysUntilPasswordExpiry');
+    if (raw === null) {
+      this.passwordDaysRemaining = null;
+      return;
+    }
+    const parsed = Number(raw);
+    this.passwordDaysRemaining = Number.isFinite(parsed) ? parsed : null;
+  }
+
+  onChangePasswordClick(): void {
+    this.router.navigate(['/change-password']);
   }
 
   /* =========================

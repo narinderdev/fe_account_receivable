@@ -47,6 +47,7 @@ import { SecurityReport } from './pages/security-report/security-report';
 import { MfaComponent } from './pages/mfa/mfa';
 import { VerifyAuthenticatorComponent } from './pages/verify-authenticator/verify-authenticator';
 import { Accounts } from './pages/accounts/accounts';
+import { ChangePassword } from './pages/change-password/change-password';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -57,6 +58,7 @@ export const routes: Routes = [
   { path: 'verify-account', component: VerifyAccountComponent },
   { path: 'verify-authenticator', component: VerifyAuthenticatorComponent },
   { path: 'set-password', component: SetPassword },
+  { path: 'change-password', component: ChangePassword, canActivate: [AuthGuard] },
   {
     path: 'admin',
     component: Main,
