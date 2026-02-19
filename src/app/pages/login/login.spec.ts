@@ -68,16 +68,30 @@ describe('Login', () => {
       const { instance, loginService, authService, router } = createComponent();
       loginService.login.mockReturnValue(
         of({
+          status: 'success',
           statusCode: 200,
           message: 'ok',
           data: {
             token: 'temp-token',
             mfa_token: 'mfa-token',
-            user: { id: 1, userCompanies: [] },
+            user: {
+              id: 1,
+              firstName: 'Test',
+              lastName: 'User',
+              email: 'user@example.com',
+              status: 'ACTIVE',
+              deleted: false,
+              userCompanies: [],
+              userRoles: [],
+              createdAt: '2024-01-01T00:00:00.000Z',
+              updatedAt: '2024-01-02T00:00:00.000Z',
+            },
           },
         })
       );
-      authService.sendEmailMfaCode.mockReturnValue(of({ statusCode: 200 }));
+      authService.sendEmailMfaCode.mockReturnValue(
+        of({ status: 'success', statusCode: 200, message: 'sent', data: null })
+      );
 
       instance.form.setValue({ email: 'USER@Example.com', password: 'Secret123!' });
       instance.submit();

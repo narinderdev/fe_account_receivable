@@ -7,6 +7,9 @@ const jsonHeaders = {
   'content-type': 'application/json',
 };
 
+const listUsersRegex = /\/api\/companies\/users\/\d+$/;
+const inviteUsersRegex = /\/api\/companies\/\d+\/users$/;
+
 const success = <T>(data: T) => ({
   statusCode: 200,
   status: 'success',
@@ -62,14 +65,14 @@ test.describe('Company users management', () => {
     await page.selectOption('select[formcontrolname="roleIds"]', '1');
 
     const inviteRequest = waitForInvite(page);
-    await modal.getByRole('button', { name: 'Send Invite' }).click();
+    await modal.getByRole('button', { name: 'Create User' }).click();
     await inviteRequest;
     await expect(modal).toBeHidden();
   });
 });
 
 async function setupUserRoutes(page: Page) {
-  await page.route('**/api/companies/users/1', async (route) => {
+  await page.route(listUsersRegex, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.continue();
       return;
@@ -81,7 +84,7 @@ async function setupUserRoutes(page: Page) {
     });
   });
 
-  await page.route('**/api/companies/1/users', async (route) => {
+  await page.route(inviteUsersRegex, async (route) => {
     if (route.request().method() !== 'POST') {
       await route.continue();
       return;
@@ -95,10 +98,17 @@ async function setupUserRoutes(page: Page) {
 }
 
 async function waitForInvite(page: Page) {
-  await page.waitForResponse(
-    (response) =>
-      response.url().includes('/api/companies/1/users') &&
+  await page.waitForResponse((response) => {
+    let pathname: string;
+    try {
+      pathname = new URL(response.url()).pathname;
+    } catch {
+      return false;
+    }
+    return (
+      inviteUsersRegex.test(pathname) &&
       response.request().method() === 'POST' &&
       response.status() === 200
-  );
+    );
+  });
 }

@@ -57,126 +57,122 @@
     </div>
   </div>
 
-  <div class="card">
-    <div *ngIf="state.loading" class="loader-block">
-      <app-loader [visible]="state.loading"></app-loader>
-    </div>
 
-    <ng-container *ngIf="!state.loading">
-      <div *ngIf="state.error" class="empty-text error">
-        {{ state.error }}
-      </div>
 
-      <div class="table-scroll" *ngIf="!state.error">
-        <table class="invoice-table">
-          <thead class="head">
-            <tr>
-              <th>INVOICE</th>
-              <th>COMPANY</th>
-              <th>EMAIL</th>
-              <th>DATE</th>
-              <th>DUE DATE</th>
-              <th>STATUS</th>
-              <th *ngIf="canApproveInvoice">ACTIONS</th>
-            </tr>
-          </thead>
+  <div class="customers-table-wrapper invoice-table-card">
+    <table class="customers-table invoice-table">
+      <thead>
+        <tr>
+          <th>INVOICE</th>
+          <th>COMPANY</th>
+          <th>EMAIL</th>
+          <th>DATE</th>
+          <th>DUE DATE</th>
+          <th>STATUS</th>
+          <th *ngIf="canApproveInvoice">ACTIONS</th>
+        </tr>
+      </thead>
+
+      <tbody *ngIf="state.loading">
+        <tr>
+          <td class="table-loader-cell" [attr.colspan]="canApproveInvoice ? 7 : 6">
+            <app-loader [visible]="state.loading"></app-loader>
+          </td>
+        </tr>
+      </tbody>
+
+      <tbody *ngIf="!state.loading && !state.error && state.invoices.length">
+        <tr
+          *ngFor="let inv of state.invoices; let i = index"
+          class="invoice-row"
+          (click)="openInvoice(inv.id)"
+        >
+          <td class="invoice-number">{{ inv.invoiceNumber }}</td>
+          <td>
+            <div class="customer-info">
+              <div class="customer-initial" [ngStyle]="getInitialColor(i)">
+                {{ getCustomerInitial(inv.customer?.customerName) }}
+              </div>
+              <span class="customer-name">
+                {{ formatCustomerName(inv.customer?.customerName) }}
+              </span>
+            </div>
+          </td>
+          <td class="customer-email" [title]="inv.customer?.email || '--'">
+            {{ inv.customer?.email || '--' }}
+          </td>
+          <td>{{ formatDate(inv.invoiceDate) }}</td>
+          <td>{{ formatDate(inv.dueDate) }}</td>
+          <td>
+            <span class="status-chip" [ngClass]="getStatusClass(inv.status)">
+              {{ formatStatus(inv.status) }}
+            </span>
+          </td>
+          <td class="actions-cell" *ngIf="canApproveInvoice">
+            <button *ngIf="isDraft(inv)" class="btn-approve" (click)="openApproveModal(inv, $event)">
+              Approve
+            </button>
+            <span *ngIf="!isDraft(inv)" class="muted">&mdash;</span>
+          </td>
+        </tr>
+      </tbody>
+
+      <tbody *ngIf="!state.loading && !state.error && !state.invoices.length">
+        <tr>
+          <td [attr.colspan]="canApproveInvoice ? 7 : 6" class="no-data-row">
+            No invoices found.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div
+      class="pagination-wrapper"
+      *ngIf="!state.loading && !state.error && state.totalPages > 1 && state.totalItems > 0"
+    >
+      <div class="pagination-info">
+        Showing
+        {{ state.totalItems === 0 ? 0 : state.currentPage * state.pageSize + 1 }}
+        to
+        {{
+          state.totalItems === 0
+            ? 0
+            : Math.min((state.currentPage + 1) * state.pageSize, state.totalItems)
+        }}
+        of {{ state.totalItems }} invoices
+      </div>
+
+      <div class="pagination-controls">
+        <button class="page-nav-btn" (click)="prevPage()" [disabled]="state.currentPage === 0">
+          <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+        </button>
+
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number-btn"
+          [class.active]="page === state.currentPage + 1"
+          [class.ellipsis]="page === -1"
+          (click)="page !== -1 && goToPage(page - 1)"
+          [disabled]="page === -1"
+        >
+          {{ page === -1 ? '...' : page }}
+        </button>
+
+        <button
+          class="page-nav-btn"
+          (click)="nextPage()"
+          [disabled]="state.currentPage === state.totalPages - 1"
+        >
+          <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-text error table-error" *ngIf="!state.loading && state.error">
 
-          <tbody *ngIf="state.invoices.length > 0; else noInvoices">
-            <tr
-              *ngFor="let inv of state.invoices; let i = index"
-              class="invoice-row"
-              (click)="openInvoice(inv.id)"
-            >
-              <td class="invoice-number">{{ inv.invoiceNumber }}</td>
+    {{ state.error }}
 
-              <td>
-                <div class="customer-info">
-                  <div class="customer-initial" [ngStyle]="getInitialColor(i)">
-                    {{ getCustomerInitial(inv.customer?.customerName) }}
-                  </div>
-                  <span class="customer-name">
-                    {{ formatCustomerName(inv.customer?.customerName) }}
-                  </span>
-                </div>
-              </td>
-
-              <td class="customer-email" [title]="inv.customer?.email || '--'">
-                {{ inv.customer?.email || '--' }}
-              </td>
-
-              <td>{{ formatDate(inv.invoiceDate) }}</td>
-              <td>{{ formatDate(inv.dueDate) }}</td>
-
-              <td>
-                <span class="status-chip" [ngClass]="getStatusClass(inv.status)">
-                  {{ formatStatus(inv.status) }}
-                </span>
-              </td>
-
-              <td class="actions-cell" *ngIf="canApproveInvoice">
-                <button
-                  *ngIf="isDraft(inv)"
-                  class="btn-approve"
-                  (click)="openApproveModal(inv, $event)"
-                >
-                  Approve
-                </button>
-
-                <span *ngIf="!isDraft(inv)" class="muted">—</span>
-              </td>
-            </tr>
-          </tbody>
-          <ng-template #noInvoices>
-            <tbody>
-              <tr>
-                <td [attr.colspan]="canApproveInvoice ? 7 : 6" class="no-data-row">
-                  No invoices found.
-                </td>
-              </tr>
-            </tbody>
-          </ng-template>
-        </table>
-      </div>
-
-      <div class="pagination-wrapper" *ngIf="state.totalPages > 1 && state.totalItems > 0">
-        <div class="pagination-info">
-          Showing
-          {{ state.totalItems === 0 ? 0 : state.currentPage * state.pageSize + 1 }}
-          to
-          {{
-            state.totalItems === 0
-              ? 0
-              : Math.min((state.currentPage + 1) * state.pageSize, state.totalItems)
-          }}
-          of {{ state.totalItems }} invoices
-        </div>
-
-        <div class="pagination-controls">
-          <button class="page-nav-btn" (click)="prevPage()" [disabled]="state.currentPage === 0">
-            <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
-          </button>
-
-          <button
-            *ngFor="let page of getPageNumbers()"
-            class="page-number-btn"
-            [class.active]="page === state.currentPage + 1"
-            [class.ellipsis]="page === -1"
-            (click)="page !== -1 && goToPage(page - 1)"
-            [disabled]="page === -1"
-          >
-            {{ page === -1 ? '...' : page }}
-          </button>
-
-          <button
-            class="page-nav-btn"
-            (click)="nextPage()"
-            [disabled]="state.currentPage === state.totalPages - 1"
-          >
-            <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
-          </button>
-        </div>
-      </div>
-    </ng-container>
   </div>
 
   <!-- Import Invoice Modal -->

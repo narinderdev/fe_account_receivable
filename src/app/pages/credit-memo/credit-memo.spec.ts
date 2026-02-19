@@ -8,17 +8,23 @@ import { CompanySelectionService } from '../../services/company-selection.servic
 import { ArCodeService } from '../../services/ar-code-service';
 import { CreditMemoService } from '../../services/credit-memo-service';
 import { UserContextService } from '../../services/user-context.service';
+import { Router } from '@angular/router';
 
 import { CreditMemo } from './credit-memo';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
+import { CreateCreditMemoPayload } from '../../models/credit-memo.model';
 
 describe('CreditMemo', () => {
   const createComponent = () => {
     const fb = new FormBuilder();
     const toastr = createSpyObj<ToastrService>('ToastrService', ['success', 'error', 'warning']);
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
-    const userContext = createSpyObj<UserContextService>('UserContextService', ['hasPermission']);
+    const userContext = createSpyObj<UserContextService>('UserContextService', [
+      'hasPermission',
+      'getUserId',
+    ]);
     userContext.hasPermission.mockReturnValue(true);
+    userContext.getUserId.mockReturnValue(101);
 
     const invoiceService = {
       getCustomerInvoicesById: createSpy('getCustomerInvoicesById'),
@@ -50,6 +56,8 @@ describe('CreditMemo', () => {
     (creditMemoService.createMemo as any).mockReturnValue(of({}));
     (creditMemoService.approveCreditMemo as any).mockReturnValue(of({}));
 
+    const router = createSpyObj<Router>('Router', ['navigate']);
+
     const component = new CreditMemo(
       fb,
       toastr,
@@ -59,12 +67,14 @@ describe('CreditMemo', () => {
       customerService,
       companySelection,
       arCodeService,
-      creditMemoService
+      creditMemoService,
+      router
     );
 
     return {
       component,
       invoiceService,
+      creditMemoService,
     };
   };
 
@@ -77,9 +87,8 @@ describe('CreditMemo', () => {
     const { component, invoiceService } = createComponent();
     component.creditMemoForm.controls['customerId'].setValue('15');
     component.selectedInvoiceIds = [3, 4];
-    const internals = component as unknown as CreditMemoInternals;
 
-    internals.handleApplyToInvoiceToggle(true);
+    component.creditMemoForm.controls['applyToInvoiceNow'].setValue(true);
 
     expect(invoiceService.getCustomerInvoicesById).toHaveBeenCalledWith(15);
     expect(component.selectedInvoiceIds).toEqual([]);
@@ -101,26 +110,44 @@ describe('CreditMemo', () => {
   });
 
   it('builds payload with invoice id when a memo is being applied immediately', () => {
-    const { component } = createComponent();
+    const { component, creditMemoService } = createComponent();
+    component.creditMemoForm.patchValue({
+      customerId: '10',
+      amount: '105.5',
+      arCodeId: '7',
+      creditMemoDate: '2024-01-01',
+      applyToInvoiceNow: false,
+      linkReferenceInvoice: false,
+    });
+    component.creditMemoForm.controls['applyToInvoiceNow'].setValue(true, { emitEvent: false });
     component.selectedInvoiceIds = [55];
-    const internals = component as unknown as CreditMemoInternals;
 
-    const payload = internals.buildCreateMemoPayload(
-      { amount: '105.5', arCodeId: '7' },
-      true
-    );
+    component.saveCreditMemo();
 
+    expect(creditMemoService.createMemo).toHaveBeenCalled();
+    const payload = (creditMemoService.createMemo as any).mock.calls[0][0] as CreateCreditMemoPayload;
     expect(payload.invoiceId).toBe(55);
     expect(payload.creditReason).toBe('Credit memo applied to invoice');
     expect(payload.amount).toBe(105.5);
   });
 
   it('uses on-account reason when no invoice is selected', () => {
-    const { component } = createComponent();
-    const internals = component as unknown as CreditMemoInternals;
+    const { component, creditMemoService } = createComponent();
+    component.creditMemoForm.patchValue({
+      customerId: '10',
+      amount: '20',
+      arCodeId: '3',
+      creditMemoDate: '2024-01-01',
+      applyToInvoiceNow: false,
+      linkReferenceInvoice: false,
+    });
+    component.creditMemoForm.controls['applyToInvoiceNow'].setValue(true, { emitEvent: false });
+    component.selectedInvoiceIds = [];
 
-    const payload = internals.buildCreateMemoPayload({ amount: '20', arCodeId: '3' }, false);
+    component.saveCreditMemo();
 
+    expect(creditMemoService.createMemo).toHaveBeenCalled();
+    const payload = (creditMemoService.createMemo as any).mock.calls[0][0] as CreateCreditMemoPayload;
     expect(payload.invoiceId).toBeUndefined();
     expect(payload.creditReason).toBe('Manual credit memo');
   });
@@ -149,12 +176,5 @@ describe('CreditMemo', () => {
 
 type CreditMemoInternals = {
   handleApplyToInvoiceToggle(applyNow: boolean): void;
-  buildCreateMemoPayload(formValue: Record<string, unknown>, applyToInvoiceNow: boolean): {
-    creditReason: string;
-    amount: number;
-    currency: string;
-    arCodeId: number;
-    invoiceId?: number;
-  };
-  mapStatusToTab(status?: string | null): 'DRAFT' | 'APPROVED';
+  mapStatusToTab(status?: string | null): 'CREATED' | 'APPROVED';
 };

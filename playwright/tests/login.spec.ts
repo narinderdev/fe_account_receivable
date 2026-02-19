@@ -165,15 +165,20 @@ test.describe('Login Page - Field & Flow Tests', () => {
   });
 
   test('should handle server error gracefully', async ({ page }) => {
+    const errorMessage = 'Server temporarily unavailable';
     await page.route(loginEndpoint, async route => {
-      await route.abort();
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: errorMessage }),
+      });
     });
 
     await page.fill(emailInput, 'user@example.com');
     await page.fill(passwordInput, 'password123');
     await page.click(loginButton);
 
-    await expect(page.getByText('An error occurred. Please try again.')).toBeVisible();
+    await expect(page.getByText(errorMessage)).toBeVisible();
   });
 
   // ---------- ACCESSIBILITY ----------
