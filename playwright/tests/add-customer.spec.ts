@@ -261,8 +261,14 @@ async function fillEftForm(page: Page, data = defaultEftInfo) {
   await page.locator('[formcontrolname="bankName"]').fill(data.bankName);
   await page.locator('[formcontrolname="ibanAccountNumber"]').fill(data.ibanAccountNumber);
   await page.locator('[formcontrolname="bankIdentifierCode"]').fill(data.bankIdentifierCode);
-  await toggleIfNeeded(page.locator('input[formcontrolname="enableAchPayments"]'), data.enableAchPayments);
-  await toggleIfNeeded(page.locator('input[formcontrolname="allowDirectDebit"]'), data.allowDirectDebit);
+  await toggleIfPresent(
+    page.locator('input[formcontrolname="enableAchPayments"]'),
+    data.enableAchPayments
+  );
+  await toggleIfPresent(
+    page.locator('input[formcontrolname="allowDirectDebit"]'),
+    data.allowDirectDebit
+  );
 }
 
 async function completeDunningStep(page: Page) {
@@ -295,5 +301,12 @@ async function toggleIfNeeded(locator: Locator, shouldBeChecked: boolean) {
     },
     shouldBeChecked,
   );
+}
+
+async function toggleIfPresent(locator: Locator, shouldBeChecked: boolean | undefined) {
+  if ((await locator.count()) === 0) {
+    return;
+  }
+  await toggleIfNeeded(locator, Boolean(shouldBeChecked));
 }
 

@@ -12,7 +12,8 @@ test.describe('Signup Page - Field & Flow Tests', () => {
   const firstNameErr = 'First name must be at least 2 letters.';
   const lastNameErr = 'Last name must be at least 2 letters.';
   const emailErr = 'Enter a valid email address.';
-  const passErr = 'Password must be 8+ chars, include 1 uppercase, 1 number & 1 symbol.';
+  const passErr =
+    'Password must be at least 12 characters and contain uppercase, lowercase, and special characters';
   const mismatchErr = 'Passwords do not match.';
 
   test.beforeEach(async ({ page }) => {
@@ -99,32 +100,32 @@ test.describe('Signup Page - Field & Flow Tests', () => {
 
   // ---------- PASSWORD RULE VALIDATION ----------
 
-  test('password invalid: less than 8 chars', async ({ page }) => {
+  test('password invalid: less than 12 chars', async ({ page }) => {
     await page.fill(password, 'A1@a'); // too short
     await page.click(createBtn);
     await expect(page.getByText(passErr)).toBeVisible();
   });
 
   test('password invalid: missing uppercase', async ({ page }) => {
-    await page.fill(password, 'secret123@');
+    await page.fill(password, 'secret1234!@');
     await page.click(createBtn);
     await expect(page.getByText(passErr)).toBeVisible();
   });
 
-  test('password invalid: missing number', async ({ page }) => {
-    await page.fill(password, 'Secret@@@');
+  test('password invalid: missing lowercase', async ({ page }) => {
+    await page.fill(password, 'SECRET1234!@');
     await page.click(createBtn);
     await expect(page.getByText(passErr)).toBeVisible();
   });
 
   test('password invalid: missing symbol', async ({ page }) => {
-    await page.fill(password, 'Secret123');
+    await page.fill(password, 'Secret1234AA');
     await page.click(createBtn);
     await expect(page.getByText(passErr)).toBeVisible();
   });
 
   test('password valid: meets policy', async ({ page }) => {
-    await page.fill(password, 'Secret123!');
+    await page.fill(password, 'Secret1234!@');
     await page.click(createBtn);
     await expect(page.getByText(passErr)).toHaveCount(0);
   });
@@ -132,15 +133,15 @@ test.describe('Signup Page - Field & Flow Tests', () => {
   // ---------- CONFIRM PASSWORD + MISMATCH VALIDATOR ----------
 
   test('shows mismatch when confirm password differs', async ({ page }) => {
-    await page.fill(password, 'Secret123!');
-    await page.fill(confirmPassword, 'Secret123@'); // mismatch
+    await page.fill(password, 'Secret1234!@');
+    await page.fill(confirmPassword, 'Secret1234@@'); // mismatch
     await page.click(createBtn);
     await expect(page.getByText(mismatchErr)).toBeVisible();
   });
 
   test('does not show mismatch when passwords match', async ({ page }) => {
-    await page.fill(password, 'Secret123!');
-    await page.fill(confirmPassword, 'Secret123!');
+    await page.fill(password, 'Secret1234!@');
+    await page.fill(confirmPassword, 'Secret1234!@');
     await page.click(createBtn);
     await expect(page.getByText(mismatchErr)).toHaveCount(0);
   });
@@ -150,7 +151,7 @@ test.describe('Signup Page - Field & Flow Tests', () => {
   test('password is hidden by default & toggles visibility', async ({ page }) => {
     await expect(page.locator(password)).toHaveAttribute('type', 'password');
     // first toggle for password field (there are two toggles - password and confirm)
-    const toggles = page.locator('.password-toggle');
+    const toggles = page.locator('.password-toggle-btn');
     await toggles.nth(0).click();
     await expect(page.locator(password)).toHaveAttribute('type', 'text');
     await toggles.nth(0).click();
@@ -159,7 +160,7 @@ test.describe('Signup Page - Field & Flow Tests', () => {
 
   test('confirm password is hidden by default & toggles visibility', async ({ page }) => {
     await expect(page.locator(confirmPassword)).toHaveAttribute('type', 'password');
-    const toggles = page.locator('.password-toggle');
+    const toggles = page.locator('.password-toggle-btn');
     await toggles.nth(1).click();
     await expect(page.locator(confirmPassword)).toHaveAttribute('type', 'text');
     await toggles.nth(1).click();
@@ -173,8 +174,8 @@ test.describe('Signup Page - Field & Flow Tests', () => {
     await page.fill(firstName, 'Jane');
     await page.fill(lastName, 'Doe');
     await page.fill(email, 'user@example.com');
-    await page.fill(password, 'Secret123!');
-    await page.fill(confirmPassword, 'Secret123!');
+    await page.fill(password, 'Secret1234!@');
+    await page.fill(confirmPassword, 'Secret1234!@');
 
     await page.route('**/auth/signup', async (route) => {
       await new Promise((res) => setTimeout(res, 1200));
@@ -210,8 +211,8 @@ test.describe('Signup Page - Field & Flow Tests', () => {
     await page.fill(lastName, 'Doe');
     await page.fill(email, 'USER@Example.COM'); // should normalize
     await page.locator(email).blur();
-    await page.fill(password, 'Secret123!');
-    await page.fill(confirmPassword, 'Secret123!');
+    await page.fill(password, 'Secret1234!@');
+    await page.fill(confirmPassword, 'Secret1234!@');
 
     await page.click(createBtn);
 
@@ -235,8 +236,8 @@ test.describe('Signup Page - Field & Flow Tests', () => {
     await page.fill(firstName, 'Jane');
     await page.fill(lastName, 'Doe');
     await page.fill(email, 'user@example.com');
-    await page.fill(password, 'Secret123!');
-    await page.fill(confirmPassword, 'Secret123!');
+    await page.fill(password, 'Secret1234!@');
+    await page.fill(confirmPassword, 'Secret1234!@');
 
     await page.click(createBtn);
 
@@ -258,8 +259,8 @@ test.describe('Signup Page - Field & Flow Tests', () => {
     await page.fill(firstName, 'Jane');
     await page.fill(lastName, 'Doe');
     await page.fill(email, 'user@example.com');
-    await page.fill(password, 'Secret123!');
-    await page.fill(confirmPassword, 'Secret123!');
+    await page.fill(password, 'Secret1234!@');
+    await page.fill(confirmPassword, 'Secret1234!@');
 
     await page.click(createBtn);
 
@@ -282,8 +283,8 @@ test.describe('Signup Page - Field & Flow Tests', () => {
     await page.fill(firstName, 'Jane');
     await page.fill(lastName, 'Doe');
     await page.fill(email, 'user@example.com');
-    await page.fill(password, 'Secret123!');
-    await page.fill(confirmPassword, 'Secret123!');
+    await page.fill(password, 'Secret1234!@');
+    await page.fill(confirmPassword, 'Secret1234!@');
 
     await page.press(confirmPassword, 'Enter');
     await expect(page).toHaveURL(/\/verify-otp/);

@@ -333,15 +333,29 @@
 }
 
 /* Table card wrapper */
-.backgrount-table {
-  background: white;
+.customers-table-wrapper {
+  background: #fff;
   padding: 16px;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   overflow-x: auto;
 }
 
+.invoice-table-card {
+  margin-top: 16px;
+}
+
+.table-loader-cell {
+  text-align: center;
+  padding: 40px 12px;
+}
+
+.table-error {
+  margin-top: 16px;
+}
+
 /* Table */
+.customers-table,
 .invoice-table {
   width: 100%;
   border-collapse: collapse;
@@ -351,10 +365,12 @@
 }
 
 /* Header */
+.customers-table thead,
 .invoice-table thead {
   background: #f9fafb;
 }
 
+.customers-table th,
 .invoice-table th {
   text-align: left;
   padding: 12px;
@@ -364,6 +380,7 @@
 }
 
 /* Body */
+.customers-table td,
 .invoice-table td {
   padding: 12px;
   border-bottom: 1px solid #f3f4f6;
@@ -372,6 +389,7 @@
 }
 
 /* Row hover */
+.customers-table tbody tr:hover,
 .invoice-table tbody tr:hover {
   background: #f9fafb;
   cursor: pointer;
@@ -535,14 +553,6 @@
   margin: 0;
 }
 
-/* Loader */
-.loader-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 300px;
-}
-
 /* Add these styles to match credit-memo design */
 
 .tabs {
@@ -579,22 +589,6 @@
   border-bottom-color: #3b82f6;
 }
 
-.card {
-  background: white;
-  padding: 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 0 0 12px 12px;
-  overflow-x: auto;
-  min-height: 400px;
-}
-
-.loader-block {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 300px;
-}
-
 .empty-text {
   text-align: center;
   padding: 60px 20px;
@@ -604,22 +598,6 @@
 
 .empty-text.error {
   color: #dc2626;
-}
-
-.table-scroll {
-  overflow-x: auto;
-}
-
-/* Remove old styles that conflict */
-.backgrount-table {
-  background: none;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-}
-
-.loader-wrapper {
-  display: none;
 }
 
 /* Responsive */

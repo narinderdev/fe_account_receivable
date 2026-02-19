@@ -36,9 +36,25 @@ describe('SetPassword', () => {
       expect(instance.confirmPasswordVisible).toBe(true);
     });
 
+    it('enforces the same password complexity rules used in signup', () => {
+      const instance = createComponent();
+      const passwordControl = instance.form.get('password');
+      passwordControl?.setValue('Short1!');
+      expect(passwordControl?.hasError('passwordComplexity')).toBe(true);
+      passwordControl?.setValue('ValidPassword12!');
+      expect(passwordControl?.hasError('passwordComplexity')).toBe(false);
+    });
+
+    it('shows password rules when the password field interaction occurs', () => {
+      const instance = createComponent();
+      instance.form.get('password')?.setValue('ValidPassword12!');
+      instance.togglePasswordVisibility('password');
+      expect(instance.showPasswordRules).toBe(true);
+    });
+
     it('blocks submit when email is missing', () => {
       const instance = createComponent();
-      instance.form.patchValue({ password: 'Secret123', confirmPassword: 'Secret123' });
+      instance.form.patchValue({ password: 'Secret1234!@', confirmPassword: 'Secret1234!@' });
       instance.email = '';
       instance.submit();
       expect(instance.errorMessage).toContain('Email is missing');

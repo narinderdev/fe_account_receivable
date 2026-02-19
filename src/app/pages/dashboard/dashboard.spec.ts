@@ -5,6 +5,7 @@ import { DashboardService } from '../../services/dashboard-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { DashboardGraphResponse, DashboardSummaryResponse } from '../../models/dashboard.model';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
+import { Router } from '@angular/router';
 
 describe('Dashboard', () => {
   const createComponent = () => {
@@ -25,12 +26,15 @@ describe('Dashboard', () => {
       runOutsideAngular: (fn: () => unknown) => fn(),
     } as unknown as NgZone;
 
+    const router = createSpyObj<Router>('Router', ['navigate']);
+
     return new Dashboard(
       'browser' as unknown as object,
       dashboardService,
       cdr,
       companySelection as unknown as CompanySelectionService,
-      ngZone
+      ngZone,
+      router
     );
   };
 

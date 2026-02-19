@@ -6,8 +6,9 @@ import { ToastrService } from 'ngx-toastr';
 import { CompanySelectionService } from '../../services/company-selection.service';
 
 import { AddCustomer } from './add-customer';
-import { Subject } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
+import { PaymentTermsService } from '../../services/payment-terms.service';
 
 describe('AddCustomer', () => {
   const createComponent = () => {
@@ -27,6 +28,10 @@ describe('AddCustomer', () => {
       selectedCompanyId$: new Subject<string | null>(),
       setSelectedCompanyId: createSpy('setSelectedCompanyId'),
     } as unknown as CompanySelectionService;
+    const paymentTermsService = createSpyObj<PaymentTermsService>('PaymentTermsService', [
+      'getPaymentTerms',
+    ]);
+    paymentTermsService.getPaymentTerms.mockReturnValue(of({ data: [] }));
 
     const instance = new AddCustomer(
       fb,
@@ -36,7 +41,8 @@ describe('AddCustomer', () => {
       router,
       route,
       toastr,
-      companySelection
+      companySelection,
+      paymentTermsService
     );
     instance.initializeForms();
     return instance;
