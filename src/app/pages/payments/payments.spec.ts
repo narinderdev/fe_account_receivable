@@ -32,6 +32,8 @@ describe('Payments', () => {
       'getFilteredPayments',
       'approveAndApply',
       'approveAndApplyBankTransaction',
+      'approvePayment',
+      'approveBankTransaction',
     ]);
     const router = createSpyObj<Router>('Router', ['navigate']);
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;

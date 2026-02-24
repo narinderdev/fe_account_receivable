@@ -150,6 +150,31 @@
   margin-left: auto;
 }
 
+.btn-eob {
+  background: #7c3aed;
+  color: white;
+  padding: 8px 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-eob:hover:not(:disabled) {
+  background: #6d28d9;
+}
+
+.btn-eob:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-bai {
   background: #10b981;
   color: white;
@@ -174,25 +199,41 @@
   cursor: not-allowed;
 }
 
+.action-button-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-approve-only,
 .btn-approve-apply {
   background: none;
   border: none;
-  color: #3b82f6;
-  padding: 0;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  transition: all 0.2s;
-  text-decoration: none;
+  transition: color 0.2s, border-bottom 0.2s;
+  padding: 0;
 }
 
+.btn-approve-only {
+  color: #6b7280;
+}
+
+.btn-approve-apply {
+  color: #2563eb;
+}
+
+.btn-approve-only:hover,
 .btn-approve-apply:hover {
-  border-bottom: 1px solid #3b82f6;
+  border-bottom: 1px solid currentColor;
 }
 
+.btn-approve-only:disabled,
 .btn-approve-apply:disabled {
-  background-color: #d1d5db;
+  opacity: 0.4;
   cursor: not-allowed;
+  border-bottom: none;
 }
 
 /* Card that wraps the table */
@@ -1231,6 +1272,7 @@
     flex-direction: column;
   }
 
+  .action-buttons .btn-eob,
   .action-buttons .btn-bai,
   .action-buttons .btn-receive {
     width: 100%;
