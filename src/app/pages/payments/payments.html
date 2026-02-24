@@ -28,7 +28,7 @@
         </select>
       </div>
 
-      <!-- Custom Date Fields (only show when Custom is selected) -->
+      <!-- Custom Date Fields -->
       <div class="filter-field" *ngIf="isCustomPeriod">
         <label>From Date</label>
         <input
@@ -50,6 +50,10 @@
       </div>
 
       <div class="action-buttons" *ngIf="canApplyPayment">
+        <button class="btn-eob" (click)="openEobModal()">
+          Upload EOB File
+        </button>
+
         <button class="btn-bai" (click)="openBaiModal()" [disabled]="uploadingBai">
           Upload BAI File
         </button>
@@ -98,14 +102,10 @@
             <th *ngIf="canApprovePayment">Actions</th>
           </tr>
         </thead>
-
         <tbody>
-          <!-- EMPTY STATE -->
           <tr *ngIf="payments.length === 0" class="no-data-row">
             <td [attr.colspan]="canApprovePayment ? 7 : 6">No payments found.</td>
           </tr>
-
-          <!-- PAYMENT ROWS -->
           <tr *ngFor="let payment of payments; let i = index">
             <td (click)="openPaymentDetails(payment.id, payment.type)">
               <div class="customer-info">
@@ -121,7 +121,6 @@
                 <span class="customer-name">{{ payment.customerName || '--' }}</span>
               </div>
             </td>
-
             <td (click)="openPaymentDetails(payment.id, payment.type)">
               <span class="status-badge" [ngClass]="getStatusClass(payment)">
                 {{ getStatusLabel(payment) }}
@@ -132,13 +131,16 @@
             <td (click)="openPaymentDetails(payment.id, payment.type)">{{ formatSource(payment.source) }}</td>
             <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.date | date: 'mediumDate' }}</td>
             <td *ngIf="canApprovePayment">
-              <button 
-                class="btn-approve-apply" 
-                (click)="approveAndApply(payment, $event)"
-                *ngIf="payment.status?.toUpperCase() === 'CREATED'"
+              <div
+                class="action-button-group"
+                *ngIf="payment.status?.toUpperCase() === 'CREATED'; else noActions"
               >
-                Approve & Apply
-              </button>
+                <button class="btn-approve-only" (click)="approveOnly(payment, $event)">Approve</button>
+                <button class="btn-approve-apply" (click)="approveAndApply(payment, $event)">
+                  Approve & Apply
+                </button>
+              </div>
+              <ng-template #noActions>--</ng-template>
             </td>
           </tr>
         </tbody>
@@ -150,12 +152,10 @@
           Showing {{ totalItems === 0 ? 0 : currentPage * pageSize + 1 }} to
           {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
         </div>
-
         <div class="pagination-controls">
           <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
             <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
           </button>
-
           <button
             *ngFor="let page of getPageNumbers()"
             class="page-number-btn"
@@ -166,7 +166,6 @@
           >
             {{ page === -1 ? '...' : page }}
           </button>
-
           <button
             class="page-nav-btn"
             (click)="nextPage()"
@@ -232,12 +231,10 @@
           }}
           of {{ approvedTotalItems }} results
         </div>
-
         <div class="pagination-controls">
           <button class="page-nav-btn" (click)="prevPage('APPROVED')" [disabled]="approvedCurrentPage === 0">
             <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
           </button>
-
           <button
             *ngFor="let page of getPageNumbers('APPROVED')"
             class="page-number-btn"
@@ -248,7 +245,6 @@
           >
             {{ page === -1 ? '...' : page }}
           </button>
-
           <button
             class="page-nav-btn"
             (click)="nextPage('APPROVED')"
@@ -262,7 +258,9 @@
   </div>
 </div>
 
-<!-- Upload BAI Modal -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Upload BAI Modal                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" *ngIf="isBaiModalOpen">
   <div class="approve-modal import-modal">
     <div class="modal-header">
@@ -279,17 +277,8 @@
 
     <div class="modal-body">
       <p class="template-info">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="16" x2="12" y2="12"></line>
           <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -307,7 +296,7 @@
       />
 
       <button class="upload-btn" (click)="baiFileInput.click()" [disabled]="uploadingBai">
-        <ng-container *ngIf="!uploadingBai"> Upload BAI (.txt) </ng-container>
+        <ng-container *ngIf="!uploadingBai">Upload BAI (.txt)</ng-container>
         <ng-container *ngIf="uploadingBai">
           <app-spinner></app-spinner>
         </ng-container>
@@ -322,7 +311,62 @@
   </div>
 </div>
 
-<!-- Approve & Apply Modal - Two Step Form -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Upload EOB Modal                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="isEobModalOpen">
+  <div class="approve-modal import-modal">
+    <div class="modal-header">
+      <h2>Upload EOB File</h2>
+      <button
+        class="btn-close"
+        (click)="closeEobModal()"
+        [disabled]="uploadingEob"
+        aria-label="Close"
+      >
+        <span>&times;</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="template-info">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        Upload a .txt or .rtf EOB (Explanation of Benefits) file to process remittance data. Make
+        sure the correct AR company is selected in the top navbar before uploading.
+      </p>
+
+      <input
+        type="file"
+        #eobFileInput
+        accept=".txt"
+        style="display: none"
+        (change)="handleEobFileUpload($event)"
+      />
+
+      <button class="upload-btn upload-btn-eob" (click)="eobFileInput.click()" [disabled]="uploadingEob">
+        <ng-container *ngIf="!uploadingEob">Upload EOB (.txt)</ng-container>
+        <ng-container *ngIf="uploadingEob">
+          <app-spinner></app-spinner>
+        </ng-container>
+      </button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeEobModal()" [disabled]="uploadingEob">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Approve & Apply Modal — Two-Step Form                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" *ngIf="approveModalOpen">
   <div class="approve-modal apply-modal">
     <div class="modal-header">
@@ -362,7 +406,7 @@
           <app-loader [visible]="true"></app-loader>
         </div>
 
-        <!-- Combined Payment Details for MANUAL -->
+        <!-- Payment Details for MANUAL -->
         <div class="payment-details-box" *ngIf="approveContext === 'MANUAL' && selectedManualPayment as manual">
           <div class="details-grid">
             <div class="detail-item">
@@ -398,7 +442,7 @@
           </div>
         </div>
 
-        <!-- Combined Payment Details for BANK -->
+        <!-- Payment Details for BANK -->
         <div class="payment-details-box" *ngIf="approveContext === 'BANK' && selectedBankTransaction as bank">
           <div class="details-grid">
             <div class="detail-item">
@@ -451,7 +495,6 @@
             {{ customerOptionsError }}
           </div>
 
-          <!-- Customer Search -->
           <div class="customer-search" *ngIf="!customerOptionsLoading && !customerOptionsError">
             <input
               type="text"
@@ -488,36 +531,18 @@
                           [disabled]="approveModalSubmitting"
                         />
                       </td>
-                      <td>
-                        <span class="customer-name-cell">{{ customer.customerName }}</span>
-                      </td>
-                      <td>
-                        <span class="customer-email-cell">{{ customer.email || 'No email on file' }}</span>
-                      </td>
+                      <td><span class="customer-name-cell">{{ customer.customerName }}</span></td>
+                      <td><span class="customer-email-cell">{{ customer.email || 'No email on file' }}</span></td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-
-              <!-- Customer Pagination -->
               <div class="modal-pagination" *ngIf="customerTotalPages > 1">
-                <button
-                  class="page-nav-btn-sm"
-                  (click)="prevCustomerPage()"
-                  [disabled]="customerCurrentPage === 0"
-                >
+                <button class="page-nav-btn-sm" (click)="prevCustomerPage()" [disabled]="customerCurrentPage === 0">
                   <img src="/assets/left.svg" alt="Previous" class="pagination-icon-sm" />
                 </button>
-
-                <span class="page-info">
-                  Page {{ customerCurrentPage + 1 }} of {{ customerTotalPages }}
-                </span>
-
-                <button
-                  class="page-nav-btn-sm"
-                  (click)="nextCustomerPage()"
-                  [disabled]="customerCurrentPage === customerTotalPages - 1"
-                >
+                <span class="page-info">Page {{ customerCurrentPage + 1 }} of {{ customerTotalPages }}</span>
+                <button class="page-nav-btn-sm" (click)="nextCustomerPage()" [disabled]="customerCurrentPage === customerTotalPages - 1">
                   <img src="/assets/right.svg" alt="Next" class="pagination-icon-sm" />
                 </button>
               </div>
@@ -530,7 +555,7 @@
           </div>
         </div>
 
-        <!-- For MANUAL, customer is already selected, just show confirmation -->
+        <!-- MANUAL: show customer info only -->
         <div class="selected-customer-info" *ngIf="approveContext === 'MANUAL' && selectedManualPayment">
           <div class="section-header">
             <h3>Customer</h3>
@@ -548,12 +573,10 @@
 
       <!-- STEP 2: Invoice Selection -->
       <ng-container *ngIf="modalStep === 2">
-        <!-- Loading Overlay for Invoices -->
         <div class="modal-loading-overlay" *ngIf="approveModalLoading">
           <app-loader [visible]="true"></app-loader>
         </div>
 
-        <!-- Selected Customer Display -->
         <div class="selected-customer-summary" *ngIf="selectedCustomer || selectedManualPayment">
           <div class="section-header">
             <h3>Selected Customer</h3>
@@ -573,7 +596,6 @@
           </div>
         </div>
 
-        <!-- Amount Summary -->
         <div class="amount-breakdown">
           <div>
             <span>Payment Amount</span>
@@ -583,13 +605,8 @@
             <span>Applied</span>
             <strong>{{ totalAppliedAmount | currency }}</strong>
           </div>
-          <!-- <div>
-            <span>Remaining</span>
-            <strong>{{ remainingApproveAmount | currency }}</strong>
-          </div> -->
         </div>
 
-        <!-- Invoice Selection -->
         <div class="invoice-list">
           <div class="section-header">
             <h3>Select Invoices</h3>
@@ -598,14 +615,9 @@
             </span>
           </div>
 
-          <div *ngIf="approveModalError" class="modal-alert error">
-            {{ approveModalError }}
-          </div>
+          <div *ngIf="approveModalError" class="modal-alert error">{{ approveModalError }}</div>
 
-          <div
-            *ngIf="!approveModalLoading && approveInvoices.length === 0 && !approveModalError"
-            class="no-data-row"
-          >
+          <div *ngIf="!approveModalLoading && approveInvoices.length === 0 && !approveModalError" class="no-data-row">
             No open invoices available for this customer.
           </div>
 
@@ -641,35 +653,19 @@
                       </div>
                     </td>
                     <td>{{ invoice.dueDate | date: 'mediumDate' }}</td>
-                    <td>
-                      <span class="status-badge">{{ invoice.status || '--' }}</span>
-                    </td>
+                    <td><span class="status-badge">{{ invoice.status || '--' }}</span></td>
                     <td>{{ (invoice.balanceDue ?? invoice.totalAmount ?? 0) | currency }}</td>
                     <td>{{ getInvoiceAppliedAmount(invoice.id) | currency }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-
-            <!-- Invoice Pagination -->
             <div class="modal-pagination" *ngIf="invoiceTotalPages > 1">
-              <button
-                class="page-nav-btn-sm"
-                (click)="prevInvoicePage()"
-                [disabled]="invoiceCurrentPage === 0"
-              >
+              <button class="page-nav-btn-sm" (click)="prevInvoicePage()" [disabled]="invoiceCurrentPage === 0">
                 <img src="/assets/left.svg" alt="Previous" class="pagination-icon-sm" />
               </button>
-
-              <span class="page-info">
-                Page {{ invoiceCurrentPage + 1 }} of {{ invoiceTotalPages }}
-              </span>
-
-              <button
-                class="page-nav-btn-sm"
-                (click)="nextInvoicePage()"
-                [disabled]="invoiceCurrentPage === invoiceTotalPages - 1"
-              >
+              <span class="page-info">Page {{ invoiceCurrentPage + 1 }} of {{ invoiceTotalPages }}</span>
+              <button class="page-nav-btn-sm" (click)="nextInvoicePage()" [disabled]="invoiceCurrentPage === invoiceTotalPages - 1">
                 <img src="/assets/right.svg" alt="Next" class="pagination-icon-sm" />
               </button>
             </div>
@@ -682,45 +678,23 @@
       <button class="btn-secondary" (click)="closeApproveModal()" [disabled]="approveModalSubmitting">
         Cancel
       </button>
-
       <div class="footer-actions">
-        <button
-          *ngIf="modalStep === 2"
-          class="btn-secondary"
-          (click)="goToPreviousStep()"
-          [disabled]="approveModalSubmitting"
-        >
+        <button *ngIf="modalStep === 2" class="btn-secondary" (click)="goToPreviousStep()" [disabled]="approveModalSubmitting">
           Back
         </button>
-
-        <button
-          *ngIf="modalStep === 1 && approveContext === 'BANK'"
-          class="btn-primary"
-          (click)="goToNextStep()"
-          [disabled]="!selectedCustomer || approveModalSubmitting"
-        >
+        <button *ngIf="modalStep === 1 && approveContext === 'BANK'" class="btn-primary" (click)="goToNextStep()" [disabled]="approveModalSubmitting">
           Next
         </button>
-
-        <button
-          *ngIf="modalStep === 1 && approveContext === 'MANUAL'"
-          class="btn-primary"
-          (click)="goToNextStep()"
-          [disabled]="approveModalSubmitting"
-        >
+        <button *ngIf="modalStep === 1 && approveContext === 'MANUAL'" class="btn-primary" (click)="goToNextStep()" [disabled]="approveModalSubmitting">
           Next
         </button>
-
-        <button
-          *ngIf="modalStep === 2"
-          class="btn-primary"
-          (click)="confirmApproveAndApply()"
-          [disabled]="approveModalSubmitting || selectedInvoiceApplications.length === 0"
-        >
-          <ng-container *ngIf="!approveModalSubmitting">Approve & Apply</ng-container>
-          <ng-container *ngIf="approveModalSubmitting">
-            <app-spinner></app-spinner>
-          </ng-container>
+        <button *ngIf="modalStep === 2" class="btn-secondary" (click)="confirmApproveOnly()">
+          <ng-container *ngIf="approveSubmitMode !== 'APPROVE'">Approve</ng-container>
+          <ng-container *ngIf="approveSubmitMode === 'APPROVE'"><app-spinner></app-spinner></ng-container>
+        </button>
+        <button *ngIf="modalStep === 2" class="btn-primary" (click)="confirmApproveAndApply()">
+          <ng-container *ngIf="approveSubmitMode !== 'APPROVE_APPLY'">Approve & Apply</ng-container>
+          <ng-container *ngIf="approveSubmitMode === 'APPROVE_APPLY'"><app-spinner></app-spinner></ng-container>
         </button>
       </div>
     </div>

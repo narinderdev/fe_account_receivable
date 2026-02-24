@@ -58,6 +58,7 @@ interface InvoiceSelection {
 })
 export class Payments implements OnInit, OnDestroy {
   @ViewChild('baiFileInput') baiFileInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('eobFileInput') eobFileInput?: ElementRef<HTMLInputElement>;
 
   payments: PaymentListItem[] = [];
   allPayments: PaymentListItem[] = [];
@@ -86,13 +87,21 @@ export class Payments implements OnInit, OnDestroy {
   approvedTotalItems = 0;
   approvedLoaded = false;
   Math = Math;
+
+  // BAI modal state
   isBaiModalOpen = false;
   uploadingBai = false;
+
+  // EOB modal state
+  isEobModalOpen = false;
+  uploadingEob = false;
+
   canApprovePayment = false;
   approveModalOpen = false;
   approveModalLoading = false;
   approveModalSubmitting = false;
   approveModalError: string | null = null;
+  approveSubmitMode: 'APPROVE' | 'APPROVE_APPLY' | null = null;
   approveInvoices: InvoiceWithItems[] = [];
   selectedInvoiceApplications: InvoiceSelection[] = [];
   selectedManualPayment: Payment | null = null;
@@ -315,6 +324,8 @@ export class Payments implements OnInit, OnDestroy {
     }
   }
 
+  // ─── BAI Modal ────────────────────────────────────────────────────────────
+
   openBaiModal() {
     if (!this.canApplyPayment) {
       this.toastr.warning('You do not have permission to upload BAI files.', 'Permission Denied');
@@ -387,6 +398,85 @@ export class Payments implements OnInit, OnDestroy {
       },
     });
   }
+
+  // ─── EOB Modal ────────────────────────────────────────────────────────────
+
+  openEobModal() {
+    if (!this.canApplyPayment) {
+      this.toastr.warning('You do not have permission to upload EOB files.', 'Permission Denied');
+      return;
+    }
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select an AR company from the navbar first.', 'Warning');
+      return;
+    }
+    this.isEobModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeEobModal() {
+    if (this.uploadingEob) {
+      return;
+    }
+    this.isEobModalOpen = false;
+    this.resetEobFileInput();
+    this.cdr.detectChanges();
+  }
+
+  handleEobFileUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!this.canApplyPayment) {
+      this.toastr.warning('You do not have permission to upload EOB files.', 'Permission Denied');
+      input.value = '';
+      return;
+    }
+
+    const fileName = file.name.toLowerCase();
+    const isValid = fileName.endsWith('.txt');
+    if (!isValid) {
+      this.toastr.warning('Please upload a valid EOB file (.txt).', 'Invalid File');
+      input.value = '';
+      return;
+    }
+
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select an AR company from the navbar first.', 'Warning');
+      input.value = '';
+      return;
+    }
+
+    const companyId = this.activeCompanyId;
+    this.uploadingEob = true;
+    this.cdr.detectChanges();
+
+    this.paymentService.uploadEobFile(companyId, file).subscribe({
+      next: () => {
+        this.uploadingEob = false;
+        this.toastr.success('EOB file uploaded successfully.', 'Success');
+        input.value = '';
+        if (this.activeCompanyId) {
+          this.loadPayments(this.activeCompanyId);
+        }
+        this.closeEobModal();
+      },
+      error: (error) => {
+        this.uploadingEob = false;
+        console.error('Failed to upload EOB file:', error);
+        const backendMessage = error?.error?.message;
+        this.toastr.error(backendMessage || 'Failed to upload EOB file.', 'Upload Failed');
+        input.value = '';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  // ─── Shared ───────────────────────────────────────────────────────────────
 
   private reloadWithFilters() {
     if (!this.activeCompanyId) {
@@ -589,6 +679,22 @@ export class Payments implements OnInit, OnDestroy {
     this.toastr.warning('Unable to approve this payment type.', 'Unsupported Action');
   }
 
+  approveOnly(payment: PaymentListItem, event: Event) {
+    event.stopPropagation();
+
+    if (payment.type === 'MANUAL' && payment.manualPayment) {
+      this.approveManualPaymentOnly(payment.manualPayment);
+      return;
+    }
+
+    if (payment.type === 'BANK' && payment.bankTransaction) {
+      this.approveBankTransactionOnly(payment.bankTransaction);
+      return;
+    }
+
+    this.toastr.warning('Unable to approve this payment type.', 'Unsupported Action');
+  }
+
   private openManualApproveModal(manualPayment: Payment) {
     const paymentId = manualPayment.paymentId ?? manualPayment.id;
     if (!paymentId) {
@@ -622,7 +728,6 @@ export class Payments implements OnInit, OnDestroy {
     this.invoiceCurrentPage = 0;
     this.cdr.detectChanges();
 
-    // ADD THIS: Fetch customer details to get email
     this.customerOptionsLoading = true;
     this.customerService
       .getCustomerById(customerId)
@@ -652,6 +757,31 @@ export class Payments implements OnInit, OnDestroy {
       .split('_')
       .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  }
+
+  private approveManualPaymentOnly(manualPayment: Payment) {
+    const paymentId = manualPayment.paymentId ?? manualPayment.id;
+    if (!paymentId) {
+      this.toastr.error('Unable to identify this payment.', 'Missing Payment ID');
+      return;
+    }
+
+    this.paymentService
+      .approvePayment(paymentId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          const backendMessage = response?.message || 'Payment approved successfully.';
+          this.toastr.success(backendMessage, 'Success');
+          if (this.activeCompanyId) {
+            this.loadPayments(this.activeCompanyId);
+          }
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Failed to approve payment.';
+          this.toastr.error(message, 'Error');
+        },
+      });
   }
 
   private openBankApproveModal(bankTransaction: BankTransaction) {
@@ -705,13 +835,6 @@ export class Payments implements OnInit, OnDestroy {
           this.customerOptionsLoading = false;
           this.updateCustomerPagination();
           this.cdr.detectChanges();
-
-          // Auto-select first matching customer
-          if (this.filteredCustomerOptions.length) {
-            setTimeout(() => {
-              this.selectBankCustomer(this.filteredCustomerOptions[0]);
-            }, 0);
-          }
         },
         error: (error) => {
           this.customerOptions = [];
@@ -884,30 +1007,55 @@ export class Payments implements OnInit, OnDestroy {
 
   goToNextStep() {
     if (this.modalStep === 1) {
-      if (this.approveContext === 'BANK' && !this.selectedCustomer) {
-        this.toastr.warning('Please select a customer first.', 'Customer Required');
-        return;
-      }
-
-      // Load invoices for step 2
       const customerId =
         this.approveContext === 'BANK'
           ? this.selectedCustomer?.id
           : (this.selectedManualPayment?.customerId ?? this.selectedManualPayment?.customer?.id);
 
+      this.approveModalLoading = !!customerId;
+      this.selectedInvoiceApplications = [];
+      this.modalStep = 2;
+      this.cdr.detectChanges();
+
       if (customerId) {
-        // Set loading state and clear previous selections
-        this.approveModalLoading = true;
-        this.selectedInvoiceApplications = [];
-
-        // Change to step 2
-        this.modalStep = 2;
-        this.cdr.detectChanges();
-
-        // Load invoices
         this.loadInvoicesForApproval(customerId);
+      } else {
+        this.approveInvoices = [];
+        this.approveModalError = null;
+        this.invoiceCurrentPage = 0;
+        this.updateInvoicePagination();
       }
     }
+  }
+
+  private approveBankTransactionOnly(bankTransaction: BankTransaction) {
+    const transactionId = bankTransaction.id;
+    if (!transactionId) {
+      this.toastr.error('Unable to identify this bank transaction.', 'Missing Transaction ID');
+      return;
+    }
+
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select an AR company first.', 'Company Required');
+      return;
+    }
+
+    this.paymentService
+      .approveBankTransaction(this.activeCompanyId, transactionId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          const backendMessage = response?.message || 'Payment approved successfully.';
+          this.toastr.success(backendMessage, 'Success');
+          if (this.activeCompanyId) {
+            this.loadPayments(this.activeCompanyId);
+          }
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Failed to approve payment.';
+          this.toastr.error(message, 'Error');
+        },
+      });
   }
 
   goToPreviousStep() {
@@ -933,6 +1081,7 @@ export class Payments implements OnInit, OnDestroy {
     this.approveModalOpen = false;
     this.approveModalLoading = false;
     this.approveModalSubmitting = false;
+    this.approveSubmitMode = null;
     this.approveModalError = null;
     this.approveInvoices = [];
     this.selectedInvoiceApplications = [];
@@ -1003,10 +1152,26 @@ export class Payments implements OnInit, OnDestroy {
       return;
     }
 
+    this.approveSubmitMode = 'APPROVE_APPLY';
+
     if (this.approveContext === 'BANK') {
       this.submitBankApproveAndApply();
     } else {
       this.submitManualApproveAndApply();
+    }
+  }
+
+  confirmApproveOnly() {
+    if (this.approveModalSubmitting) {
+      return;
+    }
+
+    this.approveSubmitMode = 'APPROVE';
+
+    if (this.approveContext === 'BANK') {
+      this.submitBankApproveOnly();
+    } else {
+      this.submitManualApproveOnly();
     }
   }
 
@@ -1039,6 +1204,39 @@ export class Payments implements OnInit, OnDestroy {
           const message = error?.error?.message || 'Failed to approve and apply payment.';
           this.toastr.error(message, 'Error');
           this.approveModalSubmitting = false;
+          this.approveSubmitMode = null;
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private submitManualApproveOnly() {
+    if (!this.selectedManualPayment) {
+      return;
+    }
+
+    const paymentId = this.selectedManualPayment.paymentId ?? this.selectedManualPayment.id;
+    if (!paymentId) {
+      this.toastr.error('Unable to identify this payment.', 'Error');
+      this.approveSubmitMode = null;
+      return;
+    }
+
+    this.approveModalSubmitting = true;
+    this.paymentService
+      .approvePayment(paymentId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          const backendMessage = response?.message || 'Payment approved successfully.';
+          this.toastr.success(backendMessage, 'Success');
+          this.handleApproveSuccess();
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Failed to approve payment.';
+          this.toastr.error(message, 'Error');
+          this.approveModalSubmitting = false;
+          this.approveSubmitMode = null;
           this.cdr.detectChanges();
         },
       });
@@ -1047,6 +1245,7 @@ export class Payments implements OnInit, OnDestroy {
   private submitBankApproveAndApply() {
     if (!this.selectedBankTransaction || !this.selectedCustomer) {
       this.toastr.warning('Select a customer before approving this payment.', 'Customer Required');
+      this.approveSubmitMode = null;
       return;
     }
 
@@ -1075,6 +1274,49 @@ export class Payments implements OnInit, OnDestroy {
           const message = error?.error?.message || 'Failed to approve and apply payment.';
           this.toastr.error(message, 'Error');
           this.approveModalSubmitting = false;
+          this.approveSubmitMode = null;
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private submitBankApproveOnly() {
+    if (!this.selectedBankTransaction) {
+      this.toastr.error('Unable to identify this bank transaction.', 'Error');
+      this.approveSubmitMode = null;
+      return;
+    }
+
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select an AR company first.', 'Company Required');
+      this.approveSubmitMode = null;
+      return;
+    }
+
+    const transactionId = this.selectedBankTransaction.id;
+    if (!transactionId) {
+      this.toastr.error('Unable to identify this bank transaction.', 'Error');
+      this.approveSubmitMode = null;
+      return;
+    }
+
+    const payload = this.selectedCustomer?.id ? { customerId: this.selectedCustomer.id } : undefined;
+
+    this.approveModalSubmitting = true;
+    this.paymentService
+      .approveBankTransaction(this.activeCompanyId, transactionId, payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          const backendMessage = response?.message || 'Payment approved successfully.';
+          this.toastr.success(backendMessage, 'Success');
+          this.handleApproveSuccess();
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Failed to approve payment.';
+          this.toastr.error(message, 'Error');
+          this.approveModalSubmitting = false;
+          this.approveSubmitMode = null;
           this.cdr.detectChanges();
         },
       });
@@ -1173,6 +1415,12 @@ export class Payments implements OnInit, OnDestroy {
   private resetBaiFileInput() {
     if (this.baiFileInput) {
       this.baiFileInput.nativeElement.value = '';
+    }
+  }
+
+  private resetEobFileInput() {
+    if (this.eobFileInput) {
+      this.eobFileInput.nativeElement.value = '';
     }
   }
 

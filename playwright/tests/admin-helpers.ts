@@ -24,8 +24,8 @@ export const apiCorsHeaders = {
 
 const defaultApiHosts = [
   environment.apiUrl,
-  'https://88373bf2f128.ngrok-free.app',
-  'http://54.225.63.207:8080',
+  'https://74c0-203-190-154-162.ngrok-free.app',
+  'http://3.84.76.210:8080',
 ];
 
 const configuredHost = process.env.PLAYWRIGHT_API_BASE_URL;

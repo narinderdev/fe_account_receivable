@@ -61,6 +61,18 @@ export class PaymentService {
     );
   }
 
+  uploadEobFile(companyId: number, file: File): Observable<any> {
+    const headers = getAuthHeaders();
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post(
+      `${this.baseUrl}/api/era/company/${companyId}/upload`,
+      formData,
+      { headers },
+    );
+  }
+
   getManualPayments(
     companyId: number,
     _params?: {
@@ -131,6 +143,11 @@ export class PaymentService {
     });
   }
 
+  approvePayment(paymentId: number): Observable<any> {
+    const headers = getAuthHeaders();
+    return this.http.post(`${this.baseUrl}/payment/${paymentId}/approve`, null, { headers });
+  }
+
   approveAndApplyBankTransaction(
     bankTransactionId: number,
     payload: BankApproveApplyRequest,
@@ -139,6 +156,21 @@ export class PaymentService {
     return this.http.post(
       `${this.baseUrl}/api/bank-reconciliation/transaction/${bankTransactionId}/approve-apply`,
       payload,
+      { headers },
+    );
+  }
+
+  approveBankTransaction(
+    companyId: number,
+    bankTransactionId: number,
+    payload?: { customerId?: number },
+  ): Observable<any> {
+    const headers = getAuthHeaders();
+    const body = payload?.customerId ? { customerId: payload.customerId } : {};
+
+    return this.http.post(
+      `${this.baseUrl}/api/bank-reconciliation/company/${companyId}/transaction/${bankTransactionId}/approve-with-era`,
+      body,
       { headers },
     );
   }
