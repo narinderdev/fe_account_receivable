@@ -91,7 +91,7 @@
 
       <div class="modal-footer">
         <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving">
-          Cancel
+          Close
         </button>
         <button type="submit" class="btn-primary" [disabled]="saving">
           <ng-container *ngIf="!saving">Save Payment Term</ng-container>
@@ -108,7 +108,7 @@
     <p>Are you sure you want to delete {{ deleteTarget?.name }}?</p>
     <div class="confirm-actions">
       <button type="button" class="btn-secondary" (click)="closeDeleteModal()" [disabled]="deleting">
-        Cancel
+        Close
       </button>
       <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="deleting">
         {{ deleting ? 'Deleting...' : 'Delete' }}

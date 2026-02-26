@@ -147,7 +147,7 @@
     <!-- Action Buttons -->
     <div class="action-buttons">
       <button type="button" class="btn btn-cancel" (click)="resetForm()" [disabled]="isSaving">
-        Cancel
+        Close
       </button>
       <button type="button" class="btn btn-save" (click)="onSubmit($event)" [disabled]="isSaving">
         <app-spinner *ngIf="isSaving"></app-spinner>

@@ -8,3 +8,55 @@
 body {
   font-family: 'Inter', sans-serif;
 }
+
+.print-header {
+  display: none;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+  page-break-after: avoid;
+}
+
+.print-header h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: #111827;
+}
+
+.print-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.meta-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  app-sidebar,
+  app-navbar,
+  .signout-bar {
+    display: none !important;
+  }
+
+  .app-shell,
+  .shell-content,
+  .page-content {
+    min-height: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .print-header {
+    display: block !important;
+  }
+}

@@ -1,4 +1,26 @@
 <div class="security-report-container">
+  <div class="print-header">
+    <h1>Security Report</h1>
+    <div class="print-meta">
+      <div>
+        <span class="meta-label">View:</span>
+        <span>{{ viewMode() === 'ROLE' ? 'By Role' : 'By Object' }}</span>
+      </div>
+      <div *ngIf="viewMode() === 'ROLE'">
+        <span class="meta-label">Role Filter:</span>
+        <span>{{ selectedRole() ? formatRoleLabel(selectedRole()) : 'All Roles' }}</span>
+      </div>
+      <div *ngIf="viewMode() === 'OBJECT'">
+        <span class="meta-label">Object Filter:</span>
+        <span>{{ selectedObject() ? formatObjectLabel(selectedObject()) : 'All Objects' }}</span>
+      </div>
+      <div>
+        <span class="meta-label">AR Company:</span>
+        <span>{{ getActiveCompanyCode() || 'N/A' }}</span>
+      </div>
+    </div>
+  </div>
+
   <div class="filter-card">
     <div class="filter-card-body">
       <div class="filter-controls">
@@ -44,7 +66,27 @@
         </ng-template>
       </div>
 
-      <div class="export-dropdown" (click)="onDropdownClick($event)">
+      <div class="actions">
+        <button type="button" class="btn-print" (click)="printReport()">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <rect x="6" y="13" width="12" height="9"></rect>
+            <line x1="6" y1="18" x2="18" y2="18"></line>
+          </svg>
+          Print Report
+        </button>
+
+        <div class="export-dropdown" (click)="onDropdownClick($event)">
         <button type="button" class="btn-export" (click)="toggleExportMenu($event)">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -139,6 +181,7 @@
             Export as PDF
           </button>
         </div>
+      </div>
       </div>
     </div>
   </div>

@@ -41,7 +41,7 @@ export class Aging implements OnInit, OnDestroy {
   customers: SelectOption[] = [{ label: 'All Customers', value: '' }];
 
   statuses: SelectOption[] = [
-    { label: 'All Statuses', value: '' },
+    { label: 'All Status', value: '' },
     { label: 'Open', value: 'OPEN' },
     { label: 'Partial', value: 'PARTIAL' },
   ];
@@ -177,6 +177,11 @@ export class Aging implements OnInit, OnDestroy {
 
   closeExportMenu() {
     this.showExportMenu = false;
+  }
+
+  printReport() {
+    this.closeExportMenu();
+    window.print();
   }
 
   async generatePdf() {
@@ -450,17 +455,17 @@ export class Aging implements OnInit, OnDestroy {
     );
   }
 
-  private getSelectedCustomerLabel(): string {
+  getSelectedCustomerLabel(): string {
     const customer = this.customers.find((c) => c.value === this.selectedCustomer);
     return customer ? customer.label : 'All Customers';
   }
 
-  private getSelectedStatusLabel(): string {
+  getSelectedStatusLabel(): string {
     const status = this.statuses.find((s) => s.value === this.selectedStatus);
-    return status ? status.label : 'All Statuses';
+    return status ? status.label : 'All Status';
   }
 
-  private getCurrentDate(): string {
+  getCurrentDate(): string {
     return new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',

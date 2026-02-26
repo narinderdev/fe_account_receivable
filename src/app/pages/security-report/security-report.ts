@@ -249,6 +249,11 @@ export class SecurityReport implements OnInit, OnDestroy {
     event.stopPropagation();
   }
 
+  printReport() {
+    this.closeExportMenu();
+    window.print();
+  }
+
   private closeExportMenu() {
     this.showExportMenu.set(false);
   }
