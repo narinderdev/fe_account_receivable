@@ -173,7 +173,7 @@
             (click)="closeAccountModal()"
             [disabled]="saving"
           >
-            Cancel
+            Close
           </button>
           <button type="submit" class="btn-primary" [disabled]="saving">
             <app-spinner *ngIf="saving"></app-spinner>
@@ -244,7 +244,7 @@
             (click)="closeGlMappingModal()"
             [disabled]="mappingSaving || mappingPrefillLoading"
           >
-            Cancel
+            Close
           </button>
           <button
             type="submit"

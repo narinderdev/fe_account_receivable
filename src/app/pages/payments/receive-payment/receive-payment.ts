@@ -245,7 +245,7 @@ export class ReceivePayment implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('Cancel clicked - navigating to payments page');
+    console.log('Close clicked - navigating to payments page');
     this.router.navigate(['/admin/payments']);
   }
 

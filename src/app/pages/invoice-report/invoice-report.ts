@@ -495,6 +495,11 @@ export class InvoiceReport implements OnInit, OnDestroy {
     this.showExportMenu = false;
   }
 
+  printReport() {
+    this.closeExportMenu();
+    window.print();
+  }
+
   async generatePdf() {
     this.closeExportMenu();
     const element = document.getElementById('invoiceReportCharts');

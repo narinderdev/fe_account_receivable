@@ -2,7 +2,7 @@
   <!-- Header -->
   <div class="page-header">
     <div class="header-actions">
-      <button class="btn-cancel" routerLink="/admin/invoices">Cancel</button>
+      <button class="btn-cancel" routerLink="/admin/invoices">Close</button>
       <button class="btn-save-send" type="button" (click)="submitInvoice()" [disabled]="loading">
         <app-spinner *ngIf="loading"></app-spinner>
         <span *ngIf="!loading">Save</span>

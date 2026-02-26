@@ -1,4 +1,25 @@
-<div class="aging-container">
+<div class="aging-container" id="agingReportRoot">
+  <div class="print-header">
+    <h1>Aging Report</h1>
+    <div class="print-meta">
+      <div>
+        <span class="meta-label">Company:</span>
+        <span>{{ getActiveCompanyName() || 'N/A' }}</span>
+      </div>
+      <div>
+        <span class="meta-label">Customer Filter:</span>
+        <span>{{ getSelectedCustomerLabel() }}</span>
+      </div>
+      <div>
+        <span class="meta-label">Status Filter:</span>
+        <span>{{ getSelectedStatusLabel() }}</span>
+      </div>
+      <div>
+        <span class="meta-label">Generated On:</span>
+        <span>{{ getCurrentDate() }}</span>
+      </div>
+    </div>
+  </div>
   <!-- <h2 class="title">Customer Aging</h2> -->
 
   <!-- FILTER BAR -->
@@ -15,8 +36,8 @@
       </option>
     </select>
 
-    <div class="export-dropdown">
-      <button type="button" class="btn-export" (click)="toggleExportMenu()">
+    <div class="report-actions">
+      <button type="button" class="btn-print" (click)="printReport()">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -28,29 +49,15 @@
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <rect x="6" y="13" width="12" height="9"></rect>
+          <line x1="6" y1="18" x2="18" y2="18"></line>
         </svg>
-        Export Report
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="chevron-icon"
-        >
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        Print Report
       </button>
 
-      <div class="export-menu" *ngIf="showExportMenu">
-        <button type="button" class="export-menu-item" (click)="generatePdf()">
+      <div class="export-dropdown">
+        <button type="button" class="btn-export" (click)="toggleExportMenu()">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -62,53 +69,88 @@
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          Export as PDF
-        </button>
-        <button type="button" class="export-menu-item" (click)="exportToExcel()">
+          Export Report
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
+            width="12"
+            height="12"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
+            class="chevron-icon"
           >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <rect x="8" y="12" width="8" height="6"></rect>
-            <line x1="10" y1="12" x2="10" y2="18"></line>
-            <line x1="14" y1="12" x2="14" y2="18"></line>
+            <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
-          Export as Excel
         </button>
-        <button type="button" class="export-menu-item" (click)="exportToCSV()">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="8" y1="13" x2="16" y2="13"></line>
-            <line x1="8" y1="17" x2="16" y2="17"></line>
-          </svg>
-          Export as CSV
-        </button>
+
+        <div class="export-menu" *ngIf="showExportMenu">
+          <button type="button" class="export-menu-item" (click)="generatePdf()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Export as PDF
+          </button>
+          <button type="button" class="export-menu-item" (click)="exportToExcel()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <rect x="8" y="12" width="8" height="6"></rect>
+              <line x1="10" y1="12" x2="10" y2="18"></line>
+              <line x1="14" y1="12" x2="14" y2="18"></line>
+            </svg>
+            Export as Excel
+          </button>
+          <button type="button" class="export-menu-item" (click)="exportToCSV()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="8" y1="13" x2="16" y2="13"></line>
+              <line x1="8" y1="17" x2="16" y2="17"></line>
+            </svg>
+            Export as CSV
+          </button>
+        </div>
       </div>
     </div>
   </div>

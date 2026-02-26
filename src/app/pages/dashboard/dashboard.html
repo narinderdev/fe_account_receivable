@@ -1,24 +1,6 @@
 <app-loader [visible]="loadingSummary || loadingGraph"></app-loader>
 
 <div class="dashboard-container">
-  <div class="password-reminder" *ngIf="passwordDaysRemaining !== null">
-    <div class="password-reminder__text">
-      <span class="password-reminder__label">Password Reminder</span>
-      <span>
-        Your password expires in
-        <strong>{{ passwordDaysRemaining }}</strong>
-        {{ passwordDaysRemaining === 1 ? 'day' : 'days' }}.
-      </span>
-    </div>
-    <button
-      type="button"
-      class="password-reminder__action"
-      (click)="onChangePasswordClick()"
-    >
-      Change Password
-    </button>
-  </div>
-
   <!-- Cards Grid -->
   <div class="cards-grid">
     <!-- Total Receivables -->
@@ -120,6 +102,21 @@
 
     <div class="chart-wrapper">
       <canvas #chartCanvas *ngIf="isBrowser"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="password-modal-backdrop" *ngIf="showPasswordReminderModal">
+  <div class="password-modal">
+    <h3>Password Reminder</h3>
+    <p>
+      Your password expires in
+      <strong>{{ passwordDaysRemaining }}</strong>
+      {{ passwordDaysRemaining === 1 ? 'day' : 'days' }}.
+    </p>
+    <div class="password-modal__actions">
+      <button type="button" class="btn-outline" (click)="dismissPasswordReminder()">Dismiss</button>
+      <button type="button" class="btn-primary" (click)="onChangePasswordClick()">Change Password</button>
     </div>
   </div>
 </div>

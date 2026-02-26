@@ -631,7 +631,7 @@
 
       <!-- FOOTER -->
       <div class="modal-footer">
-        <button class="btn-cancel" (click)="closePromisePopup()">Cancel</button>
+        <button class="btn-cancel" (click)="closePromisePopup()">Close</button>
         <button class="btn-save" [disabled]="savingPromise" (click)="savePromise()">
           <app-spinner *ngIf="savingPromise"></app-spinner>
           <span *ngIf="!savingPromise">Save Promise</span>
@@ -778,7 +778,7 @@
 
       <div class="modal-footer">
         <button class="btn-cancel" (click)="closeDisputePopup()" [disabled]="savingDispute">
-          Cancel
+          Close
         </button>
         <button class="btn-save" (click)="saveDispute()" [disabled]="savingDispute">
           <app-spinner *ngIf="savingDispute"></app-spinner>

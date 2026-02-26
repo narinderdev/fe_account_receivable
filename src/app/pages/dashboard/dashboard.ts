@@ -61,6 +61,8 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   private activeCompanyId: number | null = null;
   private graphReqSeq = 0;
   passwordDaysRemaining: number | null = null;
+  showPasswordReminderModal = false;
+  private reminderTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Computed property to show loader
   get isLoading(): boolean {
@@ -142,7 +144,34 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     const parsed = Number(raw);
-    this.passwordDaysRemaining = Number.isFinite(parsed) ? parsed : null;
+    if (!Number.isFinite(parsed) || parsed > 8) {
+      this.passwordDaysRemaining = null;
+      return;
+    }
+    this.passwordDaysRemaining = parsed;
+    this.triggerPasswordReminderModal();
+  }
+
+  private triggerPasswordReminderModal(): void {
+    if (this.passwordDaysRemaining === null) return;
+    this.showPasswordReminderModal = true;
+    this.cdr.detectChanges();
+
+    if (this.reminderTimeout) {
+      clearTimeout(this.reminderTimeout);
+    }
+    this.reminderTimeout = setTimeout(() => {
+      this.showPasswordReminderModal = false;
+      this.cdr.detectChanges();
+    }, 6000);
+  }
+
+  dismissPasswordReminder(): void {
+    this.showPasswordReminderModal = false;
+    if (this.reminderTimeout) {
+      clearTimeout(this.reminderTimeout);
+      this.reminderTimeout = null;
+    }
   }
 
   onChangePasswordClick(): void {
@@ -413,6 +442,9 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     if (this.chart) {
       this.chart.destroy();
+    }
+    if (this.reminderTimeout) {
+      clearTimeout(this.reminderTimeout);
     }
     this.destroy$.next();
     this.destroy$.complete();

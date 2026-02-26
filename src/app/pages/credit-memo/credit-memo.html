@@ -27,8 +27,8 @@
       <div *ngIf="!activeTabState.error && activeTabState.records.length === 0" class="empty-text">
         {{
           activeTab === 'CREATED'
-            ? 'No credit memos have been created yet.'
-            : 'No approved credit memos available.'
+            ? 'No credit memo available.'
+            : 'No credit memo available.'
         }}
       </div>
 
@@ -244,7 +244,7 @@
       <h3>Delete Credit Memo</h3>
       <p>Are you sure you want to delete this credit memo?</p>
       <div class="confirm-actions">
-        <button type="button" class="btn-secondary" (click)="closeDeleteModal()">Cancel</button>
+        <button type="button" class="btn-secondary" (click)="closeDeleteModal()">Close</button>
         <button
           type="button"
           class="btn-primary danger"
@@ -426,7 +426,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving">
-            Cancel
+            Close
           </button>
           <button type="submit" class="btn-primary" [disabled]="saving">
             <app-spinner *ngIf="saving"></app-spinner>
@@ -492,7 +492,7 @@
             (click)="closeApplyModal()"
             [disabled]="applying"
           >
-            Cancel
+            Close
           </button>
           <button type="submit" class="btn-primary" [disabled]="applying">
             <app-spinner *ngIf="applying"></app-spinner>
@@ -544,7 +544,7 @@
           (click)="closeApproveModal()"
           [disabled]="approvingCreditMemoId"
         >
-          Cancel
+          Close
         </button>
         <button
           type="button"
