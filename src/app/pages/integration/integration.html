@@ -1,0 +1,44 @@
+<div class="integration-page">
+  <button type="button" class="btn-eob" (click)="openEobModal()" [disabled]="uploadingEob">
+    Upload EOB File
+  </button>
+</div>
+
+<div class="modal-overlay" *ngIf="isEobModalOpen">
+  <div class="upload-modal">
+    <div class="modal-header">
+      <h2>Upload EOB File</h2>
+      <button class="btn-close" (click)="closeEobModal()" [disabled]="uploadingEob" aria-label="Close">
+        <span>&times;</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="modal-description">
+        Upload a .txt EOB (Explanation of Benefits) file to process remittance data. Make sure the
+        correct AR company is selected in the top navbar before uploading.
+      </p>
+
+      <input
+        type="file"
+        #eobFileInput
+        accept=".txt"
+        style="display: none"
+        (change)="handleEobFileUpload($event)"
+      />
+
+      <button class="upload-btn" (click)="eobFileInput.click()" [disabled]="uploadingEob">
+        <ng-container *ngIf="!uploadingEob">Upload EOB (.txt)</ng-container>
+        <ng-container *ngIf="uploadingEob">
+          <app-spinner></app-spinner>
+        </ng-container>
+      </button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeEobModal()" [disabled]="uploadingEob">
+        Close
+      </button>
+    </div>
+  </div>
+</div>

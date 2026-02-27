@@ -57,6 +57,21 @@
           Payments
         </a>
 
+        <a
+          *ngIf="canViewIntegration"
+          routerLink="integration"
+          routerLinkActive="active"
+          #integrationLink="routerLinkActive"
+          class="nav-item"
+          (click)="handleNavClick()"
+        >
+          <img
+            [src]="integrationLink.isActive ? '/integration1.svg' : '/integration.svg'"
+            class="nav-icon"
+          />
+          Integration
+        </a>
+
         <div class="nav-item setup-parent" *ngIf="canViewReports" (click)="toggleReports()">
           <img [src]="arReportsActive ? '/reports1.svg' : '/reports.svg'" class="nav-icon" />
           Aging & Reports
@@ -261,6 +276,20 @@
             class="nav-icon"
           />
           Payments
+        </a>
+
+        <a
+          *ngIf="canViewIntegration"
+          routerLink="integration"
+          routerLinkActive="active"
+          #mobileIntegration="routerLinkActive"
+          (click)="closeMobileMenu()"
+        >
+          <img
+            [src]="mobileIntegration.isActive ? '/integration1.svg' : '/integration.svg'"
+            class="nav-icon"
+          />
+          Integration
         </a>
 
         <button

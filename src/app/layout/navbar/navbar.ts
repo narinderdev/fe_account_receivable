@@ -31,6 +31,7 @@ const TITLE_RULES: TitleRule[] = [
   { prefix: '/admin/payments/receive-payment', title: 'Receive Payment' },
   { prefix: '/admin/payments/details', title: 'Payment Details' },
   { prefix: '/admin/payments', title: 'Payments' },
+  { prefix: '/admin/integration', title: 'Integration' },
   { prefix: '/admin/users', title: 'Users' },
   { prefix: '/admin/roles', title: 'Roles' },
   { prefix: '/admin/security-report', title: 'Security Report' },
