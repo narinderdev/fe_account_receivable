@@ -18,6 +18,7 @@ import { CreateInvoice } from './pages/create-invoice/create-invoice';
 import { CustomerInvoices } from './pages/customers/customer-invoices/customer-invoices';
 import { InvoiceDetail } from './pages/customers/invoice-detail/invoice-detail';
 import { Payments } from './pages/payments/payments';
+import { Integration } from './pages/integration/integration';
 import { CustomerDetail } from './pages/customers/customer-detail/customer-detail';
 import { ReceivePayment } from './pages/payments/receive-payment/receive-payment';
 import { Users } from './pages/users/users';
@@ -116,6 +117,8 @@ export const routes: Routes = [
         path: 'payments/details/:paymentType/:paymentId',
         component: PaymentDetails,
       },
+
+      { path: 'integration', component: Integration },
 
       { path: 'users', component: Users },
       { path: 'roles', component: Roles },

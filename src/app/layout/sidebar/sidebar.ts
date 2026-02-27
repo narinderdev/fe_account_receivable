@@ -23,6 +23,7 @@ export class Sidebar {
   canViewCustomers = false;
   canViewInvoices = false;
   canViewPayments = false;
+  canViewIntegration = false;
   canViewReports = false;
   canViewCollections = false;
   canViewCompany = false;
@@ -58,6 +59,8 @@ export class Sidebar {
     this.canViewCustomers = this.userContext.hasPermission('VIEW_CUSTOMERS');
     this.canViewInvoices = this.userContext.hasPermission('VIEW_INVOICES');
     this.canViewPayments = this.userContext.hasPermission('VIEW_PAYMENTS');
+    this.canViewIntegration =
+      this.userContext.hasPermission('VIEW_INTEGRATIONS') || this.userContext.isAdmin();
     this.canViewReports = this.userContext.hasPermission('VIEW_AGING_REPORTS');
     const collectionsPerms = [
       'VIEW_PROMISE_TO_PAY',

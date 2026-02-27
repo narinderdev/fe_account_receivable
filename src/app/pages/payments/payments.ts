@@ -58,7 +58,6 @@ interface InvoiceSelection {
 })
 export class Payments implements OnInit, OnDestroy {
   @ViewChild('baiFileInput') baiFileInput?: ElementRef<HTMLInputElement>;
-  @ViewChild('eobFileInput') eobFileInput?: ElementRef<HTMLInputElement>;
 
   payments: PaymentListItem[] = [];
   allPayments: PaymentListItem[] = [];
@@ -91,10 +90,6 @@ export class Payments implements OnInit, OnDestroy {
   // BAI modal state
   isBaiModalOpen = false;
   uploadingBai = false;
-
-  // EOB modal state
-  isEobModalOpen = false;
-  uploadingEob = false;
 
   canApprovePayment = false;
   approveModalOpen = false;
@@ -400,81 +395,6 @@ export class Payments implements OnInit, OnDestroy {
   }
 
   // ─── EOB Modal ────────────────────────────────────────────────────────────
-
-  openEobModal() {
-    if (!this.canApplyPayment) {
-      this.toastr.warning('You do not have permission to upload EOB files.', 'Permission Denied');
-      return;
-    }
-    if (!this.activeCompanyId) {
-      this.toastr.warning('Please select an AR company from the navbar first.', 'Warning');
-      return;
-    }
-    this.isEobModalOpen = true;
-    this.cdr.detectChanges();
-  }
-
-  closeEobModal() {
-    if (this.uploadingEob) {
-      return;
-    }
-    this.isEobModalOpen = false;
-    this.resetEobFileInput();
-    this.cdr.detectChanges();
-  }
-
-  handleEobFileUpload(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    if (!this.canApplyPayment) {
-      this.toastr.warning('You do not have permission to upload EOB files.', 'Permission Denied');
-      input.value = '';
-      return;
-    }
-
-    const fileName = file.name.toLowerCase();
-    const isValid = fileName.endsWith('.txt');
-    if (!isValid) {
-      this.toastr.warning('Please upload a valid EOB file (.txt).', 'Invalid File');
-      input.value = '';
-      return;
-    }
-
-    if (!this.activeCompanyId) {
-      this.toastr.warning('Please select an AR company from the navbar first.', 'Warning');
-      input.value = '';
-      return;
-    }
-
-    const companyId = this.activeCompanyId;
-    this.uploadingEob = true;
-    this.cdr.detectChanges();
-
-    this.paymentService.uploadEobFile(companyId, file).subscribe({
-      next: () => {
-        this.uploadingEob = false;
-        this.toastr.success('EOB file uploaded successfully.', 'Success');
-        input.value = '';
-        if (this.activeCompanyId) {
-          this.loadPayments(this.activeCompanyId);
-        }
-        this.closeEobModal();
-      },
-      error: (error) => {
-        this.uploadingEob = false;
-        console.error('Failed to upload EOB file:', error);
-        const backendMessage = error?.error?.message;
-        this.toastr.error(backendMessage || 'Failed to upload EOB file.', 'Upload Failed');
-        input.value = '';
-        this.cdr.detectChanges();
-      },
-    });
-  }
 
   // ─── Shared ───────────────────────────────────────────────────────────────
 
@@ -1415,12 +1335,6 @@ export class Payments implements OnInit, OnDestroy {
   private resetBaiFileInput() {
     if (this.baiFileInput) {
       this.baiFileInput.nativeElement.value = '';
-    }
-  }
-
-  private resetEobFileInput() {
-    if (this.eobFileInput) {
-      this.eobFileInput.nativeElement.value = '';
     }
   }
 
