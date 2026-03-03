@@ -139,6 +139,8 @@ export class Accounts implements OnInit, OnDestroy {
           Validators.pattern(Accounts.ACCOUNT_NUMBER_ALLOWED),
         ],
       ],
+      address: ['', [Validators.maxLength(150)]],
+      branch: ['', [Validators.maxLength(100)]],
       currency: ['', [Validators.required]],
     });
 
@@ -540,6 +542,16 @@ export class Accounts implements OnInit, OnDestroy {
     const currency = sanitize(formValue['currency']);
     if (typeof currency === 'string' && currency) {
       payload.currency = currency.toUpperCase();
+    }
+
+    const address = sanitize(formValue['address']);
+    if (typeof address === 'string' && address) {
+      payload.address = address;
+    }
+
+    const branch = sanitize(formValue['branch']);
+    if (typeof branch === 'string' && branch) {
+      payload.branch = branch;
     }
 
     return payload;

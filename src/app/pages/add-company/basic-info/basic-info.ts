@@ -126,6 +126,10 @@ export class BasicInfo implements OnInit, OnDestroy {
     this.router.navigate([`/admin/ar-company/edit/${this.companyId}/step-2`]);
   }
 
+  goBack() {
+    this.router.navigate(['/admin/ar-company']);
+  }
+
   private persistEditChanges(force = false) {
     if (!this.isEditMode || !this.basicForm) return;
     if (!force && !this.basicForm.dirty) return;

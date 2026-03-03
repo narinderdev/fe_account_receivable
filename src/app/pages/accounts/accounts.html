@@ -153,6 +153,30 @@
           </div>
 
           <div class="form-field">
+            <label>Address</label>
+            <input
+              type="text"
+              formControlName="address"
+              placeholder="Enter bank address"
+            />
+            <p class="error" *ngIf="submitted && accountForm.controls['address'].errors?.['maxlength']">
+              Address cannot exceed 150 characters.
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label>Branch</label>
+            <input
+              type="text"
+              formControlName="branch"
+              placeholder="Enter branch name"
+            />
+            <p class="error" *ngIf="submitted && accountForm.controls['branch'].errors?.['maxlength']">
+              Branch cannot exceed 100 characters.
+            </p>
+          </div>
+
+          <div class="form-field">
             <label>Currency <span class="color">*</span></label>
             <select formControlName="currency">
               <option value="">Select currency</option>
