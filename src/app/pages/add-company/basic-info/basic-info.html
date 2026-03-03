@@ -78,6 +78,10 @@
       <!-- SAVE BUTTON -->
       <div class="form-footer">
         <div class="actions">
+          <button type="button" class="btn-cancel" (click)="goBack()">
+            Close
+          </button>
+
           <button class="btn-save" type="submit" [disabled]="isSaving">
             <app-spinner *ngIf="isSaving"></app-spinner>
             <span *ngIf="!isSaving">Save & Continue</span>
