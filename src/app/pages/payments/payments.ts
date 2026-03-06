@@ -698,7 +698,7 @@ export class Payments implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          const message = error?.error?.message || 'Failed to approve payment.';
+          const message = this.getApproveBankErrorMessage(error);
           this.toastr.error(message, 'Error');
         },
       });
@@ -972,7 +972,7 @@ export class Payments implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          const message = error?.error?.message || 'Failed to approve payment.';
+          const message = this.getApproveBankErrorMessage(error);
           this.toastr.error(message, 'Error');
         },
       });
@@ -1233,13 +1233,21 @@ export class Payments implements OnInit, OnDestroy {
           this.handleApproveSuccess();
         },
         error: (error) => {
-          const message = error?.error?.message || 'Failed to approve payment.';
+          const message = this.getApproveBankErrorMessage(error);
           this.toastr.error(message, 'Error');
           this.approveModalSubmitting = false;
           this.approveSubmitMode = null;
           this.cdr.detectChanges();
         },
       });
+  }
+
+  private getApproveBankErrorMessage(error: unknown): string {
+    const httpError = error as { status?: number; error?: { message?: string } };
+    if (httpError?.status === 500) {
+      return 'No matching payment found in the uploaded ERA/EOB file for the selected BAI transaction.';
+    }
+    return httpError?.error?.message || 'Failed to approve payment.';
   }
 
   private handleApproveSuccess() {

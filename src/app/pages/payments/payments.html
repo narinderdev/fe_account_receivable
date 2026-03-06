@@ -131,7 +131,7 @@
                 class="action-button-group"
                 *ngIf="payment.status?.toUpperCase() === 'CREATED'; else noActions"
               >
-                <button class="btn-approve-only" (click)="approveOnly(payment, $event)">Approve</button>
+                <button *ngIf="payment.type === 'BANK'" class="btn-approve-only" (click)="approveOnly(payment, $event)">Approve</button>
                 <button class="btn-approve-apply" (click)="approveAndApply(payment, $event)">
                   Approve & Apply
                 </button>

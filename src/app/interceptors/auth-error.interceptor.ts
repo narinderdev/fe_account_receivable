@@ -8,13 +8,21 @@ import { AuthSessionService } from '../services/auth-session.service';
 const shouldForceLogout = (error: unknown): error is HttpErrorResponse =>
   error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403);
 
+const shouldSuppressSessionExpiredMessage = (reqUrl: string, error: HttpErrorResponse) =>
+  error.status === 401 && reqUrl.includes('/auth/login/mfa');
+
+const SESSION_EXPIRED_MESSAGE = 'Session expired. Please log in again.';
+
 export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const session = inject(AuthSessionService);
 
   return next(req).pipe(
-    catchError((error) => {
+    catchError((error: unknown) => {
       if (shouldForceLogout(error)) {
-        session.signOut('Session expired. Please log in again.');
+        const message = shouldSuppressSessionExpiredMessage(req.url, error)
+          ? undefined
+          : SESSION_EXPIRED_MESSAGE;
+        session.signOut(message);
       }
       return throwError(() => error);
     }),

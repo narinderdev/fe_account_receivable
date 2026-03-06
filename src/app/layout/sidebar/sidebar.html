@@ -30,7 +30,7 @@
             [src]="customersLink.isActive ? '/customers1.svg' : '/customers.svg'"
             class="nav-icon"
           />
-          Customers
+          Customer
         </a>
 
         <a
@@ -42,7 +42,7 @@
           (click)="handleNavClick()"
         >
           <img [src]="invoicesLink.isActive ? '/invoice1.svg' : '/invoice.svg'" class="nav-icon" />
-          Invoices
+          Invoice
         </a>
 
         <a
@@ -54,7 +54,7 @@
           (click)="handleNavClick()"
         >
           <img [src]="paymentsLink.isActive ? '/payment1.svg' : '/payment.svg'" class="nav-icon" />
-          Payments
+          Payment
         </a>
 
         <a
@@ -79,13 +79,13 @@
         </div>
         <div class="setup-children" *ngIf="canViewReports && reportsOpen">
           <a routerLink="ar-reports" routerLinkActive="active" class="sub-nav-item"
-            >Aging Reports</a
+            >Aging Report</a
           >
           <a routerLink="invoices-reports" routerLinkActive="active" class="sub-nav-item"
-            >Invoices Reports</a
+            >Invoice Report</a
           >
           <a routerLink="payment-reports" routerLinkActive="active" class="sub-nav-item"
-            >Payments Reports</a
+            >Payment Report</a
           >
         </div>
 
@@ -101,7 +101,7 @@
             [src]="collectionsLink.isActive ? '/collection1.svg' : '/collection.svg'"
             class="nav-icon"
           />
-          Collections & Dispute
+          Collection & Dispute
         </a>
 
         <a
@@ -125,10 +125,10 @@
 
         <div class="setup-children" *ngIf="securityOpen && showSecurityLinks">
           <a *ngIf="canViewUsers" routerLink="users" routerLinkActive="active" class="sub-nav-item"
-            >Users</a
+            >User</a
           >
           <a *ngIf="canViewRoles" routerLink="roles" routerLinkActive="active" class="sub-nav-item"
-            >Roles</a
+            >Role</a
           >
           <a
             *ngIf="canManageMfa"
@@ -168,14 +168,14 @@
             routerLink="gl-code"
             routerLinkActive="active"
             class="sub-nav-item"
-            >GL Codes</a
+            >GL Code</a
           >
           <a
             *ngIf="canViewAccounts"
             routerLink="accounts"
             routerLinkActive="active"
             class="sub-nav-item"
-          >Accounts</a
+          >Account</a
           >
           <a
             *ngIf="canViewPaymentTerms"
@@ -183,14 +183,14 @@
             routerLinkActive="active"
             class="sub-nav-item"
           >
-            Payment Terms
+            Payment Term
           </a>
           <a
             *ngIf="canViewArCodes"
             routerLink="ar-code"
             routerLinkActive="active"
             class="sub-nav-item"
-            >AR Codes</a
+            >AR Code</a
           >
         </div>
       </nav>
@@ -247,7 +247,7 @@
             [src]="mobileCustomers.isActive ? '/customers1.svg' : '/customers.svg'"
             class="nav-icon"
           />
-          Customers
+          Customer
         </a>
 
         <a
@@ -261,7 +261,7 @@
             [src]="mobileInvoices.isActive ? '/invoice1.svg' : '/invoice.svg'"
             class="nav-icon"
           />
-          Invoices
+          Invoice
         </a>
 
         <a
@@ -275,7 +275,7 @@
             [src]="mobilePayments.isActive ? '/payment1.svg' : '/payment.svg'"
             class="nav-icon"
           />
-          Payments
+          Payment
         </a>
 
         <a
@@ -306,13 +306,13 @@
         </button>
         <div class="mobile-setup-children" *ngIf="canViewReports && mobileReportsOpen">
           <a routerLink="ar-reports" routerLinkActive="active" (click)="closeMobileMenu()"
-            >Aging Reports</a
+            >Aging Report</a
           >
           <a routerLink="invoices-reports" routerLinkActive="active" (click)="closeMobileMenu()"
-            >Invoices Reports</a
+            >Invoice Report</a
           >
           <a routerLink="payment-reports" routerLinkActive="active" (click)="closeMobileMenu()"
-            >Payments Reports</a
+            >Payment Report</a
           >
         </div>
 
@@ -327,7 +327,7 @@
             [src]="mobileCollections.isActive ? '/collection1.svg' : '/collection.svg'"
             class="nav-icon"
           />
-          Collections & Dispute
+          Collection & Dispute
         </a>
 
         <a
@@ -364,14 +364,14 @@
             routerLink="users"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-            >Users</a
+            >User</a
           >
           <a
             *ngIf="canViewRoles"
             routerLink="roles"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-          >Roles</a
+          >Role</a
           >
           <a
             *ngIf="canManageMfa"
@@ -417,14 +417,14 @@
             routerLink="gl-code"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-            >GL Codes</a
+            >GL Code</a
           >
           <a
             *ngIf="canViewAccounts"
             routerLink="accounts"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-          >Accounts</a
+          >Account</a
           >
           <a
             *ngIf="canViewPaymentTerms"
@@ -432,14 +432,14 @@
             routerLinkActive="active"
             (click)="closeMobileMenu()"
           >
-            Payment Terms
+            Payment Term
           </a>
           <a
             *ngIf="canViewArCodes"
             routerLink="ar-code"
             routerLinkActive="active"
             (click)="closeMobileMenu()"
-            >AR Codes</a
+            >AR Code</a
           >
         </div>
       </nav>

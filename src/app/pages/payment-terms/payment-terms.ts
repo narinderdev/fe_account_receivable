@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { Loader } from '../../shared/loader/loader';
 import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -23,7 +24,7 @@ interface PaymentTermRecord {
 @Component({
   selector: 'app-payment-terms',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, Loader],
   templateUrl: './payment-terms.html',
   styleUrls: ['./payment-terms.css'],
 })
@@ -174,8 +175,8 @@ export class PaymentTerms implements OnInit, OnDestroy {
     this.deleting = false;
   }
 
-  closeDeleteModal() {
-    if (this.deleting) {
+  closeDeleteModal(force = false) {
+    if (this.deleting && !force) {
       return;
     }
     this.deleteModalOpen = false;
@@ -196,7 +197,7 @@ export class PaymentTerms implements OnInit, OnDestroy {
       next: () => {
         this.toastr.success('Payment term deleted successfully', 'Success');
         this.deleting = false;
-        this.closeDeleteModal();
+        this.closeDeleteModal(true);
         this.loadPaymentTerms();
         this.cdr.detectChanges();
       },
@@ -274,3 +275,4 @@ export class PaymentTerms implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 }
+

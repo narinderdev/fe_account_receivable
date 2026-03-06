@@ -16,6 +16,7 @@ import { ToastrService } from 'ngx-toastr';
 
 import { AuthService } from '../../services/auth.service';
 import { Spinner } from '../../shared/spinner/spinner';
+import { UserContextService } from '../../services/user-context.service';
 import {
   extractAuthMetadata,
   storeAuthToken,
@@ -43,6 +44,7 @@ export class VerifyAuthenticatorComponent implements OnInit {
     private authService: AuthService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
+    private userContext: UserContextService,
     @Inject(PLATFORM_ID) platformId: object
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -180,7 +182,8 @@ export class VerifyAuthenticatorComponent implements OnInit {
               localStorage.removeItem('mfa_token');
             }
             this.toastr.success(message);
-            this.router.navigate(['/admin/dashboard']);
+            const targetRoute = this.userContext.getDefaultRoute();
+            this.router.navigate([targetRoute]);
           } else {
             this.errorMessage = message;
             this.toastr.error(message);

@@ -73,8 +73,7 @@ export class Sidebar {
     ];
     this.canViewCollections = collectionsPerms.some((perm) => this.userContext.hasPermission(perm));
     this.canViewCompany = this.userContext.hasPermission('VIEW_COMPANY');
-    this.canViewAccounts =
-      this.userContext.hasPermission('VIEW_BANK_ACCOUNT') || this.canViewCompany;
+    this.canViewAccounts = this.userContext.hasPermission('VIEW_BANK_ACCOUNT');
     this.canViewUsers = this.userContext.hasPermission('VIEW_USER');
     this.canViewRoles = this.userContext.hasPermission('VIEW_ROLES');
     const canViewArCodes = this.userContext.hasPermission('VIEW_AR_CODE');
@@ -205,3 +204,5 @@ export class Sidebar {
     this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 }
+
+

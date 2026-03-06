@@ -21,6 +21,22 @@ export type UserContext = {
 
 const STORAGE_KEY = 'userContext';
 
+const PERMISSION_ROUTE_ORDER: Array<{ permission: string; route: string }> = [
+  { permission: 'VIEW_DASHBOARD', route: '/admin/dashboard' },
+  { permission: 'VIEW_INVOICES', route: '/admin/invoices' },
+  { permission: 'VIEW_CUSTOMERS', route: '/admin/customer' },
+  { permission: 'VIEW_PAYMENTS', route: '/admin/payments' },
+  { permission: 'VIEW_PROMISE_TO_PAY', route: '/admin/collections' },
+  { permission: 'VIEW_MEMOS', route: '/admin/credit-memo' },
+  { permission: 'VIEW_COMPANY', route: '/admin/ar-company' },
+  { permission: 'VIEW_PAYMENT_TERMS', route: '/admin/payment-terms' },
+  { permission: 'VIEW_BANK_ACCOUNT', route: '/admin/accounts' },
+  { permission: 'VIEW_INTEGRATIONS', route: '/admin/integration' },
+  { permission: 'VIEW_AR_CODE', route: '/admin/ar-code' },
+  { permission: 'VIEW_GL_CODE', route: '/admin/gl-code' },
+  { permission: 'VIEW_USER', route: '/admin/users' },
+];
+
 @Injectable({
   providedIn: 'root',
 })
@@ -65,6 +81,20 @@ export class UserContextService {
 
   getUserId(): number | null {
     return this.getContext().userId;
+  }
+
+  getDefaultRoute(): string {
+    if (this.isAdmin()) {
+      return '/admin/dashboard';
+    }
+
+    for (const entry of PERMISSION_ROUTE_ORDER) {
+      if (this.hasPermission(entry.permission)) {
+        return entry.route;
+      }
+    }
+
+    return '/admin/dashboard';
   }
 
   clear() {
@@ -136,4 +166,7 @@ export class UserContextService {
     };
   }
 }
+
+
+
 

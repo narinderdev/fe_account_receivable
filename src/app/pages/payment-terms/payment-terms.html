@@ -1,70 +1,92 @@
-<div class="page-shell">
+<div class="page-shell payment-terms-page">
   <div class="page-header">
-    <button type="button" class="btn-primary" (click)="openModal()">+ Add Payment Term</button>
+    <button type="button" class="btn-primary add-btn" (click)="openModal()">
+      <img src="/plus.svg" alt="Add" class="btn-icon" />
+      New Payment Term
+    </button>
   </div>
 
-  <div class="table-card">
-    <div class="loader-row" *ngIf="loading">Loading payment terms...</div>
-    <div class="error-box" *ngIf="!loading && error">{{ error }}</div>
-
-    <table *ngIf="!loading && !error && paymentTerms.length > 0">
+  <div class="customers-table-wrapper invoice-table-card">
+    <table class="customers-table payment-terms-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Days</th>
-          <th class="actions-head">Actions</th>
+          <th>NAME</th>
+          <th>DAYS</th>
+          <th>STATUS</th>
+          <th class="actions-head">ACTIONS</th>
         </tr>
       </thead>
-      <tbody>
-        <tr *ngFor="let term of paymentTerms; trackBy: trackByTermId">
+
+      <tbody *ngIf="loading">
+        <tr>
+          <td class="table-loader-cell" colspan="4">
+            <app-loader [visible]="loading"></app-loader>
+          </td>
+        </tr>
+      </tbody>
+
+      <tbody *ngIf="!loading && !error && paymentTerms.length > 0">
+        <tr *ngFor="let term of paymentTerms; trackBy: trackByTermId" class="payment-term-row">
           <td>
             <div class="name-cell">
-              <span class="initial" [style.background]="'#DBEAFE'" [style.color]="'#1D4ED8'">
-                {{ term.name.charAt(0) }}
+              <span class="initial" [ngStyle]="{ background: '#DBEAFE', color: '#1D4ED8' }">
+                {{ term.name.charAt(0) | uppercase }}
               </span>
-              <div>
+              <div class="name-meta">
                 <div class="name">{{ term.name }}</div>
-                <div class="sub">{{ term.active ? 'Active' : 'Inactive' }}</div>
               </div>
             </div>
           </td>
           <td>{{ term.days }} days</td>
-          <td class="actions">
-            <span class="btn-right"
-              ><img
-                src="/editIcn.svg"
-                class="action-icon"
-                alt="Edit"
+          <td class="status-cell">
+            <span class="status-chip" [ngClass]="term.active ? 'status-active' : 'status-inactive'">
+              {{ term.active ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <div class="action-buttons">
+              <button
+                type="button"
+                class="icon-button"
                 (click)="editPaymentTerm(term); $event.stopPropagation()"
-            /></span>
-            <span
-              ><img
-                src="/deleteIcn.svg"
-                class="action-icon delete"
-                alt="Delete"
+                aria-label="Edit payment term"
+              >
+                <img src="/editIcn.svg" class="action-icon" alt="Edit" />
+              </button>
+              <button
+                type="button"
+                class="icon-button delete"
                 (click)="openDeleteModal(term); $event.stopPropagation()"
-            /></span>
+                aria-label="Delete payment term"
+              >
+                <img src="/deleteIcn.svg" class="action-icon" alt="Delete" />
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
+
+      <tbody *ngIf="!loading && !error && paymentTerms.length === 0">
+        <tr>
+          <td class="no-data-row" colspan="4">No payment terms created yet.</td>
+        </tr>
+      </tbody>
     </table>
-    <div class="empty" *ngIf="!loading && !error && paymentTerms.length === 0">
-      No payment terms created yet.
-    </div>
   </div>
+
+  <div class="table-error" *ngIf="!loading && error">{{ error }}</div>
 </div>
 
 <div class="modal-overlay" *ngIf="modalOpen">
   <div class="modal">
     <div class="modal-header">
       <h2>{{ editingTerm ? 'Edit Payment Term' : 'New Payment Term' }}</h2>
-      <button type="button" class="btn-close" (click)="closeModal()" [disabled]="saving">
-        &times;
+      <button type="button" class="btn-close" (click)="closeModal()" [disabled]="saving" aria-label="Close">
+        <span>&times;</span>
       </button>
     </div>
     <form [formGroup]="paymentTermForm" (ngSubmit)="savePaymentTerm()">
       <div class="modal-body">
-        <!-- <div class="info-banner">Payment terms define when invoices become due.</div> -->
         <div class="form-field">
           <label>Term Name <span class="required">*</span></label>
           <input type="text" placeholder="Enter payment term name" formControlName="name" />
@@ -81,12 +103,11 @@
           </p>
         </div>
 
-        <!-- <div class="form-field checkbox-field">
+        <div class="form-field checkbox-field">
           <label>
-            <input type="checkbox" formControlName="active" />
-            Active by default
+            <input type="checkbox" formControlName="active" /> Active by default
           </label>
-        </div> -->
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -116,3 +137,4 @@
     </div>
   </div>
 </div>
+

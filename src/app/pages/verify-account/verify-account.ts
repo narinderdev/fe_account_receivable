@@ -14,6 +14,7 @@ import { finalize } from 'rxjs';
 
 import { AuthService } from '../../services/auth.service';
 import { Spinner } from '../../shared/spinner/spinner';
+import { UserContextService } from '../../services/user-context.service';
 import {
   extractAuthMetadata,
   storeAuthToken,
@@ -43,7 +44,8 @@ export class VerifyAccountComponent implements OnInit {
     private router: Router,
     private authService: AuthService,
     private toastr: ToastrService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private userContext: UserContextService
   ) {}
 
   ngOnInit() {
@@ -177,13 +179,14 @@ export class VerifyAccountComponent implements OnInit {
           }
 
           const requiresAuthenticator = localStorage.getItem('mfaEnabled') === 'true';
+          const targetRoute = this.userContext.getDefaultRoute();
 
           this.toastr.success(response?.message || 'Email verified.');
           if (requiresAuthenticator) {
             this.router.navigate(['/verify-authenticator']);
           } else {
             localStorage.removeItem('mfa_token');
-            this.router.navigate(['/admin/dashboard']);
+            this.router.navigate([targetRoute]);
           }
         },
         error: (error) => {
