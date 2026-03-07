@@ -57,7 +57,7 @@ export class SecurityReport implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private pendingRequests = 0;
   private activeCompanyId: number | null = null;
-  private activeCompanyCode: string | null = null;
+  private activeCompanyCode = signal<string | null>(null);
 
   private roleRows = signal<RolePermissionRow[]>([]);
   private objectRows = signal<RolePermissionRow[]>([]);
@@ -180,11 +180,15 @@ export class SecurityReport implements OnInit, OnDestroy {
       .subscribe((companyIdValue) => {
         const parsed = companyIdValue ? Number(companyIdValue) : NaN;
         const nextCompanyId = Number.isFinite(parsed) ? parsed : null;
+
+        if (this.activeCompanyId === nextCompanyId) {
+          return;
+        }
+
         this.activeCompanyId = nextCompanyId;
-        this.activeCompanyCode = null;
+        this.resetState();
 
         if (!this.activeCompanyId) {
-          this.resetState();
           return;
         }
 
@@ -696,13 +700,14 @@ export class SecurityReport implements OnInit, OnDestroy {
   }
 
   private resetState() {
+    this.pendingRequests = 0;
+    this.loading.set(false);
     this.roleRows.set([]);
     this.objectRows.set([]);
     this.selectedRole.set('');
     this.selectedObject.set('');
-    this.loading.set(false);
     this.resetPagination();
-    this.activeCompanyCode = null;
+    this.activeCompanyCode.set(null);
   }
 
   private loadCompanyMetadata(companyId: number) {
@@ -715,11 +720,11 @@ export class SecurityReport implements OnInit, OnDestroy {
             return;
           }
           const code = response?.data?.companyCode?.trim();
-          this.activeCompanyCode = code || null;
+          this.activeCompanyCode.set(code || null);
         },
         error: () => {
           if (this.activeCompanyId === companyId) {
-            this.activeCompanyCode = null;
+            this.activeCompanyCode.set(null);
           }
         },
       });
@@ -824,7 +829,7 @@ export class SecurityReport implements OnInit, OnDestroy {
   }
 
   getActiveCompanyCode(): string | null {
-    const trimmed = this.activeCompanyCode?.trim();
+    const trimmed = this.activeCompanyCode()?.trim();
     return trimmed ? trimmed : null;
   }
 
