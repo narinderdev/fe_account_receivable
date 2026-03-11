@@ -73,6 +73,16 @@ export interface InvoiceItemInput {
   tax: number;
 }
 
+export type RecurringFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+
+export interface RecurringInvoiceRequest {
+  customerId: number;
+  startDate: string;
+  frequency: RecurringFrequency;
+  endAfter: number;
+  items: InvoiceItemInput[];
+}
+
 export interface CreateInvoiceRequest {
   invoiceNumber?: string;
   isGenerated: boolean;
