@@ -7,6 +7,7 @@ import {
   InvoiceDetailResponse,
   InvoiceListResponse,
   InvoicePage,
+  RecurringInvoiceRequest,
   SendInvoiceResponse,
 } from '../models/invoice.model';
 import { environment } from '../../environments/environment';
@@ -157,6 +158,13 @@ export class InvoiceService {
   uploadInvoiceCsv(companyId: number, formData: FormData): Observable<any> {
     const headers = getAuthHeaders();
     return this.http.post<any>(`${this.baseUrl}/invoice/import/${companyId}`, formData, {
+      headers,
+    });
+  }
+
+  recurringInvoice(data: RecurringInvoiceRequest): Observable<any> {
+    const headers = getAuthHeaders();
+    return this.http.post<any>(`${this.baseUrl}/recurring-invoices`, data, {
       headers,
     });
   }

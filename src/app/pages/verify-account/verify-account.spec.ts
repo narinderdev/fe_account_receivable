@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 import { AuthService } from '../../services/auth.service';
 import { ToastrService } from 'ngx-toastr';
+import { UserContextService } from '../../services/user-context.service';
 import { VerifyAccountComponent } from './verify-account';
 
 describe('VerifyAccountComponent', () => {
@@ -20,8 +21,17 @@ describe('VerifyAccountComponent', () => {
     ]);
     const toastr = createSpyObj<ToastrService>('ToastrService', ['success', 'error', 'warning']);
     const cdr = { detectChanges: createSpy('detectChanges') } as unknown as ChangeDetectorRef;
+    const userContext = createSpyObj<UserContextService>('UserContextService', ['getDefaultRoute']);
+    userContext.getDefaultRoute.mockReturnValue('/admin/dashboard');
 
-    const component = new VerifyAccountComponent(route, router, authService, toastr, cdr);
+    const component = new VerifyAccountComponent(
+      route,
+      router,
+      authService,
+      toastr,
+      cdr,
+      userContext
+    );
     component.ngOnInit();
     component.code = ['1', '2', '3', '4', '5', '6'];
 

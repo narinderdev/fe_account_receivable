@@ -90,6 +90,57 @@
           </div>
         </div>
       </div>
+
+      <div class="card-body recurring-settings">
+        <div class="recurring-toggle">
+          <div class="recurring-toggle-copy">
+            <p class="recurring-title">Recurring Payment</p>
+            <p class="recurring-subtitle">Automatically repeat this invoice on a schedule.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" [(ngModel)]="invoice.isRecurring" (change)="onRecurringToggle()" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-row" *ngIf="invoice.isRecurring">
+          <div class="form-field">
+            <label>Start Date</label>
+            <input
+              type="date"
+              [(ngModel)]="invoice.recurringStartDate"
+              [min]="invoice.invoiceDate || today"
+            />
+            <p class="error" *ngIf="showRecurringStartDateError">Start date is required.</p>
+          </div>
+          <div class="form-field">
+            <label>Repeat Every</label>
+            <select [(ngModel)]="invoice.recurringFrequency">
+              <option value="">Select frequency</option>
+              <option *ngFor="let option of recurringFrequencyOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <p class="error" *ngIf="showRecurringFrequencyError">Please choose a frequency.</p>
+          </div>
+          <div class="form-field">
+            <label>End After</label>
+            <input
+              type="text"
+              inputmode="numeric"
+              maxlength="3"
+              placeholder="e.g. 12 invoices"
+              [(ngModel)]="invoice.recurringEndAfter"
+              (keypress)="onlyDigits($event)"
+              (paste)="onPaste($event)"
+            />
+            <small class="field-hint">Stop after this many invoices.</small>
+            <p class="error" *ngIf="showRecurringEndAfterError">
+              Enter how many invoices to generate.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Items Card -->

@@ -7,9 +7,13 @@ import { InvoiceService } from '../../services/invoice-service';
 import { ToastrService } from 'ngx-toastr';
 import { Spinner } from '../../shared/spinner/spinner';
 import { CompanySelectionService } from '../../services/company-selection.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, catchError, map, of, switchMap, takeUntil } from 'rxjs';
 import { CustomerEntity, PaginatedResponse } from '../../models/customer.model';
-import { InvoiceDetailResponse } from '../../models/invoice.model';
+import {
+  InvoiceDetailResponse,
+  RecurringFrequency,
+  RecurringInvoiceRequest,
+} from '../../models/invoice.model';
 
 interface InvoiceItemDraft {
   itemName: string;
@@ -29,6 +33,10 @@ interface InvoiceDraft {
   county: string;
   note: string;
   items: InvoiceItemDraft[];
+  isRecurring: boolean;
+  recurringFrequency: RecurringFrequency | '';
+  recurringStartDate: string;
+  recurringEndAfter: string;
 }
 
 interface CreateInvoicePayload {
@@ -72,6 +80,10 @@ export class CreateInvoice implements OnInit, OnDestroy {
     dueDate: '',
     county: '',
     note: '',
+    isRecurring: false,
+    recurringFrequency: '',
+    recurringStartDate: '',
+    recurringEndAfter: '',
     items: [
       {
         itemName: '',
@@ -92,6 +104,13 @@ export class CreateInvoice implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private companySelection: CompanySelectionService,
   ) {}
+
+  readonly recurringFrequencyOptions = [
+    { label: 'Daily', value: 'DAILY' as RecurringFrequency },
+    { label: 'Weekly', value: 'WEEKLY' as RecurringFrequency },
+    { label: 'Monthly', value: 'MONTHLY' as RecurringFrequency },
+    { label: 'Yearly', value: 'YEARLY' as RecurringFrequency },
+  ];
 
   ngOnInit(): void {
     this.companySelection.selectedCompanyId$.pipe(takeUntil(this.destroy$)).subscribe((id) => {
@@ -340,6 +359,61 @@ export class CreateInvoice implements OnInit, OnDestroy {
     return new Date(this.invoice.dueDate) < new Date(this.invoice.invoiceDate);
   }
 
+  get showRecurringFrequencyError(): boolean {
+    return this.formSubmitted && this.invoice.isRecurring && !this.invoice.recurringFrequency;
+  }
+
+  get showRecurringStartDateError(): boolean {
+    return this.formSubmitted && this.invoice.isRecurring && !this.invoice.recurringStartDate;
+  }
+
+  get showRecurringEndAfterError(): boolean {
+    return (
+      this.formSubmitted &&
+      this.invoice.isRecurring &&
+      this.parsePositiveInteger(this.invoice.recurringEndAfter) === null
+    );
+  }
+
+  onRecurringToggle(): void {
+    if (!this.invoice.isRecurring) {
+      this.invoice.recurringFrequency = '';
+      this.invoice.recurringStartDate = '';
+      this.invoice.recurringEndAfter = '';
+      return;
+    }
+
+    if (!this.invoice.recurringStartDate) {
+      this.invoice.recurringStartDate = this.invoice.invoiceDate || this.today;
+    }
+  }
+
+  private parsePositiveInteger(value: string): number | null {
+    const trimmed = value?.toString().trim();
+    if (!trimmed) {
+      return null;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return null;
+    }
+    return parsed;
+  }
+
+  private buildRecurringInvoicePayload(
+    customerId: number,
+    items: CreateInvoicePayload['items'],
+    endAfter: number,
+  ): RecurringInvoiceRequest {
+    return {
+      customerId,
+      startDate: this.invoice.recurringStartDate,
+      frequency: this.invoice.recurringFrequency as RecurringFrequency,
+      endAfter,
+      items,
+    };
+  }
+
   // ---------------------------
   // SUBMIT INVOICE
   // ---------------------------
@@ -388,25 +462,40 @@ export class CreateInvoice implements OnInit, OnDestroy {
       }
     }
 
+    let recurringEndAfterValue: number | null = null;
+    if (this.invoice.isRecurring) {
+      recurringEndAfterValue = this.parsePositiveInteger(this.invoice.recurringEndAfter);
+
+      if (
+        !this.invoice.recurringFrequency ||
+        !this.invoice.recurringStartDate ||
+        !recurringEndAfterValue
+      ) {
+        this.toastr.error('Please complete the recurring payment fields.', 'Validation Error');
+        return;
+      }
+    }
+
     this.loading = true;
 
     // ---------------------------
     // PAYLOAD CONSTRUCTION
     // ---------------------------
+    const normalizedItems = this.invoice.items.map((item: InvoiceItemDraft) => ({
+      itemName: item.itemName,
+      rate: parseFloat(item.rate) || 0,
+      description: item.description,
+      quantity: parseFloat(item.quantity) || 0,
+      tax: parseFloat(item.tax) || 0,
+    }));
+
     const payload: CreateInvoicePayload = {
       isGenerated: !!this.invoice.isGenerated,
       invoiceDate: this.invoice.invoiceDate,
       dueDate: this.invoice.dueDate,
       county: this.invoice.county?.trim() || null,
       note: this.invoice.note || null,
-
-      items: this.invoice.items.map((item: InvoiceItemDraft) => ({
-        itemName: item.itemName,
-        rate: parseFloat(item.rate) || 0,
-        description: item.description,
-        quantity: parseFloat(item.quantity) || 0,
-        tax: parseFloat(item.tax) || 0,
-      })),
+      items: normalizedItems,
     };
 
     if (!this.invoice.isGenerated) {
@@ -423,20 +512,50 @@ export class CreateInvoice implements OnInit, OnDestroy {
     // ---------------------------
     // CREATE INVOICE
     // ---------------------------
-    this.invoiceService.createInvoice(customerId, payload).subscribe({
-      next: (res: InvoiceDetailResponse) => {
-        this.loading = false;
-        this.toastr.success('Invoice created successfully.', 'Success');
-        this.router.navigate(['/admin/invoices']);
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        const msg = err?.error?.message || 'Unknown error';
-        this.toastr.error('Failed to create invoice: ' + msg, 'Error');
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-    });
+    this.invoiceService
+      .createInvoice(customerId, payload)
+      .pipe(
+        switchMap((res: InvoiceDetailResponse) => {
+          if (!this.invoice.isRecurring) {
+            return of({ invoiceResponse: res, recurringCreated: false });
+          }
+
+          const recurringPayload = this.buildRecurringInvoicePayload(
+            customerId,
+            normalizedItems,
+            recurringEndAfterValue as number,
+          );
+
+          return this.invoiceService.recurringInvoice(recurringPayload).pipe(
+            map(() => ({ invoiceResponse: res, recurringCreated: true })),
+            catchError((err) => {
+              const msg = err?.error?.message || 'Unknown error';
+              this.toastr.error(
+                'Recurring schedule could not be saved: ' + msg,
+                'Recurring Error',
+              );
+              return of({ invoiceResponse: res, recurringCreated: false });
+            }),
+          );
+        }),
+      )
+      .subscribe({
+        next: ({ recurringCreated }) => {
+          this.loading = false;
+          const successMessage = recurringCreated
+            ? 'Invoice and recurring schedule created successfully.'
+            : 'Invoice created successfully.';
+          this.toastr.success(successMessage, 'Success');
+          this.router.navigate(['/admin/invoices']);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          const msg = err?.error?.message || 'Unknown error';
+          this.toastr.error('Failed to create invoice: ' + msg, 'Error');
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   ngOnDestroy() {
