@@ -26,18 +26,45 @@
       <!-- Customer -->
       <div class="form-group">
         <label>Customer <span class="required">*</span></label>
-        <select
-          [(ngModel)]="selectedCustomerId"
-          (change)="onCustomerChange()"
-          [class.error-input]="showCustomerError"
-          name="customer"
+
+        <div
+          *ngIf="!selectedCustomer"
+          class="customer-select-trigger"
+          (click)="openCustomerModal()"
+          [class.has-error]="showCustomerError"
         >
-          <option [ngValue]="null">Select Customer</option>
-          <option *ngFor="let c of customers" [ngValue]="c.id">
-            {{ c.customerName }}
-          </option>
-        </select>
-        <div *ngIf="showCustomerError" class="error-message">Company is required</div>
+          <span class="customer-placeholder">Select Customer</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="trigger-icon"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-7 9a7 7 0 1 1 14 0H3Z" />
+          </svg>
+        </div>
+
+        <div *ngIf="selectedCustomer" class="customer-selected-display" (click)="openCustomerModal()">
+          <div class="customer-avatar">
+            {{ selectedCustomer.customerName.charAt(0).toUpperCase() }}
+          </div>
+          <span class="customer-selected-name">{{ selectedCustomer.customerName }}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="edit-icon"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              d="M5.433 13.917l1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z"
+            />
+            <path
+              d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z"
+            />
+          </svg>
+        </div>
+
+        <div *ngIf="showCustomerError" class="error-message">Customer is required</div>
       </div>
 
       <!-- Bank Deposit -->
@@ -153,6 +180,180 @@
         <app-spinner *ngIf="isSaving"></app-spinner>
         <span *ngIf="!isSaving">Save</span>
         <span *ngIf="isSaving">Saving...</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Selection Modal -->
+<div class="modal-backdrop" *ngIf="showCustomerModal" (click)="closeCustomerModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="modal-header-icon"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z"
+          />
+        </svg>
+        <h3 class="modal-title">Select Customer</h3>
+      </div>
+      <button class="modal-close-btn" (click)="closeCustomerModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            fill-rule="evenodd"
+            d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-search">
+      <div class="search-input-wrapper">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="search-icon"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search customers by name..."
+          [(ngModel)]="customerSearchQuery"
+          (ngModelChange)="onSearchChange()"
+          autofocus
+        />
+        <button
+          *ngIf="customerSearchQuery"
+          class="search-clear-btn"
+          (click)="customerSearchQuery = ''; onSearchChange()"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-table-wrapper">
+      <table class="customer-table">
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th>Customer Name</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="pagedCustomers.length === 0">
+            <td colspan="3" class="empty-state">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="empty-icon"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 1 1-1.49-.158 5.25 5.25 0 0 0-10.437 0 .75.75 0 0 1-1.49.158 6.721 6.721 0 0 1 1.018-4.381Z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <p>No customers found</p>
+              <span *ngIf="customerSearchQuery">Try a different search term</span>
+            </td>
+          </tr>
+
+          <tr
+            *ngFor="let customer of pagedCustomers"
+            class="customer-row"
+            [class.is-selected]="isModalCustomerSelected(customer)"
+            (click)="onModalCustomerSelect(customer)"
+          >
+            <td class="col-check">
+              <div class="custom-checkbox" [class.checked]="isModalCustomerSelected(customer)">
+                <svg
+                  *ngIf="isModalCustomerSelected(customer)"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </div>
+            </td>
+            <td>
+              <div class="customer-name-cell">
+                <div class="table-avatar">
+                  {{ customer.customerName.charAt(0).toUpperCase() }}
+                </div>
+                <span class="customer-name-text">{{ customer.customerName }}</span>
+              </div>
+            </td>
+            <td class="secondary-text">{{ customer.email || 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-pagination" *ngIf="filteredCustomers.length > 0">
+      <span class="pagination-info">
+        Showing {{ paginationStart }}-{{ paginationEnd }} of
+        {{ filteredCustomers.length }} customers
+      </span>
+      <div class="pagination-controls">
+        <button class="pagination-btn" [disabled]="currentPage === 0" (click)="goToPrevPage()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+        <span class="pagination-pages">{{ currentPage + 1 }} / {{ totalPages || 1 }}</span>
+        <button
+          class="pagination-btn"
+          [disabled]="currentPage >= totalPages - 1"
+          (click)="goToNextPage()"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" (click)="closeCustomerModal()">Cancel</button>
+      <button
+        class="btn-modal-confirm"
+        [disabled]="!modalSelectedCustomer"
+        (click)="confirmCustomerSelection()"
+      >
+        Done
       </button>
     </div>
   </div>

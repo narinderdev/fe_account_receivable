@@ -21,6 +21,7 @@ import { Spinner } from '../../../shared/spinner/spinner';
 export class ReceivePayment implements OnInit, OnDestroy {
   customers: CustomerEntity[] = [];
   selectedCustomerId: number | null = null;
+  selectedCustomer: CustomerEntity | null = null;
   bankDeposit: number | null = null;
   serviceFee: number | null = null;
   paymentMethod: string = '';
@@ -36,6 +37,11 @@ export class ReceivePayment implements OnInit, OnDestroy {
   showServiceFeeError: boolean = false;
   showPaymentMethodError: boolean = false;
   isSaving = false;
+  showCustomerModal = false;
+  customerSearchQuery = '';
+  currentPage = 0;
+  readonly pageSize = 10;
+  modalSelectedCustomer: CustomerEntity | null = null;
 
   constructor(
     private customerService: Customer,
@@ -66,9 +72,11 @@ export class ReceivePayment implements OnInit, OnDestroy {
       } else {
         this.customers = [];
         this.selectedCustomerId = null;
+        this.selectedCustomer = null;
         this.bankDeposit = null;
         this.serviceFee = null;
         this.paymentMethod = '';
+        this.closeCustomerModal();
         this.cdr.detectChanges();
       }
     });
@@ -86,6 +94,13 @@ export class ReceivePayment implements OnInit, OnDestroy {
     this.customerService.getCustomers(companyId, 0, 100).subscribe({
       next: (res: { data?: PaginatedResponse<CustomerEntity> }) => {
         this.customers = res?.data?.content || [];
+        if (this.selectedCustomerId) {
+          const match = this.customers.find((c) => c.id === this.selectedCustomerId) || null;
+          this.selectedCustomer = match;
+          if (!match) {
+            this.selectedCustomerId = null;
+          }
+        }
         console.log('Customers loaded:', this.customers.length);
         this.cdr.detectChanges();
       },
@@ -94,6 +109,34 @@ export class ReceivePayment implements OnInit, OnDestroy {
         this.toastr.error('Could not load customers. Please try again.', 'Error');
       },
     });
+  }
+
+  get filteredCustomers(): CustomerEntity[] {
+    const query = this.customerSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return this.customers;
+    }
+    return this.customers.filter((c) => {
+      const name = c.customerName?.toLowerCase() || '';
+      return name.includes(query);
+    });
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredCustomers.length / this.pageSize);
+  }
+
+  get pagedCustomers(): CustomerEntity[] {
+    const start = this.currentPage * this.pageSize;
+    return this.filteredCustomers.slice(start, start + this.pageSize);
+  }
+
+  get paginationStart(): number {
+    return this.filteredCustomers.length === 0 ? 0 : this.currentPage * this.pageSize + 1;
+  }
+
+  get paginationEnd(): number {
+    return Math.min((this.currentPage + 1) * this.pageSize, this.filteredCustomers.length);
   }
 
   onBankDepositInput(event: any) {
@@ -150,6 +193,57 @@ export class ReceivePayment implements OnInit, OnDestroy {
       this.showPaymentMethodError = false;
       this.cdr.detectChanges();
     });
+  }
+
+  openCustomerModal(): void {
+    this.modalSelectedCustomer = this.selectedCustomer;
+    this.customerSearchQuery = '';
+    this.currentPage = 0;
+    this.showCustomerModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeCustomerModal(): void {
+    this.showCustomerModal = false;
+    this.modalSelectedCustomer = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmCustomerSelection(): void {
+    if (!this.modalSelectedCustomer) {
+      return;
+    }
+    this.selectedCustomer = this.modalSelectedCustomer;
+    this.selectedCustomerId = this.modalSelectedCustomer.id;
+    this.showCustomerModal = false;
+    this.modalSelectedCustomer = null;
+    this.showCustomerError = false;
+    this.onCustomerChange();
+    this.cdr.detectChanges();
+  }
+
+  onModalCustomerSelect(customer: CustomerEntity): void {
+    this.modalSelectedCustomer = customer;
+  }
+
+  isModalCustomerSelected(customer: CustomerEntity): boolean {
+    return this.modalSelectedCustomer?.id === customer.id;
+  }
+
+  onSearchChange(): void {
+    this.currentPage = 0;
+  }
+
+  goToPrevPage(): void {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+    }
+  }
+
+  goToNextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+    }
   }
 
   /** Check if form is valid */

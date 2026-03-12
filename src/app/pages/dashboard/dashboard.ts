@@ -44,7 +44,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     pendingInvoices: 0,
     totalCustomers: 0,
     currentPromiseToPay: 0,
-    overdueMoreThan30Days:0
+    overdueMoreThan30Days: 0,
   };
 
   // Graph data properties
@@ -112,7 +112,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
           pendingInvoices: 0,
           totalCustomers: 0,
           currentPromiseToPay: 0,
-          overdueMoreThan30Days:0
+          overdueMoreThan30Days: 0,
         };
         // Show all 12 months at zero when no company selected
         this.graphLabels = this.generateMonthLabels(this.selectedYear);
@@ -218,7 +218,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
             pendingInvoices: data.pendingInvoices ?? 0,
             totalCustomers: data.totalCustomers ?? 0,
             currentPromiseToPay: data.currentPromiseToPay ?? 0,
-            overdueMoreThan30Days: data.overdueMoreThan30Days ?? 0
+            overdueMoreThan30Days: data.overdueMoreThan30Days ?? 0,
           };
         }
 
@@ -328,18 +328,12 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
         datasets: [
           {
             data: this.graphData,
-            backgroundColor: (context: ScriptableContext<'bar'>) => {
-              const ctx = context.chart.ctx;
-              const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-              gradient.addColorStop(0, '#2563eb');
-              gradient.addColorStop(1, '#1d4ed8');
-              return gradient;
-            },
-            borderColor: '#1e40af',
+            backgroundColor: '#5397F7',
+            borderColor: '#5397F7',
             borderWidth: 0,
             borderRadius: 8,
             borderSkipped: false,
-            hoverBackgroundColor: '#1e3a8a',
+            hoverBackgroundColor: '#3b82f6',
             barThickness: 'flex',
             maxBarThickness: 60,
           },
@@ -376,7 +370,6 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
         scales: {
           y: {
             beginAtZero: true,
-            // Dynamic Y-axis based on data
             suggestedMax: this.calculateSuggestedMax(this.graphData),
             grid: {
               color: '#e5e7eb',
@@ -401,7 +394,6 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
               font: {
                 size: 12,
               },
-              // Auto-skip labels if too many months
               maxRotation: 45,
               minRotation: 0,
             },

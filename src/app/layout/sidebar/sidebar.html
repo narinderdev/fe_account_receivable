@@ -186,6 +186,14 @@
             Payment Term
           </a>
           <a
+            *ngIf="canViewLateFee"
+            routerLink="late-fee"
+            routerLinkActive="active"
+            class="sub-nav-item"
+          >
+            Late Fee
+          </a>
+          <a
             *ngIf="canViewArCodes"
             routerLink="ar-code"
             routerLinkActive="active"
@@ -433,6 +441,14 @@
             (click)="closeMobileMenu()"
           >
             Payment Term
+          </a>
+          <a
+            *ngIf="canViewLateFee"
+            routerLink="late-fee"
+            routerLinkActive="active"
+            (click)="closeMobileMenu()"
+          >
+            Late Fee
           </a>
           <a
             *ngIf="canViewArCodes"

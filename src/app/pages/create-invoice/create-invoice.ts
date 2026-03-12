@@ -20,7 +20,7 @@ interface InvoiceItemDraft {
   description: string;
   quantity: string;
   rate: string;
-  rateDisplay: string; // For displaying formatted value
+  rateDisplay: string;
   tax: string;
 }
 
@@ -71,6 +71,15 @@ export class CreateInvoice implements OnInit, OnDestroy {
   formSubmitted = false;
   loading = false;
   selectedCustomer: CustomerEntity | null = null;
+
+  // ---------------------------
+  // CUSTOMER MODAL STATE
+  // ---------------------------
+  showCustomerModal = false;
+  customerSearchQuery = '';
+  currentPage = 0;
+  readonly pageSize = 10;
+  modalSelectedCustomer: CustomerEntity | null = null;
 
   invoice: InvoiceDraft = {
     customerId: '',
@@ -150,14 +159,94 @@ export class CreateInvoice implements OnInit, OnDestroy {
   }
 
   // ---------------------------
+  // CUSTOMER MODAL METHODS
+  // ---------------------------
+  openCustomerModal(): void {
+    this.modalSelectedCustomer = this.selectedCustomer;
+    this.customerSearchQuery = '';
+    this.currentPage = 0;
+    this.showCustomerModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeCustomerModal(): void {
+    this.showCustomerModal = false;
+    this.modalSelectedCustomer = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmCustomerSelection(): void {
+    if (!this.modalSelectedCustomer) return;
+
+    this.selectedCustomer = this.modalSelectedCustomer;
+    this.invoice.customerId = this.modalSelectedCustomer.id;
+    this.showCustomerModal = false;
+    this.modalSelectedCustomer = null;
+    this.cdr.detectChanges();
+  }
+
+  onModalCustomerSelect(customer: CustomerEntity): void {
+    this.modalSelectedCustomer = customer;
+  }
+
+  isModalCustomerSelected(customer: CustomerEntity): boolean {
+    return this.modalSelectedCustomer?.id === customer.id;
+  }
+
+  onSearchChange(): void {
+    this.currentPage = 0;
+  }
+
+  get filteredCustomers(): CustomerEntity[] {
+    const query = this.customerSearchQuery.trim().toLowerCase();
+    if (!query) return this.customers;
+    return this.customers.filter((c) =>
+      c.customerName?.toLowerCase().includes(query),
+    );
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredCustomers.length / this.pageSize);
+  }
+
+  get pagedCustomers(): CustomerEntity[] {
+    const start = this.currentPage * this.pageSize;
+    return this.filteredCustomers.slice(start, start + this.pageSize);
+  }
+
+  get paginationStart(): number {
+    return this.filteredCustomers.length === 0 ? 0 : this.currentPage * this.pageSize + 1;
+  }
+
+  get paginationEnd(): number {
+    return Math.min((this.currentPage + 1) * this.pageSize, this.filteredCustomers.length);
+  }
+
+  goToPrevPage(): void {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+    }
+  }
+
+  goToNextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+    }
+  }
+
+  clearCustomerSelection(): void {
+    this.selectedCustomer = null;
+    this.invoice.customerId = '';
+    this.cdr.detectChanges();
+  }
+
+  // ---------------------------
   // INPUT VALIDATION METHODS
   // ---------------------------
   onlyDigits(event: KeyboardEvent): boolean {
     const charCode = event.which ? event.which : event.keyCode;
-    // Allow: backspace, delete, tab, escape, enter
     if (
       [46, 8, 9, 27, 13].indexOf(charCode) !== -1 ||
-      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
       (charCode === 65 && event.ctrlKey === true) ||
       (charCode === 67 && event.ctrlKey === true) ||
       (charCode === 86 && event.ctrlKey === true) ||
@@ -165,7 +254,6 @@ export class CreateInvoice implements OnInit, OnDestroy {
     ) {
       return true;
     }
-    // Ensure that it is a number and stop the keypress
     if (charCode < 48 || charCode > 57) {
       event.preventDefault();
       return false;
@@ -177,10 +265,8 @@ export class CreateInvoice implements OnInit, OnDestroy {
     const charCode = event.which ? event.which : event.keyCode;
     const inputValue = (event.target as HTMLInputElement).value;
 
-    // Allow: backspace, delete, tab, escape, enter
     if (
       [46, 8, 9, 27, 13].indexOf(charCode) !== -1 ||
-      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
       (charCode === 65 && event.ctrlKey === true) ||
       (charCode === 67 && event.ctrlKey === true) ||
       (charCode === 86 && event.ctrlKey === true) ||
@@ -189,7 +275,6 @@ export class CreateInvoice implements OnInit, OnDestroy {
       return true;
     }
 
-    // Allow decimal point only once
     if (charCode === 46) {
       if (inputValue.indexOf('.') !== -1) {
         event.preventDefault();
@@ -198,7 +283,6 @@ export class CreateInvoice implements OnInit, OnDestroy {
       return true;
     }
 
-    // Ensure that it is a number
     if (charCode < 48 || charCode > 57) {
       event.preventDefault();
       return false;
@@ -224,31 +308,28 @@ export class CreateInvoice implements OnInit, OnDestroy {
   // RATE FORMATTING METHODS
   // ---------------------------
   onRateInput(item: InvoiceItemDraft, event: any): void {
-  const input = event.target.value.replace(/[^\d.]/g, '');
-  item.rate = input;
-  item.rateDisplay = input;
-}
-
+    const input = event.target.value.replace(/[^\d.]/g, '');
+    item.rate = input;
+    item.rateDisplay = input;
+  }
 
   formatRateOnBlur(item: InvoiceItemDraft): void {
-  if (!item.rate) {
-    item.rateDisplay = '';
-    return;
+    if (!item.rate) {
+      item.rateDisplay = '';
+      return;
+    }
+
+    const numericValue = parseFloat(item.rate);
+    if (isNaN(numericValue)) {
+      item.rateDisplay = '';
+      item.rate = '';
+      return;
+    }
+
+    item.rateDisplay = `$${this.formatNumberWithCommas(numericValue)}`;
   }
-
-  const numericValue = parseFloat(item.rate);
-  if (isNaN(numericValue)) {
-    item.rateDisplay = '';
-    item.rate = '';
-    return;
-  }
-
-  item.rateDisplay = `$${this.formatNumberWithCommas(numericValue)}`;
-}
-
 
   removeRateFormatting(item: InvoiceItemDraft): void {
-    // When focused, show the raw number without formatting
     item.rateDisplay = item.rate;
   }
 
@@ -259,14 +340,13 @@ export class CreateInvoice implements OnInit, OnDestroy {
   }
 
   // ---------------------------
-  // CUSTOMER SELECTION
+  // CUSTOMER SELECTION (legacy — kept for compatibility)
   // ---------------------------
   onCustomerChange(): void {
     if (!this.invoice.customerId) {
       this.selectedCustomer = null;
       return;
     }
-
     const customerId = Number(this.invoice.customerId);
     this.selectedCustomer = this.customers.find((c) => c.id === customerId) || null;
     this.cdr.detectChanges();
@@ -346,16 +426,12 @@ export class CreateInvoice implements OnInit, OnDestroy {
   }
 
   get isInvoiceDateInFuture(): boolean {
-    if (!this.invoice.invoiceDate) {
-      return false;
-    }
+    if (!this.invoice.invoiceDate) return false;
     return new Date(this.invoice.invoiceDate) > new Date(this.today);
   }
 
   get isDueDateBeforeInvoiceDate(): boolean {
-    if (!this.invoice.dueDate || !this.invoice.invoiceDate) {
-      return false;
-    }
+    if (!this.invoice.dueDate || !this.invoice.invoiceDate) return false;
     return new Date(this.invoice.dueDate) < new Date(this.invoice.invoiceDate);
   }
 
@@ -382,7 +458,6 @@ export class CreateInvoice implements OnInit, OnDestroy {
       this.invoice.recurringEndAfter = '';
       return;
     }
-
     if (!this.invoice.recurringStartDate) {
       this.invoice.recurringStartDate = this.invoice.invoiceDate || this.today;
     }
@@ -390,13 +465,9 @@ export class CreateInvoice implements OnInit, OnDestroy {
 
   private parsePositiveInteger(value: string): number | null {
     const trimmed = value?.toString().trim();
-    if (!trimmed) {
-      return null;
-    }
+    if (!trimmed) return null;
     const parsed = Number(trimmed);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-      return null;
-    }
+    if (!Number.isInteger(parsed) || parsed <= 0) return null;
     return parsed;
   }
 
@@ -420,7 +491,6 @@ export class CreateInvoice implements OnInit, OnDestroy {
   submitInvoice(): void {
     this.formSubmitted = true;
 
-    // Validate mandatory fields
     if (
       !this.invoice.customerId ||
       !this.invoice.invoiceDate ||
@@ -441,18 +511,6 @@ export class CreateInvoice implements OnInit, OnDestroy {
       return;
     }
 
-    // Check credit limit
-    // if (this.exceedsCreditLimit) {
-    //   this.toastr.error(
-    //     `Invoice total ($${this.totalAmount.toFixed(
-    //       2,
-    //     )}) exceeds customer's credit limit ($${this.customerCreditLimit.toFixed(2)})`,
-    //     'Credit Limit Exceeded',
-    //   );
-    //   return;
-    // }
-
-    // Validate manual invoice number
     if (!this.invoice.isGenerated) {
       const num = this.invoice.invoiceNumber?.toString() || '';
       const isValidDigits = /^[0-9]{4}$/.test(num);
@@ -465,12 +523,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
     let recurringEndAfterValue: number | null = null;
     if (this.invoice.isRecurring) {
       recurringEndAfterValue = this.parsePositiveInteger(this.invoice.recurringEndAfter);
-
-      if (
-        !this.invoice.recurringFrequency ||
-        !this.invoice.recurringStartDate ||
-        !recurringEndAfterValue
-      ) {
+      if (!this.invoice.recurringFrequency || !this.invoice.recurringStartDate || !recurringEndAfterValue) {
         this.toastr.error('Please complete the recurring payment fields.', 'Validation Error');
         return;
       }
@@ -478,9 +531,6 @@ export class CreateInvoice implements OnInit, OnDestroy {
 
     this.loading = true;
 
-    // ---------------------------
-    // PAYLOAD CONSTRUCTION
-    // ---------------------------
     const normalizedItems = this.invoice.items.map((item: InvoiceItemDraft) => ({
       itemName: item.itemName,
       rate: parseFloat(item.rate) || 0,
@@ -509,9 +559,6 @@ export class CreateInvoice implements OnInit, OnDestroy {
       return;
     }
 
-    // ---------------------------
-    // CREATE INVOICE
-    // ---------------------------
     this.invoiceService
       .createInvoice(customerId, payload)
       .pipe(
@@ -530,10 +577,7 @@ export class CreateInvoice implements OnInit, OnDestroy {
             map(() => ({ invoiceResponse: res, recurringCreated: true })),
             catchError((err) => {
               const msg = err?.error?.message || 'Unknown error';
-              this.toastr.error(
-                'Recurring schedule could not be saved: ' + msg,
-                'Recurring Error',
-              );
+              this.toastr.error('Recurring schedule could not be saved: ' + msg, 'Recurring Error');
               return of({ invoiceResponse: res, recurringCreated: false });
             }),
           );

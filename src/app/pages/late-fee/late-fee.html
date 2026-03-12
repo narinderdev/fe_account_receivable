@@ -1,0 +1,310 @@
+<div class="late-fee-container">
+  <div class="header-card">
+    <button class="btn-primary" (click)="openModal()">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="btn-icon"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"
+        />
+      </svg>
+      Late Fee
+    </button>
+  </div>
+
+  <div class="card">
+    <div *ngIf="loading" class="loader-block">
+      <app-spinner *ngIf="loading"></app-spinner>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <!-- Empty State -->
+      <div *ngIf="records.length === 0" class="empty-state">
+        <div class="empty-icon-wrap">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="empty-icon"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 7.5a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z" />
+            <path
+              fill-rule="evenodd"
+              d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v9.75c0 1.036-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 0 1 1.5 14.625v-9.75ZM8.25 9.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM18.75 9a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V9.75a.75.75 0 0 0-.75-.75h-.008ZM4.5 9.75A.75.75 0 0 1 5.25 9h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H5.25a.75.75 0 0 1-.75-.75V9.75Z"
+              clip-rule="evenodd"
+            />
+            <path
+              d="M2.25 18a.75.75 0 0 0 0 1.5c5.4 0 10.63.722 15.6 2.075 1.19.324 2.4-.558 2.4-1.82V18.75a.75.75 0 0 0-.75-.75H2.25Z"
+            />
+          </svg>
+        </div>
+        <p class="empty-title">No late fees configured</p>
+        <p class="empty-sub">Add a late fee rule to automatically charge overdue invoices.</p>
+      </div>
+
+      <!-- Table -->
+      <div class="table-scroll" *ngIf="records.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Grace Period</th>
+              <th>Mandatory Charge</th>
+              <th>Late Fee (%)</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of pagedRecords; let i = index">
+              <td>
+                <div class="grace-period-cell">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="cell-icon"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  {{ record.gracePeriodDays }} day{{ record.gracePeriodDays !== 1 ? 's' : '' }}
+                </div>
+              </td>
+              <td>
+                <span class="amount-cell">{{ formatDollars(record.mandatoryCharge) }}</span>
+              </td>
+              <td>
+                <span class="amount-cell">{{ formatPercent(record.lateFeePercentage) }}</span>
+              </td>
+              <td>
+                <span
+                  class="status-badge"
+                  [ngClass]="{
+                    'status-active': record.status === 'ACTIVE',
+                    'status-inactive': record.status !== 'ACTIVE',
+                  }"
+                >
+                  {{ record.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="actions">
+                <img
+                  src="/editIcn.svg"
+                  alt="Edit"
+                  class="action-icon"
+                  (click)="editLateFee(currentPage * pageSize + i); $event.stopPropagation()"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-wrapper" *ngIf="totalPages > 1 && totalItems > 0">
+        <div class="pagination-info">
+          Showing {{ currentPage * pageSize + 1 }} to
+          {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} records
+        </div>
+        <div class="pagination-controls">
+          <button class="page-nav-btn" (click)="prevPage()" [disabled]="currentPage === 0">
+            <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+          </button>
+          <button
+            *ngFor="let page of getPageNumbers()"
+            class="page-number-btn"
+            [class.active]="page === currentPage + 1"
+            [class.ellipsis]="page === -1"
+            (click)="page !== -1 && goToPage(page - 1)"
+            [disabled]="page === -1"
+          >
+            {{ page === -1 ? '...' : page }}
+          </button>
+          <button
+            class="page-nav-btn"
+            (click)="nextPage()"
+            [disabled]="currentPage === totalPages - 1"
+          >
+            <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+          </button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<!-- ============================================
+     LATE FEE MODAL
+============================================ -->
+<div class="modal-overlay" *ngIf="modalOpen">
+  <div class="late-fee-modal">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div class="modal-header-icon-wrap">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="modal-header-icon"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path
+              d="M10.464 8.746c.227-.18.497-.311.786-.394v2.795a2.252 2.252 0 0 1-.786-.393c-.394-.313-.546-.681-.546-1.004 0-.323.152-.691.546-1.004ZM12.75 15.662v-2.824c.347.085.664.228.921.421.427.32.579.686.579.991 0 .305-.152.671-.579.991a2.534 2.534 0 0 1-.921.42Z"
+            />
+            <path
+              fill-rule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v.816a3.836 3.836 0 0 0-1.72.756c-.712.566-1.112 1.35-1.112 2.178 0 .829.4 1.612 1.113 2.178.502.4 1.102.647 1.719.756v2.978a2.536 2.536 0 0 1-.921-.421l-.879-.66a.75.75 0 0 0-.9 1.2l.879.66c.533.4 1.169.645 1.821.75V18a.75.75 0 0 0 1.5 0v-.81a4.124 4.124 0 0 0 1.821-.749c.745-.559 1.179-1.344 1.179-2.191 0-.847-.434-1.632-1.179-2.191a4.122 4.122 0 0 0-1.821-.75V8.354c.29.082.559.213.786.393l.415.33a.75.75 0 0 0 .933-1.175l-.415-.33a3.836 3.836 0 0 0-1.719-.755V6Z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <h2>{{ editingRecordIndex !== null ? 'Edit Late Fee' : 'New Late Fee' }}</h2>
+      </div>
+      <button class="btn-close" (click)="closeModal()" [disabled]="saving" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            fill-rule="evenodd"
+            d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="modal-info-banner">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="info-banner-icon"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      <span
+        >Late fees are applied automatically after the grace period expires on overdue
+        invoices.</span
+      >
+    </div>
+
+    <form [formGroup]="lateFeeForm" (ngSubmit)="saveLateFee()">
+      <div class="modal-body">
+        <!-- Grace Period -->
+        <div class="form-field">
+          <label>Grace Period (Days) <span class="color">*</span></label>
+          <div class="input-with-suffix">
+            <input
+              type="text"
+              formControlName="gracePeriodDays"
+              placeholder="e.g. 7"
+              (keypress)="onlyDigits($event)"
+              (paste)="onPaste($event)"
+            />
+            <span class="input-suffix">days</span>
+          </div>
+          <p class="hint-text">Number of days after the due date before a late fee is applied.</p>
+          <p
+            class="error"
+            *ngIf="submitted && lateFeeForm.controls['gracePeriodDays'].hasError('required')"
+          >
+            Grace period is required.
+          </p>
+          <p
+            class="error"
+            *ngIf="submitted && lateFeeForm.controls['gracePeriodDays'].hasError('min')"
+          >
+            Grace period cannot be negative.
+          </p>
+          <p
+            class="error"
+            *ngIf="submitted && lateFeeForm.controls['gracePeriodDays'].hasError('max')"
+          >
+            Grace period cannot exceed 365 days.
+          </p>
+        </div>
+
+        <!-- Fee Row -->
+        <div class="fee-row">
+          <!-- Mandatory Late Fee -->
+          <div class="form-field">
+            <label>Mandatory Late Fee <span class="color">*</span></label>
+            <div class="currency-input-wrapper">
+              <span class="currency-prefix">$</span>
+              <input
+                type="text"
+                [value]="mandatoryChargeDisplay"
+                placeholder="0.00"
+                (input)="onMandatoryLateFeeInput($event)"
+                (blur)="formatMandatoryLateFeeOnBlur()"
+                (focus)="removeMandatoryLateFeeFormatting()"
+                (keypress)="onlyDigitsAndDecimal($event)"
+                (paste)="onPaste($event)"
+              />
+            </div>
+            <p class="hint-text">Fixed fee charged on every overdue invoice.</p>
+            <p
+              class="error"
+              *ngIf="submitted && lateFeeForm.controls['mandatoryCharge'].hasError('required')"
+            >
+              Mandatory late fee is required.
+            </p>
+          </div>
+
+          <!-- Late Fee -->
+          <!-- REPLACE the Late Fee form-field div with this -->
+          <div class="form-field">
+            <label>Late Fee (%) <span class="color">*</span></label>
+            <div class="input-with-suffix">
+              <input
+                type="text"
+                [value]="lateFeePercentageDisplay"
+                placeholder="0.00"
+                (input)="onLateFeeInput($event)"
+                (blur)="formatLateFeeOnBlur()"
+                (focus)="removeLateFeeFormatting()"
+                (keypress)="onlyDigitsAndDecimal($event)"
+                (paste)="onPaste($event)"
+              />
+              <span class="input-suffix">%</span>
+            </div>
+            <p class="hint-text">Percentage of the invoice amount charged per billing cycle.</p>
+            <p
+              class="error"
+              *ngIf="submitted && lateFeeForm.controls['lateFeePercentage'].hasError('required')"
+            >
+              Late fee is required.
+            </p>
+            <p
+              class="error"
+              *ngIf="submitted && lateFeeForm.controls['lateFeePercentage'].hasError('max')"
+            >
+              Late fee cannot exceed 100%.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="saving">
+          Close
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="saving">
+          <app-spinner *ngIf="saving"></app-spinner>
+          <span *ngIf="!saving">Save Late Fee</span>
+          <span *ngIf="saving">Saving...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

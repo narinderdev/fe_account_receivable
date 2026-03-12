@@ -34,6 +34,7 @@ export class Sidebar {
   canViewGlCodes = false;
   canViewCreditMemo = false;
   canViewPaymentTerms = false;
+  canViewLateFee = false;
   showSetupLinks = false;
   showSecurityLinks = false;
   canViewSecurityReport = false;  
@@ -83,6 +84,8 @@ export class Sidebar {
     this.canViewCreditMemo = this.userContext.hasPermission('VIEW_MEMOS');
     this.canViewPaymentTerms =
       this.userContext.hasPermission('VIEW_PAYMENT_TERMS') || this.userContext.isAdmin();
+    this.canViewLateFee =
+      this.userContext.hasPermission('VIEW_LATE_FEE') || this.userContext.isAdmin();
     this.canViewSecurityReport = this.userContext.hasPermission('VIEW_SECURITY_REPORT');
     this.canManageMfa =
       this.userContext.hasPermission('MANAGE_MFA') ||
@@ -102,7 +105,8 @@ export class Sidebar {
       this.canViewArCodes ||
       this.canViewGlCodes ||
       this.canViewAccounts ||
-      this.canViewPaymentTerms;
+      this.canViewPaymentTerms ||
+      this.canViewLateFee;
   }
 
   toggleSetup() {

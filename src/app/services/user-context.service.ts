@@ -30,6 +30,7 @@ const PERMISSION_ROUTE_ORDER: Array<{ permission: string; route: string }> = [
   { permission: 'VIEW_MEMOS', route: '/admin/credit-memo' },
   { permission: 'VIEW_COMPANY', route: '/admin/ar-company' },
   { permission: 'VIEW_PAYMENT_TERMS', route: '/admin/payment-terms' },
+  { permission: 'VIEW_LATE_FEE', route: '/admin/late-fee' },
   { permission: 'VIEW_BANK_ACCOUNT', route: '/admin/accounts' },
   { permission: 'VIEW_INTEGRATIONS', route: '/admin/integration' },
   { permission: 'VIEW_AR_CODE', route: '/admin/ar-code' },
