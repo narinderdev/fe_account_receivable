@@ -46,4 +46,11 @@ export class LateFeeService {
       headers,
     });
   }
+
+  deleteLateFee(lateFeeId: number): Observable<ApiResponse<LateFeeRule>> {
+    const headers = getAuthHeaders();
+    return this.http.delete<ApiResponse<LateFeeRule>>(`${this.baseUrl}/late-fee/${lateFeeId}`, {
+      headers,
+    });
+  }
 }

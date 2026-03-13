@@ -25,20 +25,24 @@ export class Sidebar {
   canViewPayments = false;
   canViewIntegration = false;
   canViewReports = false;
+  canViewAgingReport = false;
+  canViewInvoiceReports = false;
+  canViewPaymentReports = false;
   canViewCollections = false;
   canViewCompany = false;
   canViewAccounts = false;
   canViewUsers = false;
   canViewRoles = false;
   canViewArCodes = false;
+  canViewAgingCodes = false;
   canViewGlCodes = false;
   canViewCreditMemo = false;
   canViewPaymentTerms = false;
   canViewLateFee = false;
   showSetupLinks = false;
   showSecurityLinks = false;
-  canViewSecurityReport = false;  
-  canManageMfa = false;
+  canViewSecurityReport = false;
+  canViewMfa = false;
 
   constructor(
     private router: Router,
@@ -61,8 +65,13 @@ export class Sidebar {
     this.canViewInvoices = this.userContext.hasPermission('VIEW_INVOICES');
     this.canViewPayments = this.userContext.hasPermission('VIEW_PAYMENTS');
     this.canViewIntegration =
-      this.userContext.hasPermission('VIEW_INTEGRATIONS') || this.userContext.isAdmin();
-    this.canViewReports = this.userContext.hasPermission('VIEW_AGING_REPORTS');
+      this.userContext.hasPermission('VIEW_INTEGRATION') ||
+      this.userContext.hasPermission('VIEW_INTEGRATIONS') ||
+      this.userContext.isAdmin();
+    this.canViewAgingReport = this.userContext.hasPermission('VIEW_AGING_REPORTS');
+    this.canViewInvoiceReports = this.userContext.hasPermission('VIEW_INVOICE_REPORTS');
+    this.canViewPaymentReports = this.userContext.hasPermission('VIEW_PAYMENT_REPORTS');
+    this.canViewReports = this.canViewAgingReport || this.canViewInvoiceReports || this.canViewPaymentReports;
     const collectionsPerms = [
       'VIEW_PROMISE_TO_PAY',
       'CREATE_PROMISE_TO_PAY',
@@ -78,8 +87,10 @@ export class Sidebar {
     this.canViewUsers = this.userContext.hasPermission('VIEW_USER');
     this.canViewRoles = this.userContext.hasPermission('VIEW_ROLES');
     const canViewArCodes = this.userContext.hasPermission('VIEW_AR_CODE');
+    const canViewAgingCodes = this.userContext.hasPermission('VIEW_AGING_CODE');
     const canViewGlCodes = this.userContext.hasPermission('VIEW_GL_CODE');
     this.canViewArCodes = canViewArCodes;
+    this.canViewAgingCodes = canViewAgingCodes || this.userContext.isAdmin();
     this.canViewGlCodes = canViewGlCodes;
     this.canViewCreditMemo = this.userContext.hasPermission('VIEW_MEMOS');
     this.canViewPaymentTerms =
@@ -87,22 +98,18 @@ export class Sidebar {
     this.canViewLateFee =
       this.userContext.hasPermission('VIEW_LATE_FEE') || this.userContext.isAdmin();
     this.canViewSecurityReport = this.userContext.hasPermission('VIEW_SECURITY_REPORT');
-    this.canManageMfa =
-      this.userContext.hasPermission('MANAGE_MFA') ||
-      this.userContext.hasPermission('VIEW_MFA') ||
-      this.canViewUsers ||
-      this.canViewRoles ||
-      this.userContext.isAdmin();
+    this.canViewMfa = this.userContext.hasPermission('VIEW_MFA') || this.userContext.isAdmin();
 
 
     // Security section visibility
     this.showSecurityLinks =
-      this.canViewUsers || this.canViewRoles || this.canViewSecurityReport || this.canManageMfa;
+      this.canViewUsers || this.canViewRoles || this.canViewSecurityReport || this.canViewMfa;
 
     this.showSetupLinks =
       this.userContext.isAdmin() ||
       this.canViewCompany ||
       this.canViewArCodes ||
+      this.canViewAgingCodes ||
       this.canViewGlCodes ||
       this.canViewAccounts ||
       this.canViewPaymentTerms ||

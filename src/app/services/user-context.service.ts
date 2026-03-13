@@ -28,14 +28,20 @@ const PERMISSION_ROUTE_ORDER: Array<{ permission: string; route: string }> = [
   { permission: 'VIEW_PAYMENTS', route: '/admin/payments' },
   { permission: 'VIEW_PROMISE_TO_PAY', route: '/admin/collections' },
   { permission: 'VIEW_MEMOS', route: '/admin/credit-memo' },
+  { permission: 'VIEW_AGING_REPORTS', route: '/admin/ar-reports' },
+  { permission: 'VIEW_INVOICE_REPORTS', route: '/admin/invoices-reports' },
+  { permission: 'VIEW_PAYMENT_REPORTS', route: '/admin/payment-reports' },
   { permission: 'VIEW_COMPANY', route: '/admin/ar-company' },
   { permission: 'VIEW_PAYMENT_TERMS', route: '/admin/payment-terms' },
   { permission: 'VIEW_LATE_FEE', route: '/admin/late-fee' },
+  { permission: 'VIEW_AGING_CODE', route: '/admin/aging-code' },
   { permission: 'VIEW_BANK_ACCOUNT', route: '/admin/accounts' },
+  { permission: 'VIEW_INTEGRATION', route: '/admin/integration' },
   { permission: 'VIEW_INTEGRATIONS', route: '/admin/integration' },
   { permission: 'VIEW_AR_CODE', route: '/admin/ar-code' },
   { permission: 'VIEW_GL_CODE', route: '/admin/gl-code' },
   { permission: 'VIEW_USER', route: '/admin/users' },
+  { permission: 'VIEW_MFA', route: '/admin/mfa' },
 ];
 
 @Injectable({

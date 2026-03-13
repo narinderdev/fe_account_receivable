@@ -99,8 +99,9 @@
               <img
                 src="/deleteIcn.svg"
                 class="action-icon delete"
-                (click)="openDeleteModal(c.id); $event.stopPropagation()"
-            /></span>
+                [class.disabled]="deleting && deleteTarget?.id === c.id"
+                (click)="openDeleteModal(c); $event.stopPropagation()"
+              /></span>
             <span *ngIf="!canEditCustomer && !canDeleteCustomer">--</span>
           </td>
         </tr>
@@ -156,21 +157,35 @@
   </div>
 </div>
 
-<!-- Delete Modal -->
-<div class="modal-overlay" *ngIf="isDeleteModalOpen">
-  <div class="modal">
-    <h3>Delete Customer</h3>
-    <p>Are you sure you want to delete this customer?</p>
-
-    <div class="modal-actions">
-      <button class="cancelBtn" (click)="closeDeleteModal()">Close</button>
-
-      <button class="deleteBtn" (click)="confirmDelete()" [disabled]="deleting">
-        <ng-container *ngIf="!deleting">Delete</ng-container>
-
-        <ng-container *ngIf="deleting">
-          <app-spinner></app-spinner>
-        </ng-container>
+<div class="confirm-modal-overlay" *ngIf="deleteModalOpen">
+  <div class="confirm-modal">
+    <div class="confirm-header">
+      <h3>Delete Customer</h3>
+      <button
+        type="button"
+        class="btn-close"
+        (click)="closeDeleteModal()"
+        [disabled]="deleting"
+        aria-label="Close"
+      >
+        <span>&times;</span>
+      </button>
+    </div>
+    <div class="confirm-body">
+      <p>
+        Are you sure you want to delete
+        <strong>{{ deleteTarget?.customerName || 'this customer' }}</strong>?
+      </p>
+      <p class="confirm-subtext">This action cannot be undone.</p>
+    </div>
+    <div class="confirm-footer">
+      <button type="button" class="btn-secondary" (click)="closeDeleteModal()" [disabled]="deleting">
+        Cancel
+      </button>
+      <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="deleting">
+        <app-spinner *ngIf="deleting"></app-spinner>
+        <span *ngIf="!deleting">Delete</span>
+        <span *ngIf="deleting">Deleting...</span>
       </button>
     </div>
   </div>

@@ -12,6 +12,7 @@ import { Spinner } from '../../shared/spinner/spinner';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { ToastrService } from 'ngx-toastr';
 import { LateFeeService, LateFeePayload, LateFeeRule } from '../../services/late-fee-service';
+import { UserContextService } from '../../services/user-context.service';
 
 type LateFeeRecord = LateFeeRule;
 
@@ -29,6 +30,9 @@ export class LateFee implements OnInit, OnDestroy {
   modalOpen = false;
   submitted = false;
   editingRecordIndex: number | null = null;
+  deleteModalOpen = false;
+  deleteTarget: LateFeeRecord | null = null;
+  deleting = false;
 
   currentPage = 0;
   pageSize = 10;
@@ -44,6 +48,10 @@ export class LateFee implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private activeCompanyId: number | null = null;
   private editingRecordOriginal: LateFeeRecord | null = null;
+  canViewLateFee = false;
+  canCreateLateFee = false;
+  canUpdateLateFee = false;
+  canDeleteLateFee = false;
 
   constructor(
     private fb: FormBuilder,
@@ -51,12 +59,14 @@ export class LateFee implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private companySelection: CompanySelectionService,
     private lateFeeService: LateFeeService,
+    private userContext: UserContextService,
   ) {
     this.lateFeeForm = this.fb.group({
       gracePeriodDays: ['', [Validators.required, Validators.min(0), Validators.max(365)]],
       mandatoryCharge: [null, [Validators.required, Validators.min(0)]],
       lateFeePercentage: [null, [Validators.required, Validators.min(0), Validators.max(100)]],
     });
+    this.syncPermissions();
   }
 
   ngOnInit(): void {
@@ -78,6 +88,15 @@ export class LateFee implements OnInit, OnDestroy {
   }
 
   loadRecords(): void {
+    if (!this.canViewLateFee) {
+      this.records = [];
+      this.totalItems = 0;
+      this.totalPages = 0;
+      this.currentPage = 0;
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
     if (!this.activeCompanyId) {
       this.records = [];
       this.totalItems = 0;
@@ -128,6 +147,10 @@ export class LateFee implements OnInit, OnDestroy {
   }
 
   openModal(): void {
+    if (!this.canCreateLateFee) {
+      this.toastr.warning('You do not have permission to create late fee rules.', 'Permission Denied');
+      return;
+    }
     this.submitted = false;
     this.editingRecordIndex = null;
     this.editingRecordOriginal = null;
@@ -142,6 +165,10 @@ export class LateFee implements OnInit, OnDestroy {
   }
 
   editLateFee(index: number): void {
+    if (!this.canUpdateLateFee) {
+      this.toastr.warning('You do not have permission to update late fee rules.', 'Permission Denied');
+      return;
+    }
     const record = this.records[index];
     if (!record) {
       return;
@@ -159,6 +186,28 @@ export class LateFee implements OnInit, OnDestroy {
       lateFeePercentage: record.lateFeePercentage,
     });
     this.modalOpen = true;
+  }
+
+  openDeleteModal(record: LateFeeRecord): void {
+    if (!this.canDeleteLateFee) {
+      this.toastr.warning('You do not have permission to delete late fee rules.', 'Permission Denied');
+      return;
+    }
+    if (!record?.id) {
+      this.toastr.error('Unable to identify the late fee rule to delete.', 'Error');
+      return;
+    }
+    this.deleteTarget = record;
+    this.deleteModalOpen = true;
+    this.deleting = false;
+  }
+
+  closeDeleteModal(force = false): void {
+    if (this.deleting && !force) {
+      return;
+    }
+    this.deleteModalOpen = false;
+    this.deleteTarget = null;
   }
 
   closeModal(): void {
@@ -343,6 +392,15 @@ export class LateFee implements OnInit, OnDestroy {
       this.toastr.error('Select a company before saving a late fee.', 'Error');
       return;
     }
+    const isEditing = this.editingRecordIndex !== null;
+    if (isEditing && !this.canUpdateLateFee) {
+      this.toastr.warning('You do not have permission to update late fee rules.', 'Permission Denied');
+      return;
+    }
+    if (!isEditing && !this.canCreateLateFee) {
+      this.toastr.warning('You do not have permission to create late fee rules.', 'Permission Denied');
+      return;
+    }
 
     const formVal = this.lateFeeForm.value;
     const payload: LateFeePayload = {
@@ -351,7 +409,6 @@ export class LateFee implements OnInit, OnDestroy {
       lateFeePercentage: formVal.lateFeePercentage ?? 0,
     };
 
-    const isEditing = this.editingRecordIndex !== null;
     let request$;
 
     if (isEditing) {
@@ -392,6 +449,38 @@ export class LateFee implements OnInit, OnDestroy {
         error: (error) => {
           const message =
             error?.error?.message || 'Unable to save late fee. Please try again.';
+          this.toastr.error(message, 'Error');
+        },
+      });
+  }
+
+  confirmDelete(): void {
+    if (!this.canDeleteLateFee) {
+      this.toastr.warning('You do not have permission to delete late fee rules.', 'Permission Denied');
+      return;
+    }
+    if (!this.deleteTarget?.id) {
+      this.toastr.error('Unable to identify the late fee rule to delete.', 'Error');
+      return;
+    }
+    this.deleting = true;
+    this.lateFeeService
+      .deleteLateFee(this.deleteTarget.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.deleting = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.toastr.success('Late fee deleted successfully.', 'Success');
+          this.closeDeleteModal(true);
+          this.loadRecords();
+        },
+        error: (error) => {
+          const message = error?.error?.message || 'Unable to delete late fee. Please try again.';
           this.toastr.error(message, 'Error');
         },
       });
@@ -440,5 +529,12 @@ export class LateFee implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private syncPermissions() {
+    this.canViewLateFee = this.userContext.hasPermission('VIEW_LATE_FEE');
+    this.canCreateLateFee = this.userContext.hasPermission('CREATE_LATE_FEE');
+    this.canUpdateLateFee = this.userContext.hasPermission('UPDATE_LATE_FEE');
+    this.canDeleteLateFee = this.userContext.hasPermission('DELETE_LATE_FEE');
   }
 }

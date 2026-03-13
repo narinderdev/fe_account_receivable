@@ -1,10 +1,16 @@
-<div class="page-shell payment-terms-page">
-  <div class="page-header">
-    <button type="button" class="btn-primary add-btn" (click)="openModal()">
-      <img src="/plus.svg" alt="Add" class="btn-icon" />
-      New Payment Term
-    </button>
-  </div>
+<ng-container *ngIf="canViewPaymentTerms; else paymentTermsNoAccess">
+  <div class="page-shell payment-terms-page">
+    <div class="page-header">
+      <button
+        type="button"
+        class="btn-primary add-btn"
+        (click)="openModal()"
+        *ngIf="canCreatePaymentTerm"
+      >
+        <img src="/plus.svg" alt="Add" class="btn-icon" />
+        New Payment Term
+      </button>
+    </div>
 
   <div class="customers-table-wrapper invoice-table-card">
     <table class="customers-table payment-terms-table">
@@ -50,6 +56,7 @@
                 class="icon-button"
                 (click)="editPaymentTerm(term); $event.stopPropagation()"
                 aria-label="Edit payment term"
+                *ngIf="canUpdatePaymentTerm"
               >
                 <img src="/editIcn.svg" class="action-icon" alt="Edit" />
               </button>
@@ -58,6 +65,7 @@
                 class="icon-button delete"
                 (click)="openDeleteModal(term); $event.stopPropagation()"
                 aria-label="Delete payment term"
+                *ngIf="canDeletePaymentTerm"
               >
                 <img src="/deleteIcn.svg" class="action-icon" alt="Delete" />
               </button>
@@ -75,9 +83,9 @@
   </div>
 
   <div class="table-error" *ngIf="!loading && error">{{ error }}</div>
-</div>
+  </div>
 
-<div class="modal-overlay" *ngIf="modalOpen">
+  <div class="modal-overlay" *ngIf="modalOpen">
   <div class="modal">
     <div class="modal-header">
       <h2>{{ editingTerm ? 'Edit Payment Term' : 'New Payment Term' }}</h2>
@@ -121,9 +129,9 @@
       </div>
     </form>
   </div>
-</div>
+  </div>
 
-<div class="modal-overlay" *ngIf="deleteModalOpen">
+  <div class="modal-overlay" *ngIf="deleteModalOpen">
   <div class="confirm-modal">
     <h3>Delete Payment Term</h3>
     <p>Are you sure you want to delete {{ deleteTarget?.name }}?</p>
@@ -136,5 +144,12 @@
       </button>
     </div>
   </div>
-</div>
+  </div>
+</ng-container>
+
+<ng-template #paymentTermsNoAccess>
+  <div class="page-shell payment-terms-page">
+    <div class="table-error">You do not have permission to view payment terms.</div>
+  </div>
+</ng-template>
 

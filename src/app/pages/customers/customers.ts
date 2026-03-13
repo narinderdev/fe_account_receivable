@@ -33,8 +33,8 @@ export class Customers implements OnInit, OnDestroy {
   downloadingTemplate = false;
 
   // Delete Modal
-  isDeleteModalOpen = false;
-  deleteId: number | null = null;
+  deleteModalOpen = false;
+  deleteTarget: CustomerEntity | null = null;
   deleting = false;
 
   // Import Modal
@@ -498,26 +498,29 @@ export class Customers implements OnInit, OnDestroy {
     this.router.navigate(['/admin/customer/edit', id]);
   }
 
-  openDeleteModal(id: number) {
-    if (!this.canDeleteCustomer) {
+  openDeleteModal(customer: CustomerEntity) {
+    if (!this.canDeleteCustomer || !customer?.id) {
       return;
     }
 
-    this.deleteId = id;
-    this.isDeleteModalOpen = true;
+    this.deleteTarget = customer;
+    this.deleteModalOpen = true;
   }
 
   closeDeleteModal() {
-    this.isDeleteModalOpen = false;
-    this.deleteId = null;
+    if (this.deleting) {
+      return;
+    }
+    this.deleteModalOpen = false;
+    this.deleteTarget = null;
   }
 
   confirmDelete() {
-    if (!this.deleteId) return;
+    if (!this.deleteTarget?.id || this.deleting) return;
 
     this.deleting = true;
 
-    this.customerService.deleteCustomer(this.deleteId).subscribe({
+    this.customerService.deleteCustomer(this.deleteTarget.id).subscribe({
       next: () => {
         this.deleting = false;
         this.closeDeleteModal();

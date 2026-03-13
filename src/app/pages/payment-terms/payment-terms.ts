@@ -10,6 +10,7 @@ import {
   PaymentTermDto,
 } from '../../services/payment-terms.service';
 import { CompanySelectionService } from '../../services/company-selection.service';
+import { UserContextService } from '../../services/user-context.service';
 import { takeUntil, Subject } from 'rxjs';
 
 interface PaymentTermRecord {
@@ -39,6 +40,10 @@ export class PaymentTerms implements OnInit, OnDestroy {
   deleteModalOpen = false;
   deleteTarget: PaymentTermRecord | null = null;
   deleting = false;
+  canViewPaymentTerms = false;
+  canCreatePaymentTerm = false;
+  canUpdatePaymentTerm = false;
+  canDeletePaymentTerm = false;
   private destroy$ = new Subject<void>();
 
   paymentTermForm: FormGroup;
@@ -49,12 +54,14 @@ export class PaymentTerms implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService,
+    private userContext: UserContextService,
   ) {
     this.paymentTermForm = this.formBuilder.group({
       name: ['', Validators.required],
       netDays: ['', [Validators.required, Validators.min(0)]],
       active: [true],
     });
+    this.syncPermissions();
   }
 
   ngOnInit() {
@@ -65,6 +72,10 @@ export class PaymentTerms implements OnInit, OnDestroy {
   }
 
   openModal() {
+    if (!this.canCreatePaymentTerm) {
+      this.toastr.warning('You do not have permission to create payment terms.', 'Permission Denied');
+      return;
+    }
     this.modalOpen = true;
     this.submitted = false;
     this.editingTerm = null;
@@ -72,6 +83,10 @@ export class PaymentTerms implements OnInit, OnDestroy {
   }
 
   editPaymentTerm(term: PaymentTermRecord) {
+    if (!this.canUpdatePaymentTerm) {
+      this.toastr.warning('You do not have permission to update payment terms.', 'Permission Denied');
+      return;
+    }
     this.modalOpen = true;
     this.submitted = false;
     this.editingTerm = term;
@@ -104,11 +119,19 @@ export class PaymentTerms implements OnInit, OnDestroy {
     };
 
     if (this.editingTerm?.id) {
+      if (!this.canUpdatePaymentTerm) {
+        this.toastr.warning('You do not have permission to update payment terms.', 'Permission Denied');
+        return;
+      }
       this.updatePaymentTerm(this.editingTerm.id, {
         name: payload.name,
         netDays: payload.netDays,
       });
     } else {
+      if (!this.canCreatePaymentTerm) {
+        this.toastr.warning('You do not have permission to create payment terms.', 'Permission Denied');
+        return;
+      }
       this.createPaymentTerm(payload);
     }
   }
@@ -170,6 +193,10 @@ export class PaymentTerms implements OnInit, OnDestroy {
   }
 
   openDeleteModal(term: PaymentTermRecord) {
+    if (!this.canDeletePaymentTerm) {
+      this.toastr.warning('You do not have permission to delete payment terms.', 'Permission Denied');
+      return;
+    }
     this.deleteTarget = term;
     this.deleteModalOpen = true;
     this.deleting = false;
@@ -184,6 +211,10 @@ export class PaymentTerms implements OnInit, OnDestroy {
   }
 
   confirmDelete() {
+    if (!this.canDeletePaymentTerm) {
+      this.toastr.warning('You do not have permission to delete payment terms.', 'Permission Denied');
+      return;
+    }
     if (!this.deleteTarget?.id || this.deleting) {
       return;
     }
@@ -212,6 +243,13 @@ export class PaymentTerms implements OnInit, OnDestroy {
   }
 
   private loadPaymentTerms() {
+    if (!this.canViewPaymentTerms) {
+      this.paymentTerms = [];
+      this.error = 'You do not have permission to view payment terms.';
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
     const companyId = this.getSelectedCompanyId();
     if (!companyId || Number.isNaN(companyId)) {
       this.paymentTerms = [];
@@ -274,5 +312,11 @@ export class PaymentTerms implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-}
 
+  private syncPermissions() {
+    this.canViewPaymentTerms = this.userContext.hasPermission('VIEW_PAYMENT_TERMS');
+    this.canCreatePaymentTerm = this.userContext.hasPermission('CREATE_PAYMENT_TERMS');
+    this.canUpdatePaymentTerm = this.userContext.hasPermission('UPDATE_PAYMENT_TERMS');
+    this.canDeletePaymentTerm = this.userContext.hasPermission('DELETE_PAYMENT_TERMS');
+  }
+}

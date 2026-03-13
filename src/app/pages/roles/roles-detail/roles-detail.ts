@@ -41,7 +41,7 @@ export class RolesDetail implements OnInit, OnDestroy {
       permissions: { view: 'VIEW_DASHBOARD' },
     },
     {
-      label: 'Customers',
+      label: 'Customer',
       permissions: {
         view: 'VIEW_CUSTOMERS',
         create: 'CREATE_CUSTOMER',
@@ -50,23 +50,29 @@ export class RolesDetail implements OnInit, OnDestroy {
       },
     },
     {
-      label: 'Invoices',
+      label: 'Invoice',
       permissions: {
         view: 'VIEW_INVOICES',
         create: 'CREATE_INVOICE',
-        approve: 'APPROVE_INVOICE'
+        approve: 'APPROVE_INVOICE',
       },
     },
     {
-      label: 'Payments',
+      label: 'Payment',
       permissions: {
         view: 'VIEW_PAYMENTS',
         create: 'APPLY_PAYMENT',
-        approve:'APPROVE_PAYMENT',
+        approve: 'APPROVE_PAYMENT',
       },
     },
     {
-      label: 'Credit Memos',
+      label: 'Integration',
+      permissions: {
+        view: 'VIEW_INTEGRATION',
+      },
+    },
+    {
+      label: 'Credit Memo',
       permissions: {
         view: 'VIEW_MEMOS',
         create: 'CREATE_MEMOS',
@@ -74,24 +80,43 @@ export class RolesDetail implements OnInit, OnDestroy {
       },
     },
     {
-      label: 'Aging & Reports',
-      permissions: {
-        view: 'VIEW_AGING_REPORTS',
-      },
-    },
-    {
-      label: 'Collections',
+      label: 'Aging & Report',
       permissions: {},
     },
     {
-      label: 'Collections',
+      label: 'Aging Report',
+      permissions: {
+        view: 'VIEW_AGING_REPORTS',
+      },
+      isSubRow: true,
+    },
+    {
+      label: 'Invoice Report',
+      permissions: {
+        view: 'VIEW_INVOICE_REPORTS',
+      },
+      isSubRow: true,
+    },
+    {
+      label: 'Payment Report',
+      permissions: {
+        view: 'VIEW_PAYMENT_REPORTS',
+      },
+      isSubRow: true,
+    },
+    {
+      label: 'Collection',
+      permissions: {},
+    },
+    {
+      label: 'Collection',
       permissions: {
         view: 'VIEW_COLLECTIONS',
       },
       isSubRow: true,
     },
     {
-      label: 'Follow-up Reminders',
+      label: 'Follow-up Reminder',
       permissions: {
         view: 'VIEW_REMINDER',
         create: 'SEND_REMINDER',
@@ -107,7 +132,7 @@ export class RolesDetail implements OnInit, OnDestroy {
       isSubRow: true,
     },
     {
-      label: 'Disputes',
+      label: 'Dispute',
       permissions: {
         view: 'VIEW_DISPUTE',
         create: 'CREATE_DISPUTE',
@@ -124,34 +149,53 @@ export class RolesDetail implements OnInit, OnDestroy {
       isSubRow: true,
     },
     {
-      label: 'Company',
-      permissions: {
-        view: 'VIEW_COMPANY',
-        create: 'CREATE_COMPANY',
-        update: 'UPDATE_COMPANY',
-        delete: 'DELETE_COMPANY',
-      },
+      label: 'Security',
+      permissions: {},
     },
     {
-      label: 'Users',
+      label: 'User',
       permissions: {
         view: 'VIEW_USER',
         create: 'INVITE_USER',
       },
+      isSubRow: true,
     },
     {
-      label: 'Roles',
+      label: 'Role',
       permissions: {
         view: 'VIEW_ROLES',
         create: 'CREATE_ROLES',
-        update:'UPDATE_ROLE',
+        update: 'UPDATE_ROLE',
       },
+      isSubRow: true,
+    },
+    {
+      label: 'MFA',
+      permissions: {
+        view: 'VIEW_MFA',
+      },
+      isSubRow: true,
     },
     {
       label: 'Security Report',
       permissions: {
         view: 'VIEW_SECURITY_REPORT',
       },
+      isSubRow: true,
+    },
+    {
+      label: 'Setup / Admin',
+      permissions: {},
+    },
+    {
+      label: 'AR Company',
+      permissions: {
+        view: 'VIEW_COMPANY',
+        create: 'CREATE_COMPANY',
+        update: 'UPDATE_COMPANY',
+        delete: 'DELETE_COMPANY',
+      },
+      isSubRow: true,
     },
     {
       label: 'GL Code',
@@ -160,14 +204,46 @@ export class RolesDetail implements OnInit, OnDestroy {
         create: 'CREATE_GL_CODE',
         update: 'UPDATE_GL_CODE',
       },
+      isSubRow: true,
     },
     {
-      label: 'Accounts',
+      label: 'Account',
       permissions: {
         view: 'VIEW_BANK_ACCOUNT',
         create: 'CREATE_BANK_ACCOUNT',
         update: 'UPDATE_BANK_ACCOUNT',
       },
+      isSubRow: true,
+    },
+    {
+      label: 'Payment Term',
+      permissions: {
+        view: 'VIEW_PAYMENT_TERMS',
+        create: 'CREATE_PAYMENT_TERMS',
+        update: 'UPDATE_PAYMENT_TERMS',
+        delete: 'DELETE_PAYMENT_TERMS',
+      },
+      isSubRow: true,
+    },
+    {
+      label: 'Late Fee',
+      permissions: {
+        view: 'VIEW_LATE_FEE',
+        create: 'CREATE_LATE_FEE',
+        update: 'UPDATE_LATE_FEE',
+        delete: 'DELETE_LATE_FEE',
+      },
+      isSubRow: true,
+    },
+    {
+      label: 'Aging Code',
+      permissions: {
+        view: 'VIEW_AGING_CODE',
+        create: 'CREATE_AGING_CODE',
+        update: 'UPDATE_AGING_CODE',
+        delete: 'DELETE_AGING_CODE',
+      },
+      isSubRow: true,
     },
     {
       label: 'AR Code',
@@ -177,7 +253,9 @@ export class RolesDetail implements OnInit, OnDestroy {
         update: 'UPDATE_AR_CODE',
         delete: 'DELETE_AR_CODE',
       },
+      isSubRow: true,
     },
+    
   ];
 
   private destroy$ = new Subject<void>();
@@ -188,7 +266,7 @@ export class RolesDetail implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private roleService: RoleService,
     private companySelection: CompanySelectionService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() {

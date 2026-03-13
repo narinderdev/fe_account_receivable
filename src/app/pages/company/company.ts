@@ -26,8 +26,8 @@ export class Company implements OnInit {
   Math = Math;
 
   // DELETE MODAL STATE
-  isDeleteModalOpen = false;
-  deleteId: number | null = null;
+  deleteModalOpen = false;
+  deleteTarget: CompanyEntity | null = null;
   deleting = false;
   canCreateCompany = false;
   canUpdateCompany = false;
@@ -129,49 +129,39 @@ export class Company implements OnInit {
     this.router.navigate(['/admin/ar-company/details', id]);
   }
 
-  openDeleteModal(id: number) {
-    if (!this.canDeleteCompany) {
+  openDeleteModal(company: CompanyEntity) {
+    if (!this.canDeleteCompany || !company?.id) {
       return;
     }
-    this.deleteId = id;
-
-    // Hide page loader while modal is open
-    const oldLoadingState = this.loading;
-    this.loading = false;
-
-    this.isDeleteModalOpen = true;
-
-    // Restore loader state after modal closes
-    setTimeout(() => (this.loading = oldLoadingState), 0);
+    this.deleteTarget = company;
+    this.deleteModalOpen = true;
   }
 
-  // CLOSE MODAL
   closeDeleteModal() {
-    this.isDeleteModalOpen = false;
-    this.deleteId = null;
+    if (this.deleting) {
+      return;
+    }
+    this.deleteModalOpen = false;
+    this.deleteTarget = null;
   }
 
   confirmDelete() {
-    if (!this.deleteId) return;
+    if (!this.deleteTarget?.id || this.deleting) {
+      return;
+    }
 
-    this.deleting = true; // show small spinner only in the button
+    this.deleting = true;
 
-    this.companyService.deleteCompany(this.deleteId).subscribe({
+    this.companyService.deleteCompany(this.deleteTarget.id).subscribe({
       next: () => {
         this.deleting = false;
-
-        // Close modal first
         this.closeDeleteModal();
-
-        // Wait for modal to disappear before showing page loader
-        setTimeout(() => {
-          this.loading = true;
-          this.loadCompanies();
-        }, 50);
+        this.loadCompanies();
       },
       error: (err) => {
         console.error('Delete failed:', err);
         this.deleting = false;
+        this.cdr.detectChanges();
       },
     });
   }

@@ -149,6 +149,8 @@
 .actions img { display: inline-block; }
 .action-icon { width: 18px; height: 18px; opacity: 0.8; cursor: pointer; transition: opacity 0.15s; }
 .action-icon:hover { opacity: 1; }
+.actions .action-icon { margin-right: 12px; }
+.actions .action-icon:last-child { margin-right: 0; }
 
 /* ============================================
    PAGINATION
@@ -397,6 +399,85 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+.confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  padding: 16px;
+}
+
+.confirm-modal {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+  overflow: hidden;
+}
+
+.confirm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.confirm-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.confirm-body {
+  padding: 20px;
+  color: #475569;
+}
+
+.confirm-subtext {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.confirm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.confirm-footer .btn-secondary,
+.confirm-footer .btn-danger {
+  min-width: 96px;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ============================================
