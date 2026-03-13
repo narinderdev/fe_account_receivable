@@ -2,11 +2,12 @@ export interface AgingRowDto {
   customerId: number;
   customerName: string;
   totalDue: number;
-  current: number;
-  bucket1To30: number;
-  bucket31To60: number;
-  bucket61To90: number;
-  bucketGt90: number;
+  current: number | null;
+  bucket1To30?: number | null;
+  bucket31To60?: number | null;
+  bucket61To90?: number | null;
+  bucketGt90?: number | null;
+  buckets?: Record<string, number | null | undefined>;
 }
 
 export interface AgingDataPayload {

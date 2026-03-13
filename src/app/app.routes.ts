@@ -50,6 +50,7 @@ import { VerifyAuthenticatorComponent } from './pages/verify-authenticator/verif
 import { Accounts } from './pages/accounts/accounts';
 import { ChangePassword } from './pages/change-password/change-password';
 import { LateFee } from './pages/late-fee/late-fee';
+import { AgingCode } from './pages/aging-code/aging-code';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -137,6 +138,7 @@ export const routes: Routes = [
       { path: 'gl-code', component: GlCode },
       { path: 'accounts', component: Accounts },
       { path: 'payment-terms', component: PaymentTerms },
+      { path: 'aging-code', component: AgingCode },
       { path: 'late-fee', component: LateFee },
       { path: 'credit-memo', component: CreditMemo },
       { path: 'credit-memo/:creditMemoId', component: CreditMemoDetail },

@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AgingService } from '../../services/aging-service';
 import { Customer } from '../../services/customer';
 import { Loader } from '../../shared/loader/loader';
@@ -17,9 +18,7 @@ interface AgingTableRow {
   customer: string;
   totalDue: number;
   current: number;
-  days1to30: number;
-  days31to60: number;
-  days90plus: number;
+  buckets: Record<string, number>;
 }
 
 interface SelectOption {
@@ -50,6 +49,7 @@ export class Aging implements OnInit, OnDestroy {
   selectedStatus = '';
   agingData: AgingTableRow[] = [];
   private allRows: AgingTableRow[] = [];
+  bucketLabels: string[] = [];
   pageSize = 10;
   currentPage = 0;
   totalPages = 0;
@@ -67,6 +67,7 @@ export class Aging implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private companySelection: CompanySelectionService,
     private companyService: CompanyService,
+    private router: Router,
   ) {}
 
   ngOnInit() {
@@ -91,6 +92,7 @@ export class Aging implements OnInit, OnDestroy {
         this.selectedCustomer = '';
         this.agingData = [];
         this.allRows = [];
+        this.bucketLabels = [];
         this.totalPages = 0;
         this.totalItems = 0;
         this.currentPage = 0;
@@ -229,6 +231,8 @@ export class Aging implements OnInit, OnDestroy {
     const wb = XLSX.utils.book_new();
 
     // Prepare data for export - use ALL rows, not just current page
+    const bucketHeaders = [...this.bucketLabels];
+
     const exportData = [
       ['Customer Aging Report'],
       ['Company Code:', this.getActiveCompanyCode() || 'N/A'],
@@ -237,21 +241,19 @@ export class Aging implements OnInit, OnDestroy {
       ['Status Filter:', this.getSelectedStatusLabel()],
       ['Total Records:', this.totalItems],
       [],
-      ['Customer', 'Total Due', 'Current', '1-30 Days', '31-60 Days', '>90 Days'],
+      ['Customer', 'Total Due', 'Current', ...bucketHeaders],
       ...this.allRows.map((row) => [
         row.customer,
         row.totalDue,
         row.current,
-        row.days1to30,
-        row.days31to60,
-        row.days90plus,
+        ...bucketHeaders.map((label) => row.buckets[label] ?? 0),
       ]),
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(exportData);
 
     // Format the sheet
-    this.formatExcelSheet(ws, exportData.length, 6);
+    this.formatExcelSheet(ws, exportData.length, bucketHeaders.length + 2);
 
     // Add totals row
     const totals = this.calculateTotals();
@@ -259,9 +261,7 @@ export class Aging implements OnInit, OnDestroy {
       'TOTAL',
       totals.totalDue,
       totals.current,
-      totals.days1to30,
-      totals.days31to60,
-      totals.days90plus,
+      ...bucketHeaders.map((label) => totals.buckets[label] ?? 0),
     ];
 
     XLSX.utils.sheet_add_aoa(ws, [totalsRow], { origin: -1 });
@@ -274,6 +274,8 @@ export class Aging implements OnInit, OnDestroy {
     this.closeExportMenu();
 
     // Prepare CSV data - use ALL rows, not just current page
+    const bucketHeaders = [...this.bucketLabels];
+
     const csvData = [
       ['Customer Aging Report'],
       ['Company Code:', this.getActiveCompanyCode() || 'N/A'],
@@ -282,14 +284,12 @@ export class Aging implements OnInit, OnDestroy {
       ['Status Filter:', this.getSelectedStatusLabel()],
       ['Total Records:', this.totalItems],
       [],
-      ['Customer', 'Total Due', 'Current', '1-30 Days', '31-60 Days', '>90 Days'],
+      ['Customer', 'Total Due', 'Current', ...bucketHeaders],
       ...this.allRows.map((row) => [
         row.customer,
         row.totalDue,
         row.current,
-        row.days1to30,
-        row.days31to60,
-        row.days90plus,
+        ...bucketHeaders.map((label) => row.buckets[label] ?? 0),
       ]),
     ];
 
@@ -299,9 +299,7 @@ export class Aging implements OnInit, OnDestroy {
       'TOTAL',
       totals.totalDue,
       totals.current,
-      totals.days1to30,
-      totals.days31to60,
-      totals.days90plus,
+      ...bucketHeaders.map((label) => totals.buckets[label] ?? 0),
     ]);
 
     const csvContent = csvData
@@ -437,20 +435,24 @@ export class Aging implements OnInit, OnDestroy {
   }
 
   private calculateTotals() {
+    const initialBuckets = this.bucketLabels.reduce<Record<string, number>>((acc, label) => {
+      acc[label] = 0;
+      return acc;
+    }, {});
+
     return this.allRows.reduce(
-      (acc, row) => ({
-        totalDue: acc.totalDue + row.totalDue,
-        current: acc.current + row.current,
-        days1to30: acc.days1to30 + row.days1to30,
-        days31to60: acc.days31to60 + row.days31to60,
-        days90plus: acc.days90plus + row.days90plus,
-      }),
+      (acc, row) => {
+        acc.totalDue += row.totalDue;
+        acc.current += row.current;
+        this.bucketLabels.forEach((label) => {
+          acc.buckets[label] = (acc.buckets[label] ?? 0) + (row.buckets[label] ?? 0);
+        });
+        return acc;
+      },
       {
         totalDue: 0,
         current: 0,
-        days1to30: 0,
-        days31to60: 0,
-        days90plus: 0,
+        buckets: initialBuckets,
       },
     );
   }
@@ -593,16 +595,66 @@ export class Aging implements OnInit, OnDestroy {
 
   private mapResponse(res: AgingResponse) {
     const rows: AgingRowDto[] = res.data?.rows ?? [];
+    const entryMatrix = rows.map((row) => this.extractBucketEntries(row));
 
-    this.allRows = rows.map((r: AgingRowDto) => ({
-      customer: r.customerName,
-      totalDue: r.totalDue,
-      current: r.current,
-      days1to30: r.bucket1To30,
-      days31to60: r.bucket31To60,
-      days90plus: r.bucketGt90,
-    }));
+    this.bucketLabels = [];
+    entryMatrix.forEach((entries) => {
+      entries.forEach(([label]) => this.ensureBucketLabel(label));
+    });
+
+    this.allRows = rows.map((r: AgingRowDto, index) => {
+      const entryMap: Record<string, number> = {};
+      entryMatrix[index].forEach(([label, value]) => {
+        entryMap[label] = value;
+      });
+
+      const buckets = this.bucketLabels.reduce<Record<string, number>>((acc, label) => {
+        acc[label] = entryMap[label] ?? 0;
+        return acc;
+      }, {});
+
+      return {
+        customer: r.customerName,
+        totalDue: Number(r.totalDue ?? 0),
+        current: Number(r.current ?? 0),
+        buckets,
+      };
+    });
     this.applyPagination(0);
+  }
+
+  navigateToAgingCodes() {
+    this.router.navigate(['/admin/aging-code']);
+  }
+
+  private extractBucketEntries(row: AgingRowDto): Array<[string, number]> {
+    const entries: Array<[string, number]> = [];
+    if (row.buckets && typeof row.buckets === 'object') {
+      Object.entries(row.buckets).forEach(([label, value]) => {
+        const normalizedLabel = label?.trim() || 'Bucket';
+        entries.push([normalizedLabel, Number(value ?? 0)]);
+      });
+    } else {
+      const fallback: Array<[string, number | null | undefined]> = [
+        ['1-30 DAYS', row.bucket1To30],
+        ['31-60 DAYS', row.bucket31To60],
+        ['61-90 DAYS', row.bucket61To90],
+        ['>90 DAYS', row.bucketGt90],
+      ];
+      fallback.forEach(([label, value]) => entries.push([label, Number(value ?? 0)]));
+    }
+    return entries;
+  }
+
+  private ensureBucketLabel(label: string) {
+    const normalized = label || 'Bucket';
+    if (!this.bucketLabels.includes(normalized)) {
+      this.bucketLabels.push(normalized);
+    }
+  }
+
+  get totalTableColumns(): number {
+    return 3 + this.bucketLabels.length;
   }
 
   getPageNumbers(): number[] {
