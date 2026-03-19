@@ -6,6 +6,7 @@ import {
   PeriodManagementPayload,
   PeriodMonthStatus,
   PeriodYearStatus,
+  PeriodMonthBalanceEntry,
 } from '../../models/accounting.model';
 import { CompanySelectionService } from '../../services/company-selection.service';
 
@@ -42,6 +43,7 @@ export class Accounting implements OnInit, OnDestroy {
 
   monthStatuses: MonthClosingStatus[] = [];
   yearStatuses: YearClosingStatus[] = [];
+  yearOptions: number[] = [];
 
   closeYearModalOpen = false;
   pendingYear: YearClosingStatus | null = null;
@@ -68,6 +70,8 @@ export class Accounting implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    this.yearOptions = this.buildYearOptions();
+
     this.companySelection.selectedCompanyId$
       .pipe(takeUntil(this.destroy$))
       .subscribe((companyId) => {
@@ -128,7 +132,7 @@ export class Accounting implements OnInit, OnDestroy {
   }
 
   private handlePeriodPayload(payload: PeriodManagementPayload | PeriodManagementPayload[] | null) {
-    if (!payload || Array.isArray(payload)) {
+    if (!payload) {
       this.monthStatuses = [];
       this.yearStatuses = [];
       this.loadError = '';
@@ -136,8 +140,25 @@ export class Accounting implements OnInit, OnDestroy {
       return;
     }
 
+    if (Array.isArray(payload)) {
+      const normalizedMonths = this.normalizeLegacyEntries(payload as PeriodMonthBalanceEntry[]);
+      this.monthStatuses = normalizedMonths;
+      this.yearStatuses = [];
+
+      if (normalizedMonths.length) {
+        this.financialYear = normalizedMonths[0].year;
+        this.yearOptions = this.buildYearOptions();
+      } else {
+        this.monthStatuses = [];
+      }
+
+      this.cdr.detectChanges();
+      return;
+    }
+
     if (typeof payload.financialYear === 'number' && payload.financialYear > 0) {
       this.financialYear = payload.financialYear;
+      this.yearOptions = this.buildYearOptions();
     }
 
     const normalizedMonths = this.normalizeMonthStatuses(payload.monthEndStatuses);
@@ -146,8 +167,34 @@ export class Accounting implements OnInit, OnDestroy {
     this.monthStatuses = normalizedMonths;
     this.yearStatuses = normalizedYears;
 
-    this.loadError = normalizedMonths.length ? '' : 'No period data found for the selected year.';
     this.cdr.detectChanges();
+  }
+
+  onYearChange(event: Event) {
+    const yearValue = (event.target as HTMLSelectElement | null)?.value;
+    if (!yearValue) {
+      return;
+    }
+    const parsed = Number(yearValue);
+    if (!Number.isFinite(parsed) || parsed === this.financialYear) {
+      return;
+    }
+
+    this.financialYear = parsed;
+    this.yearOptions = this.buildYearOptions();
+    this.isLoading = true;
+    this.monthStatuses = [];
+    this.fetchPeriodSummary();
+  }
+
+  private buildYearOptions(): number[] {
+    const currentYear = new Date().getFullYear();
+    const start = Math.max(this.financialYear, currentYear);
+    const years = Array.from({ length: 6 }, (_, index) => start - index);
+    if (!years.includes(this.financialYear)) {
+      years.push(this.financialYear);
+    }
+    return [...new Set(years)].sort((a, b) => b - a);
   }
 
   private normalizeMonthStatuses(source?: PeriodMonthStatus[] | null): MonthClosingStatus[] {
@@ -202,6 +249,26 @@ export class Accounting implements OnInit, OnDestroy {
     return value?.toUpperCase() === 'CLOSED' ? 'CLOSED' : 'OPEN';
   }
 
+  private normalizeLegacyEntries(entries: PeriodMonthBalanceEntry[]): MonthClosingStatus[] {
+    return entries
+      .map((entry) => {
+        const label = this.resolveLegacyMonth(entry.yearMonth);
+        const parsedYear = this.extractYear(entry.yearMonth) ?? this.financialYear;
+        if (!label || !parsedYear) {
+          return null;
+        }
+
+        const mapped: MonthClosingStatus = {
+          month: label,
+          year: parsedYear,
+          status: entry.locked ? 'CLOSED' : 'OPEN',
+          snapshotBalance: this.parseNumeric(entry.balance) ?? 0,
+        };
+        return mapped;
+      })
+      .filter((entry): entry is MonthClosingStatus => entry !== null);
+  }
+
   private resolveMonthLabel(entry: PeriodMonthStatus): string {
     const candidate = entry.month ?? entry.monthName ?? entry.label;
 
@@ -231,6 +298,27 @@ export class Accounting implements OnInit, OnDestroy {
     }
 
     return '';
+  }
+
+  private resolveLegacyMonth(yearMonth?: string | null): string {
+    if (!yearMonth) {
+      return '';
+    }
+    const [year, month] = yearMonth.split('-');
+    if (!month) {
+      return '';
+    }
+    const index = Number(month) - 1;
+    return this.monthNames[index] ?? month;
+  }
+
+  private extractYear(yearMonth?: string | null): number | null {
+    if (!yearMonth) {
+      return null;
+    }
+    const [year] = yearMonth.split('-');
+    const parsed = Number(year);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   private parseNumeric(value: unknown): number | null {

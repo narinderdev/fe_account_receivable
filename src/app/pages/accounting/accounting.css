@@ -28,7 +28,7 @@
 
 .page-meta {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   font-size: 14px;
   color: #475569;
@@ -38,6 +38,22 @@
 .page-meta .meta-value {
   font-size: 18px;
   color: #0f172a;
+}
+
+.year-select {
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #fff;
+  min-width: 120px;
+}
+
+.year-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
 .cards-grid {

@@ -5,8 +5,15 @@
       <h1>{{ headline }}</h1>
     </div>
     <div class="page-meta">
-      <span class="meta-label">Financial Year:</span>
-      <span class="meta-value">{{ financialYear }}</span>
+      <label class="meta-label" for="yearSelect">Financial Year:</label>
+      <select
+        id="yearSelect"
+        class="year-select"
+        [value]="financialYear"
+        (change)="onYearChange($event)"
+      >
+        <option *ngFor="let year of yearOptions" [value]="year">{{ year }}</option>
+      </select>
     </div>
   </header>
 

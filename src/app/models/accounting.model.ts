@@ -11,6 +11,16 @@ export interface PeriodManagementPayload {
   yearEndStatuses?: PeriodYearStatus[];
 }
 
+export interface PeriodMonthBalanceEntry {
+  id?: number;
+  companyId?: number;
+  yearMonth?: string | null;
+  asOfDate?: string | null;
+  balance?: number | string | null;
+  calculatedAt?: string | null;
+  locked?: boolean | null;
+}
+
 export interface PeriodMonthStatus {
   month?: string | null;
   monthName?: string | null;
