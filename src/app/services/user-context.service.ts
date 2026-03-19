@@ -28,6 +28,7 @@ const PERMISSION_ROUTE_ORDER: Array<{ permission: string; route: string }> = [
   { permission: 'VIEW_PAYMENTS', route: '/admin/payments' },
   { permission: 'VIEW_PROMISE_TO_PAY', route: '/admin/collections' },
   { permission: 'VIEW_MEMOS', route: '/admin/credit-memo' },
+  { permission: 'VIEW_ACCOUNTING', route: '/admin/accounting' },
   { permission: 'VIEW_AGING_REPORTS', route: '/admin/ar-reports' },
   { permission: 'VIEW_INVOICE_REPORTS', route: '/admin/invoices-reports' },
   { permission: 'VIEW_PAYMENT_REPORTS', route: '/admin/payment-reports' },

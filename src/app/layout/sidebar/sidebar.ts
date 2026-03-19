@@ -39,6 +39,7 @@ export class Sidebar {
   canViewCreditMemo = false;
   canViewPaymentTerms = false;
   canViewLateFee = false;
+  canViewAccounting = false;
   showSetupLinks = false;
   showSecurityLinks = false;
   canViewSecurityReport = false;
@@ -93,6 +94,8 @@ export class Sidebar {
     this.canViewAgingCodes = canViewAgingCodes || this.userContext.isAdmin();
     this.canViewGlCodes = canViewGlCodes;
     this.canViewCreditMemo = this.userContext.hasPermission('VIEW_MEMOS');
+    this.canViewAccounting =
+      this.userContext.hasPermission('VIEW_ACCOUNTING') || this.userContext.isAdmin();
     this.canViewPaymentTerms =
       this.userContext.hasPermission('VIEW_PAYMENT_TERMS') || this.userContext.isAdmin();
     this.canViewLateFee =

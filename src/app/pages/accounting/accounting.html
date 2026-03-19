@@ -1,0 +1,92 @@
+<div class="accounting-page">
+  <header class="page-header">
+    <div class="title-block">
+      <p class="breadcrumb">{{ breadcrumbLabel }}</p>
+      <h1>{{ headline }}</h1>
+    </div>
+    <div class="page-meta">
+      <span class="meta-label">Financial Year:</span>
+      <span class="meta-value">{{ financialYear }}</span>
+    </div>
+  </header>
+
+  <div class="info-banner error" *ngIf="loadError">
+    {{ loadError }}
+  </div>
+
+  <section class="cards-grid">
+    <article class="card">
+      <div class="card-header">
+        <div>
+          <h2>Month-End Closing Status</h2>
+          <p class="card-subtitle">Snapshot of every completed month in {{ financialYear }}</p>
+        </div>
+        <span class="snapshot-label">Snapshot Balance</span>
+      </div>
+
+      <div class="card-state" *ngIf="isLoading && !monthStatuses.length">Loading month-end status…</div>
+      <div class="card-state" *ngIf="!isLoading && !monthStatuses.length">
+        Month-end data is not available for {{ financialYear }} yet.
+      </div>
+
+      <div class="table" *ngIf="!isLoading && monthStatuses.length">
+        <div class="table-row table-head table-three">
+          <div>Month</div>
+          <div>Status</div>
+          <div class="align-right">Snapshot Balance</div>
+        </div>
+        <div
+          class="table-row table-three"
+          *ngFor="let month of monthStatuses; let last = last"
+          [class.row-divider]="!last"
+        >
+          <div>{{ month.month }}, {{ month.year }}</div>
+          <div>
+            <span class="status-pill" [ngClass]="month.status.toLowerCase()">
+              <img
+                [src]="month.status === 'CLOSED' ? '/lock.svg' : '/relock.svg'"
+                [alt]="month.status === 'CLOSED' ? 'Closed period' : 'Open period'"
+              />
+              {{ month.status }}
+            </span>
+          </div>
+          <div class="align-right">
+            <ng-container
+              *ngIf="month.snapshotBalance !== null && month.snapshotBalance !== undefined; else noBalance"
+            >
+              {{ month.snapshotBalance | currency: 'USD':'symbol':'1.0-0' }}
+            </ng-container>
+            <ng-template #noBalance>--</ng-template>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Year-end card temporarily removed -->
+  </section>
+
+  <div
+    class="modal-overlay"
+    *ngIf="closeYearModalOpen && pendingYear"
+    (click)="closeModal()"
+  >
+    <div class="modal" (click)="$event.stopPropagation()">
+      <button type="button" class="modal-close" (click)="closeModal()">&times;</button>
+      <h3>Close Financial Year {{ pendingYear?.year }}?</h3>
+      <ul class="checklist">
+        <li *ngFor="let item of checklist">
+          <span class="check-icon">&#10003;</span>
+          {{ item.label }}<ng-container *ngIf="item.appendYear"> {{ pendingYear?.year }}</ng-container>
+        </li>
+      </ul>
+      <div class="modal-ar">
+        Year-End AR:
+        <strong>{{ getYearEndValue(pendingYear) | currency: 'USD':'symbol':'1.0-0' }}</strong>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="ghost-btn" (click)="closeModal()">Cancel</button>
+        <button type="button" class="primary-btn" (click)="confirmYearClose()">Confirm Close</button>
+      </div>
+    </div>
+  </div>
+</div>

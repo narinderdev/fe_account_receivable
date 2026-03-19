@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { MonthEndCompanyResponse, MonthEndCustomerResponse } from '../models/month-end.model';
+import { PeriodManagementResponse } from '../models/accounting.model';
 import { getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
@@ -34,5 +35,16 @@ export class MonthEndService {
       headers,
       params,
     });
+  }
+
+  getCompanyYearSummary(companyId: number, year: number): Observable<PeriodManagementResponse> {
+    const headers = getAuthHeadersWithNgrok().set('Content-Type', 'application/json');
+    const payload = { companyId, year };
+
+    return this.http.post<PeriodManagementResponse>(
+      `${this.baseUrl}/ar/company/year-full`,
+      payload,
+      { headers },
+    );
   }
 }

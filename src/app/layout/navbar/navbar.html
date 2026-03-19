@@ -2,15 +2,6 @@
   <h1 class="navbar-title">{{ pageTitle }}</h1>
 
   <div class="navbar-right">
-    <!-- ✅ Month-End Balance Display -->
-    <div class="month-end-balance" *ngIf="selectedCompanyId">
-      <span class="balance-label">Month-End AR:</span>
-      <span class="balance-amount" *ngIf="!loadingMonthEnd">
-        {{ formatCurrency(monthEndBalance) }}
-      </span>
-      <span class="balance-loading" *ngIf="loadingMonthEnd">Loading...</span>
-    </div>
-
     <!-- Company Select -->
     <div
       class="company-select"

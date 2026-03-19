@@ -159,11 +159,9 @@ export class Navbar implements OnInit, OnDestroy {
       });
   }
 
-  // ✅ Load month-end balance for selected company
+  // Month-end balance fetching retained for future use but UI hidden.
   private loadMonthEndBalance(companyId: number) {
     this.loadingMonthEnd = true;
-
-    // Get current month in YYYY-MM format
     const now = new Date();
     const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 

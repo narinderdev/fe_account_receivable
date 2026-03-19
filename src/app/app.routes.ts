@@ -51,6 +51,7 @@ import { Accounts } from './pages/accounts/accounts';
 import { ChangePassword } from './pages/change-password/change-password';
 import { LateFee } from './pages/late-fee/late-fee';
 import { AgingCode } from './pages/aging-code/aging-code';
+import { Accounting } from './pages/accounting/accounting';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -142,6 +143,7 @@ export const routes: Routes = [
       { path: 'late-fee', component: LateFee },
       { path: 'credit-memo', component: CreditMemo },
       { path: 'credit-memo/:creditMemoId', component: CreditMemoDetail },
+      { path: 'accounting', component: Accounting },
     ],
   },
 ];

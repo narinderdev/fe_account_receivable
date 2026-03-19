@@ -131,6 +131,21 @@
           Credit Memo
         </a>
 
+        <a
+          *ngIf="canViewAccounting"
+          routerLink="accounting"
+          routerLinkActive="active"
+          #accountingLink="routerLinkActive"
+          class="nav-item"
+          (click)="handleNavClick()"
+        >
+          <img
+            [src]="accountingLink.isActive ? '/accounting1.svg' : '/accounting.svg'"
+            class="nav-icon"
+          />
+          Accounting
+        </a>
+
         <!-- NEW SECURITY SECTION -->
         <div class="nav-item setup-parent" *ngIf="showSecurityLinks" (click)="toggleSecurity()">
           <img [src]="securityActive ? '/security1.svg' : '/security.svg'" class="nav-icon" />
@@ -383,6 +398,20 @@
             class="nav-icon"
           />
           Credit Memo
+        </a>
+
+        <a
+          *ngIf="canViewAccounting"
+          routerLink="accounting"
+          routerLinkActive="active"
+          #mobileAccountingLink="routerLinkActive"
+          (click)="closeMobileMenu()"
+        >
+          <img
+            [src]="mobileAccountingLink.isActive ? '/accounting1.svg' : '/accounting.svg'"
+            class="nav-icon"
+          />
+          Accounting
         </a>
 
         <!-- MOBILE SECURITY SECTION -->
