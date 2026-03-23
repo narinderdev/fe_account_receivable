@@ -8,6 +8,8 @@ import {
   PaymentPage,
   ApproveApplyRequest,
   BankApproveApplyRequest,
+  ApproveBankPaymentRequest,
+  ApplyApprovedPaymentRequest,
 } from '../models/payment.model';
 import { environment } from '../../environments/environment';
 import { getAuthHeaders, getAuthHeadersWithNgrok } from './auth-headers.util';
@@ -161,16 +163,26 @@ export class PaymentService {
   }
 
   approveBankTransaction(
-    companyId: number,
     bankTransactionId: number,
-    payload?: { customerId?: number },
+    payload: ApproveBankPaymentRequest,
   ): Observable<any> {
     const headers = getAuthHeaders();
-    const body = payload?.customerId ? { customerId: payload.customerId } : {};
 
     return this.http.post(
-      `${this.baseUrl}/api/bank-reconciliation/company/${companyId}/transaction/${bankTransactionId}/approve-with-era`,
-      body,
+      `${this.baseUrl}/api/bank-reconciliation/transaction/${bankTransactionId}/approve`,
+      payload,
+      { headers },
+    );
+  }
+
+  applyApprovedPayment(
+    paymentId: number,
+    payload: ApplyApprovedPaymentRequest,
+  ): Observable<ApplyPaymentResponse> {
+    const headers = getAuthHeaders();
+    return this.http.post<ApplyPaymentResponse>(
+      `${this.baseUrl}/payment/${paymentId}/apply`,
+      payload,
       { headers },
     );
   }
@@ -199,9 +211,9 @@ export class PaymentService {
 
     if (params.months !== undefined) queryParams.push(`months=${params.months}`);
 
-    // if (params.statuses?.length) {
-    //   params.statuses.forEach((s) => queryParams.push(`statuses=${encodeURIComponent(s)}`));
-    // }
+    if (params.statuses?.length) {
+      params.statuses.forEach((s) => queryParams.push(`status=${encodeURIComponent(s)}`));
+    }
 
     return this.http.get<PaymentPage>(
       `${this.baseUrl}/payment/company/${companyId}/filter?${queryParams.join('&')}`,

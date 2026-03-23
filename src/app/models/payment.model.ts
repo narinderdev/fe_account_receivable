@@ -60,6 +60,14 @@ export interface BankApproveApplyRequest {
   invoiceIds: number[];
 }
 
+export interface ApproveBankPaymentRequest {
+  customerId: number;
+}
+
+export interface ApplyApprovedPaymentRequest {
+  invoiceIds: number[];
+}
+
 // Complete API response shape
 export interface PaymentPage {
   statusCode: number;

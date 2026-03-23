@@ -83,9 +83,17 @@
       >
         Approved
       </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'APPLIED'"
+        (click)="setTab('APPLIED')"
+      >
+        Applied
+      </button>
     </div>
 
-    <ng-container *ngIf="activeTab === 'CREATED'; else approvedTab">
+    <ng-container [ngSwitch]="activeTab">
+      <ng-container *ngSwitchCase="'CREATED'">
       <table class="payments-table">
         <thead>
           <tr>
@@ -131,10 +139,7 @@
                 class="action-button-group"
                 *ngIf="payment.status?.toUpperCase() === 'CREATED'; else noActions"
               >
-                <button *ngIf="payment.type === 'BANK'" class="btn-approve-only" (click)="approveOnly(payment, $event)">Approve</button>
-                <button class="btn-approve-apply" (click)="approveAndApply(payment, $event)">
-                  Approve & Apply
-                </button>
+                <button class="btn-approve-only" (click)="approveOnly(payment, $event)">Approve</button>
               </div>
               <ng-template #noActions>--</ng-template>
             </td>
@@ -143,7 +148,7 @@
       </table>
 
       <!-- Pagination -->
-      <div class="pagination-wrapper" *ngIf="totalPages > 1">
+      <div class="pagination-wrapper" *ngIf="!loading && totalItems > 0">
         <div class="pagination-info">
           Showing {{ totalItems === 0 ? 0 : currentPage * pageSize + 1 }} to
           {{ Math.min((currentPage + 1) * pageSize, totalItems) }} of {{ totalItems }} results
@@ -171,9 +176,9 @@
           </button>
         </div>
       </div>
-    </ng-container>
+      </ng-container>
 
-    <ng-template #approvedTab>
+      <ng-container *ngSwitchCase="'APPROVED'">
       <table class="payments-table">
         <thead>
           <tr>
@@ -183,11 +188,12 @@
             <th>Description</th>
             <th>Source</th>
             <th>Payment Date</th>
+            <th *ngIf="canApplyPayment">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngIf="approvedPayments.length === 0" class="no-data-row">
-            <td colspan="7">No approved payments found.</td>
+            <td [attr.colspan]="canApplyPayment ? 7 : 6">No approved payments found.</td>
           </tr>
           <tr *ngFor="let payment of approvedPayments; let i = index">
             <td (click)="openPaymentDetails(payment.id, payment.type)">
@@ -213,11 +219,18 @@
             <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.description || '--' }}</td>
             <td (click)="openPaymentDetails(payment.id, payment.type)">{{ formatSource(payment.source) }}</td>
             <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.date | date: 'mediumDate' }}</td>
+            <td *ngIf="canApplyPayment">
+              <div class="action-button-group">
+                <button class="btn-approve-apply" (click)="openApplyModal(payment, $event)">
+                  Apply
+                </button>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
 
-      <div class="pagination-wrapper" *ngIf="approvedTotalPages > 1">
+      <div class="pagination-wrapper" *ngIf="!loading && approvedTotalItems > 0">
         <div class="pagination-info">
           Showing {{ approvedTotalItems === 0 ? 0 : approvedCurrentPage * pageSize + 1 }} to
           {{
@@ -250,7 +263,89 @@
           </button>
         </div>
       </div>
-    </ng-template>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'APPLIED'">
+        <table class="payments-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Amount</th>
+              <th>Description</th>
+              <th>Source</th>
+              <th>Payment Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="appliedPayments.length === 0" class="no-data-row">
+              <td colspan="6">No applied payments found.</td>
+            </tr>
+            <tr *ngFor="let payment of appliedPayments; let i = index">
+              <td (click)="openPaymentDetails(payment.id, payment.type)">
+                <div class="customer-info">
+                  <div
+                    class="customer-initial"
+                    [ngStyle]="{
+                      backgroundColor: getInitialColor(i).background,
+                      color: getInitialColor(i).color,
+                    }"
+                  >
+                    {{ getCustomerInitial(payment) }}
+                  </div>
+                  <span class="customer-name">{{ payment.customerName || '--' }}</span>
+                </div>
+              </td>
+              <td (click)="openPaymentDetails(payment.id, payment.type)">
+                <span class="status-badge" [ngClass]="getStatusClass(payment)">
+                  {{ getStatusLabel(payment) }}
+                </span>
+              </td>
+              <td (click)="openPaymentDetails(payment.id, payment.type)">
+                {{ payment.amount || 0 | currency }}
+              </td>
+              <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.description || '--' }}</td>
+              <td (click)="openPaymentDetails(payment.id, payment.type)">{{ formatSource(payment.source) }}</td>
+              <td (click)="openPaymentDetails(payment.id, payment.type)">{{ payment.date | date: 'mediumDate' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pagination-wrapper" *ngIf="!loading && appliedTotalItems > 0">
+          <div class="pagination-info">
+            Showing {{ appliedTotalItems === 0 ? 0 : appliedCurrentPage * pageSize + 1 }} to
+            {{
+              appliedTotalItems === 0
+                ? 0
+                : Math.min((appliedCurrentPage + 1) * pageSize, appliedTotalItems)
+            }}
+            of {{ appliedTotalItems }} results
+          </div>
+          <div class="pagination-controls">
+            <button class="page-nav-btn" (click)="prevPage('APPLIED')" [disabled]="appliedCurrentPage === 0">
+              <img src="/assets/left.svg" alt="Previous" class="pagination-icon" />
+            </button>
+            <button
+              *ngFor="let page of getPageNumbers('APPLIED')"
+              class="page-number-btn"
+              [class.active]="page === appliedCurrentPage + 1"
+              [class.ellipsis]="page === -1"
+              (click)="page !== -1 && goToPage(page - 1, 'APPLIED')"
+              [disabled]="page === -1"
+            >
+              {{ page === -1 ? '...' : page }}
+            </button>
+            <button
+              class="page-nav-btn"
+              (click)="nextPage('APPLIED')"
+              [disabled]="appliedCurrentPage === appliedTotalPages - 1"
+            >
+              <img src="/assets/right.svg" alt="Next" class="pagination-icon" />
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
   </div>
 </div>
 
@@ -314,7 +409,11 @@
   <div class="approve-modal apply-modal">
     <div class="modal-header">
       <h2>
-        {{ approveContext === 'BANK' ? 'Match & Apply Payment' : 'Approve & Apply Payment' }}
+        {{
+          modalMode === 'BANK_APPROVAL'
+            ? 'Approve Bank Payment'
+            : 'Apply Payment to Invoices'
+        }}
       </h2>
       <button
         class="btn-close"
@@ -326,63 +425,14 @@
       </button>
     </div>
 
-    <!-- Stepper -->
-    <div class="stepper">
-      <div class="step" [class.active]="modalStep === 1" [class.completed]="modalStep > 1">
-        <div class="step-number">1</div>
-        <div class="step-label">Select Customer</div>
-      </div>
-      <div class="step-divider"></div>
-      <div class="step" [class.active]="modalStep === 2" [class.completed]="modalStep > 2">
-        <div class="step-number">2</div>
-        <div class="step-label">Select Invoices</div>
-      </div>
-    </div>
-
     <div class="modal-body">
-      <!-- STEP 1: Customer Selection -->
-      <ng-container *ngIf="modalStep === 1">
+      <!-- BANK APPROVAL: Customer Selection -->
+      <ng-container *ngIf="modalMode === 'BANK_APPROVAL'">
         <div
           class="modal-loading-overlay"
           *ngIf="approveContext === 'BANK' && customerOptionsLoading"
         >
           <app-loader [visible]="true"></app-loader>
-        </div>
-
-        <!-- Payment Details for MANUAL -->
-        <div class="payment-details-box" *ngIf="approveContext === 'MANUAL' && selectedManualPayment as manual">
-          <div class="details-grid">
-            <div class="detail-item">
-              <span class="detail-label">Customer Name</span>
-              <span class="detail-value">{{ manual.customerName || '--' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Transaction Date</span>
-              <span class="detail-value">{{ manual.paymentDate | date: 'mediumDate' }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Reference</span>
-              <span class="detail-value">{{ formatToTitleCase(manual.paymentMethod) }}</span>
-            </div>
-          </div>
-          <div class="details-grid">
-            <div class="detail-item">
-              <span class="detail-label">Amount</span>
-              <span class="detail-value">{{ manual.paymentAmount ?? 0 | currency }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Transaction Type</span>
-              <span class="detail-value">Manual Payment</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Status</span>
-              <span class="detail-value">{{ formatToTitleCase(manual.status) || 'Created' }}</span>
-            </div>
-          </div>
-          <div class="notes-section" *ngIf="manual.notes">
-            <span class="detail-label">Bank Notes</span>
-            <span class="detail-value">{{ manual.notes }}</span>
-          </div>
         </div>
 
         <!-- Payment Details for BANK -->
@@ -514,8 +564,8 @@
         </div>
       </ng-container>
 
-      <!-- STEP 2: Invoice Selection -->
-      <ng-container *ngIf="modalStep === 2">
+      <!-- APPLY: Invoice Selection -->
+      <ng-container *ngIf="modalMode === 'APPLY'">
         <div class="modal-loading-overlay" *ngIf="approveModalLoading">
           <app-loader [visible]="true"></app-loader>
         </div>
@@ -622,22 +672,23 @@
         Close
       </button>
       <div class="footer-actions">
-        <button *ngIf="modalStep === 2" class="btn-secondary" (click)="goToPreviousStep()" [disabled]="approveModalSubmitting">
-          Back
+        <button
+          *ngIf="modalMode === 'BANK_APPROVAL'"
+          class="btn-primary"
+          (click)="submitBankApproval()"
+          [disabled]="approveModalSubmitting"
+        >
+          <ng-container *ngIf="!approveModalSubmitting">Approve</ng-container>
+          <ng-container *ngIf="approveModalSubmitting"><app-spinner></app-spinner></ng-container>
         </button>
-        <button *ngIf="modalStep === 1 && approveContext === 'BANK'" class="btn-primary" (click)="goToNextStep()" [disabled]="approveModalSubmitting">
-          Next
-        </button>
-        <button *ngIf="modalStep === 1 && approveContext === 'MANUAL'" class="btn-primary" (click)="goToNextStep()" [disabled]="approveModalSubmitting">
-          Next
-        </button>
-        <button *ngIf="modalStep === 2" class="btn-secondary" (click)="confirmApproveOnly()">
-          <ng-container *ngIf="approveSubmitMode !== 'APPROVE'">Approve</ng-container>
-          <ng-container *ngIf="approveSubmitMode === 'APPROVE'"><app-spinner></app-spinner></ng-container>
-        </button>
-        <button *ngIf="modalStep === 2" class="btn-primary" (click)="confirmApproveAndApply()">
-          <ng-container *ngIf="approveSubmitMode !== 'APPROVE_APPLY'">Approve & Apply</ng-container>
-          <ng-container *ngIf="approveSubmitMode === 'APPROVE_APPLY'"><app-spinner></app-spinner></ng-container>
+        <button
+          *ngIf="modalMode === 'APPLY'"
+          class="btn-primary"
+          (click)="submitApplyInvoices()"
+          [disabled]="approveModalSubmitting"
+        >
+          <ng-container *ngIf="!approveModalSubmitting">Apply</ng-container>
+          <ng-container *ngIf="approveModalSubmitting"><app-spinner></app-spinner></ng-container>
         </button>
       </div>
     </div>
