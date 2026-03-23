@@ -79,11 +79,11 @@
   >
     <div class="modal" (click)="$event.stopPropagation()">
       <button type="button" class="modal-close" (click)="closeModal()">&times;</button>
-      <h3>Close Financial Year {{ pendingYear?.year }}?</h3>
+      <h3>Close Financial Year {{ pendingYear.year }}?</h3>
       <ul class="checklist">
         <li *ngFor="let item of checklist">
           <span class="check-icon">&#10003;</span>
-          {{ item.label }}<ng-container *ngIf="item.appendYear"> {{ pendingYear?.year }}</ng-container>
+          {{ item.label }}<ng-container *ngIf="item.appendYear"> {{ pendingYear.year }}</ng-container>
         </li>
       </ul>
       <div class="modal-ar">

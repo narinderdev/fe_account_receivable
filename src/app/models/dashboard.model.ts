@@ -7,7 +7,7 @@ export interface DashboardSummaryData {
   totalInvoices: number;
   pendingInvoices: number;
   currentPromiseToPay: number;
-  overdueMoreThan30Days: number
+  overdueMoreThan30Days: number;
 }
 
 export interface DashboardSummaryResponse {
@@ -51,4 +51,16 @@ export interface DashboardInvoiceResponse {
   status: string;
   message: string;
   data: InvoiceGraphData;
+}
+
+export interface UnmatchedCashApplicationData {
+  totalAmount: number;
+  totalCount: number;
+}
+
+export interface UnmatchedCashApplicationResponse {
+  statusCode: number;
+  status: string;
+  message: string;
+  data: UnmatchedCashApplicationData;
 }

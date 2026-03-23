@@ -18,7 +18,11 @@ import { ScriptableContext, TooltipItem } from 'chart.js';
 import { DashboardService } from '../../services/dashboard-service';
 import { CompanySelectionService } from '../../services/company-selection.service';
 import { Subject, takeUntil } from 'rxjs';
-import { DashboardSummaryData, DashboardInvoiceResponse } from '../../models/dashboard.model';
+import {
+  DashboardSummaryData,
+  DashboardInvoiceResponse,
+  UnmatchedCashApplicationData,
+} from '../../models/dashboard.model';
 import { Loader } from 'src/app/shared/loader/loader';
 import { Router } from '@angular/router';
 
@@ -52,6 +56,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   graphData: number[] = [];
   loadingGraph = false;
   loadingSummary = false;
+  loadingUnmatched = false;
 
   // Year selector
   selectedYear: number = new Date().getFullYear();
@@ -63,10 +68,14 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   passwordDaysRemaining: number | null = null;
   showPasswordReminderModal = false;
   private reminderTimeout: ReturnType<typeof setTimeout> | null = null;
+  unmatchedCashApplication: UnmatchedCashApplicationData = {
+    totalAmount: 0,
+    totalCount: 0,
+  };
 
   // Computed property to show loader
   get isLoading(): boolean {
-    return this.loadingSummary || this.loadingGraph;
+    return this.loadingSummary || this.loadingGraph || this.loadingUnmatched;
   }
 
   constructor(
@@ -101,6 +110,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
       if (this.activeCompanyId) {
         this.loadDashboardSummary(this.activeCompanyId);
+        this.loadUnmatchedCashApplication(this.activeCompanyId);
         this.loadGraphData(this.activeCompanyId, this.selectedYear);
       } else {
         this.dashboardData = {
@@ -113,6 +123,10 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
           totalCustomers: 0,
           currentPromiseToPay: 0,
           overdueMoreThan30Days: 0,
+        };
+        this.unmatchedCashApplication = {
+          totalAmount: 0,
+          totalCount: 0,
         };
         // Show all 12 months at zero when no company selected
         this.graphLabels = this.generateMonthLabels(this.selectedYear);
@@ -228,6 +242,33 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
       error: (err) => {
         console.error('Dashboard summary error:', err);
         this.loadingSummary = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadUnmatchedCashApplication(companyId: number): void {
+    this.loadingUnmatched = true;
+
+    this.dashboardService.getUnmatchedCashApplication(companyId).subscribe({
+      next: (res) => {
+        const data = res?.data;
+
+        this.unmatchedCashApplication = {
+          totalAmount: data?.totalAmount ?? 0,
+          totalCount: data?.totalCount ?? 0,
+        };
+
+        this.loadingUnmatched = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Unmatched cash application error:', err);
+        this.unmatchedCashApplication = {
+          totalAmount: 0,
+          totalCount: 0,
+        };
+        this.loadingUnmatched = false;
         this.cdr.detectChanges();
       },
     });

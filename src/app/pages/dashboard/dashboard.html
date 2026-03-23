@@ -1,4 +1,4 @@
-<app-loader [visible]="loadingSummary || loadingGraph"></app-loader>
+<app-loader [visible]="isLoading"></app-loader>
 
 <div class="dashboard-container">
   <!-- Cards Grid -->
@@ -25,13 +25,18 @@
       <p class="card-value">{{ dashboardData.currentReceivables | currency }}</p>
     </div>
 
-    <!-- Promise To Pay -->
+    <!-- Unmatched Cash Application -->
     <div class="card card-blue">
       <div class="card-header">
-        <p class="card-title">Promise to Pay</p>
-        <img src="/assets/promise-icon.svg" alt="Promise" class="card-icon" />
+        <p class="card-title">Unmatched Cash Application</p>
+        <img src="/assets/promise-icon.svg" alt="Unmatched Cash Application" class="card-icon" />
       </div>
-      <p class="card-value">{{ dashboardData.currentPromiseToPay | currency }}</p>
+      <p class="card-value">{{ unmatchedCashApplication.totalAmount | currency }}</p>
+      <!-- <p class="card-subtext">
+        {{ unmatchedCashApplication.totalCount }}
+        {{ unmatchedCashApplication.totalCount === 1 ? 'payment' : 'payments' }}
+        awaiting matching   
+      </p> -->
     </div>
 
     <!-- Payment Received -->

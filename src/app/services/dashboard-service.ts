@@ -2,7 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { DashboardSummaryResponse, DashboardGraphResponse, DashboardInvoiceResponse } from '../models/dashboard.model';
+import {
+  DashboardSummaryResponse,
+  DashboardGraphResponse,
+  DashboardInvoiceResponse,
+  UnmatchedCashApplicationResponse,
+} from '../models/dashboard.model';
 import { getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
@@ -35,6 +40,15 @@ export class DashboardService {
 
     return this.http.get<DashboardInvoiceResponse>(
       `${this.baseUrl}/dashboard/invoices/monthly/company/${companyId}?year=${year}`, 
+      { headers }
+    );
+  }
+
+  getUnmatchedCashApplication(companyId: number): Observable<UnmatchedCashApplicationResponse> {
+    const headers = getAuthHeadersWithNgrok();
+
+    return this.http.get<UnmatchedCashApplicationResponse>(
+      `${this.baseUrl}/payment/company/${companyId}/unmatched-summary`,
       { headers }
     );
   }
