@@ -1,0 +1,252 @@
+.login-report-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 32px;
+}
+
+.header-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: end;
+  gap: 16px;
+  flex-wrap: wrap;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.header-info h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #0f172a;
+}
+
+.subtext {
+  margin: 6px 0 0;
+  color: #4b5563;
+}
+
+.subtext.muted {
+  color: #9ca3af;
+}
+
+.company-code {
+  font-weight: 600;
+  color: #111827;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.btn-print,
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  height: 42px;
+  transition: all 0.2s;
+}
+
+.btn-print {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+}
+
+.btn-export {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  font-weight: 500;
+}
+
+.btn-print:hover:not(:disabled),
+.btn-export:hover:not(:disabled) {
+  border-color: #9ca3af;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.btn-export:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-print:disabled,
+.btn-export:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-export svg {
+  color: #fff;
+}
+
+.btn-export .chevron-icon {
+  transition: transform 0.2s;
+}
+
+.btn-export-disabled svg {
+  color: #9ca3af;
+}
+
+.export-dropdown {
+  position: relative;
+}
+
+.export-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.15);
+  min-width: 200px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  animation: slideDown 0.2s ease;
+}
+
+.export-menu-item {
+  border: 0;
+  background: transparent;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.95rem;
+  color: #111827;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.export-menu-item:hover {
+  background: #f3f4f6;
+}
+
+.export-menu-item svg {
+  color: #6b7280;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.table-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  padding: 0 0 8px;
+}
+
+.info-banner,
+.error-banner {
+  margin: 20px 24px 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.info-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  padding: 16px 24px 8px;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.report-table thead th {
+  text-align: left;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: #6b7280;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.report-table tbody td {
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f5f9;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.status-chip {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.loader-cell,
+.empty-cell {
+  text-align: center;
+  padding: 32px 0;
+  color: #6b7280;
+}
+
+@media (max-width: 768px) {
+  .header-card {
+    flex-direction: column;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .report-table thead {
+    display: none;
+  }
+
+  .report-table tbody td {
+    display: block;
+    padding: 8px 0;
+  }
+
+  .report-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+  }
+}
