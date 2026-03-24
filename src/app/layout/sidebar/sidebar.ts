@@ -40,10 +40,13 @@ export class Sidebar {
   canViewPaymentTerms = false;
   canViewLateFee = false;
   canViewAccounting = false;
+  canViewTransactions = false;
   showSetupLinks = false;
   showSecurityLinks = false;
   canViewSecurityReport = false;
   canViewMfa = false;
+  canViewLoginReport = false;
+  canViewMfaReport = false;
 
   constructor(
     private router: Router,
@@ -100,13 +103,24 @@ export class Sidebar {
       this.userContext.hasPermission('VIEW_PAYMENT_TERMS') || this.userContext.isAdmin();
     this.canViewLateFee =
       this.userContext.hasPermission('VIEW_LATE_FEE') || this.userContext.isAdmin();
+    this.canViewTransactions =
+      this.userContext.hasPermission('VIEW_GL_TRANSACTIONS') || this.userContext.isAdmin();
     this.canViewSecurityReport = this.userContext.hasPermission('VIEW_SECURITY_REPORT');
+    this.canViewLoginReport =
+      this.userContext.hasPermission('VIEW_LOGIN_REPORT') || this.userContext.isAdmin();
+    this.canViewMfaReport =
+      this.userContext.hasPermission('VIEW_MFA_REPORT') || this.userContext.isAdmin();
     this.canViewMfa = this.userContext.hasPermission('VIEW_MFA') || this.userContext.isAdmin();
 
 
     // Security section visibility
     this.showSecurityLinks =
-      this.canViewUsers || this.canViewRoles || this.canViewSecurityReport || this.canViewMfa;
+      this.canViewUsers ||
+      this.canViewRoles ||
+      this.canViewSecurityReport ||
+      this.canViewLoginReport ||
+      this.canViewMfaReport ||
+      this.canViewMfa;
 
     this.showSetupLinks =
       this.userContext.isAdmin() ||
@@ -116,7 +130,8 @@ export class Sidebar {
       this.canViewGlCodes ||
       this.canViewAccounts ||
       this.canViewPaymentTerms ||
-      this.canViewLateFee;
+      this.canViewLateFee ||
+      this.canViewTransactions;
   }
 
   toggleSetup() {
@@ -207,6 +222,8 @@ export class Sidebar {
       this.router.url.includes('/admin/users') ||
       this.router.url.includes('/admin/roles') ||
       this.router.url.includes('/admin/security-report') ||
+      this.router.url.includes('/admin/login-report') ||
+      this.router.url.includes('/admin/mfa-report') ||
       this.router.url.includes('/admin/mfa');
     this.securityOpen = this.securityActive || this.securityOpen;
     this.mobileSecurityOpen = this.securityActive || this.mobileSecurityOpen;

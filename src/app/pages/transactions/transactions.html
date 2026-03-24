@@ -1,0 +1,228 @@
+<div class="transactions-container">
+
+  <div class="filters-card">
+    <div class="filters-content">
+      <div class="filter-controls">
+        <div class="filter-field">
+          <label>Time Period</label>
+          <select class="filter-input" [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()">
+            <option *ngFor="let option of periodOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-field" *ngIf="isCustomPeriod">
+          <label>From Date</label>
+          <input
+            type="date"
+            class="filter-input"
+            [(ngModel)]="fromDate"
+            (ngModelChange)="handleFromDateChange($event)"
+          />
+        </div>
+
+        <div class="filter-field" *ngIf="isCustomPeriod">
+          <label>To Date</label>
+          <input
+            type="date"
+            class="filter-input"
+            [(ngModel)]="toDate"
+            (ngModelChange)="handleToDateChange($event)"
+          />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button
+          type="button"
+          class="btn-print"
+          (click)="printTransactions()"
+          [disabled]="!state.transactions.length"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <rect x="6" y="13" width="12" height="9"></rect>
+            <line x1="6" y1="18" x2="18" y2="18"></line>
+          </svg>
+          Print Report
+        </button>
+
+        <div class="export-dropdown" (click)="onDropdownClick($event)">
+          <button
+            type="button"
+            class="btn-export"
+            (click)="toggleExportMenu($event)"
+            [disabled]="!state.transactions.length"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+            Export Report
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          <div class="export-menu" *ngIf="showExportMenu">
+            <button type="button" class="export-menu-item" (click)="exportCsv()">
+              <span>Export as CSV</span>
+            </button>
+            <button type="button" class="export-menu-item" (click)="exportExcel()">
+              <span>Export as Excel</span>
+            </button>
+            <button type="button" class="export-menu-item" (click)="exportPdf()">
+              <span>Export as PDF</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="info-banner" *ngIf="!activeCompanyId">
+      {{ companySelectionMessage }}
+    </div>
+
+    <div class="error-banner" *ngIf="state.error && activeCompanyId">
+      {{ state.error }}
+    </div>
+
+    <div class="table-wrapper">
+      <table class="transactions-table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Description</th>
+            <th>Entries</th>
+          </tr>
+        </thead>
+
+        <tbody *ngIf="state.loading">
+          <tr>
+            <td class="table-loader-cell" colspan="6">
+              <app-loader [visible]="state.loading"></app-loader>
+            </td>
+          </tr>
+        </tbody>
+
+        <tbody *ngIf="!state.loading && state.transactions.length">
+          <tr
+            *ngFor="let txn of state.transactions; trackBy: trackByTransaction"
+            class="transaction-row"
+          >
+            <td>
+              <div class="reference-type">{{ txn.referenceType || '--' }}</div>
+              <div class="reference-number">{{ txn.referenceNumber || '--' }}</div>
+            </td>
+            <td>{{ formatDate(txn.transactionDate) }}</td>
+            <td>{{ formatAmount(txn.amount) }}</td>
+            <td>
+              <span class="status-chip" [ngClass]="getStatusClass(txn.status)">
+                {{ formatStatus(txn.status) }}
+              </span>
+            </td>
+            <td>
+              <div class="description-text" [title]="txn.description || '--'">
+                {{ txn.description || '--' }}
+              </div>
+            </td>
+            <td class="entry-cell">
+              <ng-container *ngIf="txn.lines?.length; else noEntries">
+                <div
+                  *ngFor="let line of txn.lines"
+                  class="entry-chip"
+                  [ngClass]="getEntryBadgeClass(line.entryType)"
+                >
+                  <span class="entry-type">{{ line.entryType || '—' }}</span>
+                  <span class="entry-amount">{{ formatAmount(line.amount) }}</span>
+                </div>
+              </ng-container>
+              <ng-template #noEntries>—</ng-template>
+            </td>
+          </tr>
+        </tbody>
+
+        <tbody *ngIf="!state.loading && !state.transactions.length">
+          <tr>
+            <td class="no-data-cell" colspan="6">
+              <ng-container *ngIf="state.error; else emptyPlaceholder">
+                {{ state.error }}
+              </ng-container>
+              <ng-template #emptyPlaceholder>
+                <ng-container *ngIf="activeCompanyId; else noCompany">
+                  No GL transactions were found for the selected filters.
+                </ng-container>
+              </ng-template>
+              <ng-template #noCompany>
+                {{ companySelectionMessage }}
+              </ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div
+      class="pagination-wrapper"
+      *ngIf="!state.loading && state.totalPages > 1 && state.totalItems > 0"
+    >
+      <button type="button" class="page-control" (click)="prevPage()" [disabled]="state.currentPage === 0">
+        Previous
+      </button>
+      <button
+        type="button"
+        class="page-number"
+        *ngFor="let page of getPageNumbers()"
+        [disabled]="page === -1"
+        [class.active]="page - 1 === state.currentPage"
+        (click)="page !== -1 && goToPage(page - 1)"
+      >
+        {{ page === -1 ? '...' : page }}
+      </button>
+      <button
+        type="button"
+        class="page-control"
+        (click)="nextPage()"
+        [disabled]="state.currentPage >= state.totalPages - 1"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>

@@ -45,6 +45,8 @@ import { GlCode } from './pages/gl-code/gl-code';
 import { InvoiceReport } from './pages/invoice-report/invoice-report';
 import { PaymentReport } from './pages/payment-report/payment-report';
 import { SecurityReport } from './pages/security-report/security-report';
+import { LoginReport } from './pages/login-report/login-report';
+import { MfaReport } from './pages/mfa-report/mfa-report';
 import { MfaComponent } from './pages/mfa/mfa';
 import { VerifyAuthenticatorComponent } from './pages/verify-authenticator/verify-authenticator';
 import { Accounts } from './pages/accounts/accounts';
@@ -52,6 +54,7 @@ import { ChangePassword } from './pages/change-password/change-password';
 import { LateFee } from './pages/late-fee/late-fee';
 import { AgingCode } from './pages/aging-code/aging-code';
 import { Accounting } from './pages/accounting/accounting';
+import { Transactions } from './pages/transactions/transactions';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -133,6 +136,8 @@ export const routes: Routes = [
       { path: 'collections', component: Collections },
       { path: 'collections/disputes/:disputeId', component: DisputeDetails },
       { path: 'security-report', component: SecurityReport },
+      { path: 'login-report', component: LoginReport },
+      { path: 'mfa-report', component: MfaReport },
       { path: 'mfa', component: MfaComponent },
 
       { path: 'ar-code', component: ArCodes },
@@ -144,6 +149,7 @@ export const routes: Routes = [
       { path: 'credit-memo', component: CreditMemo },
       { path: 'credit-memo/:creditMemoId', component: CreditMemoDetail },
       { path: 'accounting', component: Accounting },
+      { path: 'transactions', component: Transactions },
     ],
   },
 ];

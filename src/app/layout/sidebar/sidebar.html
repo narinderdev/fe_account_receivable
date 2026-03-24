@@ -171,6 +171,22 @@
           >
             Security Report
           </a>
+          <a
+            *ngIf="canViewLoginReport"
+            routerLink="login-report"
+            routerLinkActive="active"
+            class="sub-nav-item"
+          >
+            Login Report
+          </a>
+          <a
+            *ngIf="canViewMfaReport"
+            routerLink="mfa-report"
+            routerLinkActive="active"
+            class="sub-nav-item"
+          >
+            MFA Report
+          </a>
         </div>
 
         <!-- SETUP/ADMIN SECTION (without Users and Roles) -->
@@ -233,6 +249,14 @@
             class="sub-nav-item"
             >AR Code</a
           >
+          <a
+            *ngIf="canViewTransactions"
+            routerLink="transactions"
+            routerLinkActive="active"
+            class="sub-nav-item"
+          >
+            Transactions
+          </a>
         </div>
       </nav>
     </div>
@@ -454,6 +478,22 @@
           >
             Security Report
           </a>
+          <a
+            *ngIf="canViewLoginReport"
+            routerLink="login-report"
+            routerLinkActive="active"
+            (click)="closeMobileMenu()"
+          >
+            Login Report
+          </a>
+          <a
+            *ngIf="canViewMfaReport"
+            routerLink="mfa-report"
+            routerLinkActive="active"
+            (click)="closeMobileMenu()"
+          >
+            MFA Report
+          </a>
         </div>
 
         <button
@@ -522,6 +562,14 @@
             (click)="closeMobileMenu()"
             >AR Code</a
           >
+          <a
+            *ngIf="canViewTransactions"
+            routerLink="transactions"
+            routerLinkActive="active"
+            (click)="closeMobileMenu()"
+          >
+            Transactions
+          </a>
         </div>
       </nav>
 
