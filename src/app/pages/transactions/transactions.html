@@ -120,6 +120,19 @@
       {{ state.error }}
     </div>
 
+    <div class="tab-nav" *ngIf="activeCompanyId">
+      <button
+        type="button"
+        class="tab-btn"
+        *ngFor="let tab of statusTabs"
+        [class.active]="activeStatus === tab.value"
+        (click)="changeStatusTab(tab.value)"
+        [attr.aria-pressed]="activeStatus === tab.value"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
     <div class="table-wrapper">
       <table class="transactions-table">
         <thead>
@@ -129,13 +142,13 @@
             <th>Amount</th>
             <th>Status</th>
             <th>Description</th>
-            <th>Entries</th>
+            <th *ngIf="activeStatus === 'RELEASED'">Action</th>
           </tr>
         </thead>
 
         <tbody *ngIf="state.loading">
           <tr>
-            <td class="table-loader-cell" colspan="6">
+            <td class="table-loader-cell" [attr.colspan]="tableColumnCount">
               <app-loader [visible]="state.loading"></app-loader>
             </td>
           </tr>
@@ -145,6 +158,12 @@
           <tr
             *ngFor="let txn of state.transactions; trackBy: trackByTransaction"
             class="transaction-row"
+            role="button"
+            tabindex="0"
+            (click)="viewTransactionDetails(txn)"
+            (keydown.enter)="onTransactionRowKeydown($event, txn)"
+            (keydown.space)="onTransactionRowKeydown($event, txn)"
+            [attr.aria-label]="'View transaction ' + (txn.referenceNumber || txn.referenceType || txn.id)"
           >
             <td>
               <div class="reference-type">{{ txn.referenceType || '--' }}</div>
@@ -162,25 +181,23 @@
                 {{ txn.description || '--' }}
               </div>
             </td>
-            <td class="entry-cell">
-              <ng-container *ngIf="txn.lines?.length; else noEntries">
-                <div
-                  *ngFor="let line of txn.lines"
-                  class="entry-chip"
-                  [ngClass]="getEntryBadgeClass(line.entryType)"
-                >
-                  <span class="entry-type">{{ line.entryType || '—' }}</span>
-                  <span class="entry-amount">{{ formatAmount(line.amount) }}</span>
-                </div>
-              </ng-container>
-              <ng-template #noEntries>—</ng-template>
+            <td *ngIf="activeStatus === 'RELEASED'" class="action-cell">
+              <button
+                type="button"
+                class="action-button"
+                (click)="postTransaction(txn, $event)"
+                [disabled]="isPosting(txn.id)"
+              >
+                <ng-container *ngIf="!isPosting(txn.id); else postingState">Post</ng-container>
+                <ng-template #postingState>Posting...</ng-template>
+              </button>
             </td>
           </tr>
         </tbody>
 
         <tbody *ngIf="!state.loading && !state.transactions.length">
           <tr>
-            <td class="no-data-cell" colspan="6">
+            <td class="no-data-cell" [attr.colspan]="tableColumnCount">
               <ng-container *ngIf="state.error; else emptyPlaceholder">
                 {{ state.error }}
               </ng-container>

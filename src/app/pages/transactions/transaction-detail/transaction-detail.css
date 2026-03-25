@@ -1,0 +1,333 @@
+.transaction-detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Back button ── */
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: #64748b;
+  border: none;
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  width: fit-content;
+}
+
+.back-button:hover {
+  color: #0f172a;
+}
+
+/* ── Header card ── */
+.header-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 28px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.05);
+  border-left: 4px solid #1d4ed8;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.header-card h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.description {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* ── Status chips ── */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.status-success { background: #dcfce7; color: #15803d; }
+.status-pending { background: #fef9c3; color: #854d0e; }
+.status-error   { background: #fee2e2; color: #b91c1c; }
+.status-default { background: #e2e8f0; color: #334155; }
+
+/* ── Info grid ── */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.info-item {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-item .label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.info-item .value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* ── Section card ── */
+.section-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.section-header {
+  margin-bottom: 20px;
+}
+
+.section-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-card h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.entries-badge {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+}
+
+/* ── Lines table ── */
+.lines-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lines-table thead tr {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.lines-table th {
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #94a3b8;
+  padding: 0 12px 12px 0;
+}
+
+.lines-table tbody tr {
+  border-bottom: 1px solid #f8fafc;
+  transition: background 0.12s ease;
+}
+
+.lines-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.lines-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.lines-table td {
+  padding: 14px 12px 14px 0;
+  font-size: 0.9rem;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.code-cell {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
+.amount-col {
+  text-align: left;
+}
+
+.amount-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* ── Entry chips ── */
+.entry-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.entry-chip.debit  { background: #eef2ff; color: #4338ca; }
+.entry-chip.credit { background: #ecfeff; color: #0369a1; }
+.entry-chip.neutral { background: #f3f4f6; color: #475569; }
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 16px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.empty-icon {
+  opacity: 0.4;
+}
+
+/* ── State card (loading / error) ── */
+.state-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 48px 32px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.state-card p {
+  margin: 12px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.error-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.state-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-secondary,
+.btn-primary {
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-secondary {
+  border-color: #c7d2fe;
+  background: #fff;
+  color: #1d4ed8;
+}
+
+.btn-secondary:hover {
+  border-color: #a5b4fc;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.1);
+}
+
+.btn-primary {
+  background: #1d4ed8;
+  color: #fff;
+  border-color: #1d4ed8;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 16px rgba(29, 78, 216, 0.3);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .header-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    border-left-width: 3px;
+  }
+
+  .section-card {
+    padding: 18px 16px;
+  }
+
+  .lines-table th,
+  .lines-table td {
+    font-size: 0.8rem;
+  }
+}

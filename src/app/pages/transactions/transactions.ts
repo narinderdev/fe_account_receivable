@@ -7,10 +7,11 @@ import {
   OnInit,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, finalize, takeUntil } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
+import { Router } from '@angular/router';
 
 import { Loader } from '../../shared/loader/loader';
 import { GlTransaction } from '../../models/gl-transaction.model';
@@ -35,11 +36,17 @@ interface TransactionsState {
   styleUrls: ['./transactions.css'],
 })
 export class Transactions implements OnInit, OnDestroy {
+  readonly statusTabs = [
+    { label: 'Released', value: 'RELEASED' as const },
+    { label: 'Posted', value: 'POSTED' as const },
+  ];
+
   selectedPeriod = '12';
   isCustomPeriod = false;
   fromDate: string | null = null;
   toDate: string | null = null;
   Math = Math;
+  activeStatus: 'RELEASED' | 'POSTED' = 'RELEASED';
 
   showExportMenu = false;
   companySelectionMessage = 'Select an AR company from the navbar to view GL transactions.';
@@ -56,12 +63,14 @@ export class Transactions implements OnInit, OnDestroy {
   activeCompanyId: number | null = null;
 
   private destroy$ = new Subject<void>();
+  private postingTransactions = new Set<number>();
 
   constructor(
     private glTransactionService: GlTransactionService,
     private companySelection: CompanySelectionService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
+    private router: Router,
   ) {}
 
   @HostListener('document:click')
@@ -83,11 +92,13 @@ export class Transactions implements OnInit, OnDestroy {
         this.activeCompanyId = nextId;
 
         if (!this.activeCompanyId) {
+          this.activeStatus = 'RELEASED';
           this.state = this.buildInitialState();
           this.cdr.detectChanges();
           return;
         }
 
+        this.activeStatus = 'RELEASED';
         this.loadTransactions(this.activeCompanyId, 0);
       });
   }
@@ -106,6 +117,15 @@ export class Transactions implements OnInit, OnDestroy {
     this.isCustomPeriod = false;
     this.fromDate = null;
     this.toDate = null;
+    this.reloadWithFilters();
+  }
+
+  changeStatusTab(status: 'RELEASED' | 'POSTED'): void {
+    if (this.activeStatus === status) {
+      return;
+    }
+    this.activeStatus = status;
+    this.closeExportMenu();
     this.reloadWithFilters();
   }
 
@@ -139,6 +159,69 @@ export class Transactions implements OnInit, OnDestroy {
     if (this.state.currentPage > 0) {
       this.loadTransactions(this.activeCompanyId, this.state.currentPage - 1);
     }
+  }
+
+  viewTransactionDetails(transaction: GlTransaction): void {
+    if (!transaction?.id) {
+      return;
+    }
+    this.router.navigate(['/admin/transactions', transaction.id], {
+      state: { transaction },
+    });
+  }
+
+  onTransactionRowKeydown(event: Event, transaction: GlTransaction): void {
+    if (!('key' in event)) {
+      return;
+    }
+    const keyboardEvent = event as KeyboardEvent;
+    if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+      keyboardEvent.preventDefault();
+      this.viewTransactionDetails(transaction);
+    }
+  }
+
+  postTransaction(transaction: GlTransaction, event?: MouseEvent): void {
+    event?.stopPropagation();
+    if (!transaction?.id || !this.activeCompanyId || this.isPosting(transaction.id)) {
+      return;
+    }
+
+    this.postingTransactions.add(transaction.id);
+    this.glTransactionService
+      .postTransaction(transaction.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.postingTransactions.delete(transaction.id);
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.toastr.success('Transaction posted successfully.', 'GL Transactions');
+          const nextPage =
+            this.state.transactions.length <= 1 && this.state.currentPage > 0
+              ? this.state.currentPage - 1
+              : this.state.currentPage;
+          this.loadTransactions(this.activeCompanyId!, nextPage);
+        },
+        error: (error) => {
+          const message = this.resolveErrorMessage(error);
+          this.toastr.error(message, 'GL Transactions');
+        },
+      });
+  }
+
+  isPosting(transactionId?: number | null): boolean {
+    if (!transactionId) {
+      return false;
+    }
+    return this.postingTransactions.has(transactionId);
+  }
+
+  get tableColumnCount(): number {
+    return this.activeStatus === 'RELEASED' ? 7 : 6;
   }
 
   getPageNumbers(): number[] {
@@ -412,6 +495,7 @@ export class Transactions implements OnInit, OnDestroy {
       case 'posted':
       case 'completed':
         return 'status-success';
+      case 'released':
       case 'pending':
       case 'created':
         return 'status-pending';
@@ -487,9 +571,11 @@ export class Transactions implements OnInit, OnDestroy {
       months?: number;
       fromDate?: string;
       toDate?: string;
+      status: string;
     } = {
       page,
       size: pageSize,
+      status: this.activeStatus,
     };
 
     if (this.isCustomPeriod) {

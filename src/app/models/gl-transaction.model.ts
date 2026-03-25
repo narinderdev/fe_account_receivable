@@ -1,4 +1,5 @@
 export interface GlTransactionLine {
+  glCode: string | null;
   glCodeDescription: string | null;
   entryType: string;
   amount: number;

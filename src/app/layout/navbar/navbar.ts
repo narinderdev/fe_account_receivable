@@ -37,7 +37,7 @@ const TITLE_RULES: TitleRule[] = [
   { prefix: '/admin/security-report', title: 'Security Report' },
   { prefix: '/admin/login-report', title: 'Login Report' },
   { prefix: '/admin/mfa-report', title: 'MFA Report' },
-  { prefix: '/admin/transactions', title: 'GL Transactions' },
+  { prefix: '/admin/transactions', title: 'AR Transactions to GL' },
   { prefix: '/admin/mfa', title: 'MFA' },
   { prefix: '/admin/ar-reports', title: 'Aging Report' },
   { prefix: '/admin/ar-code', title: 'AR Codes' },

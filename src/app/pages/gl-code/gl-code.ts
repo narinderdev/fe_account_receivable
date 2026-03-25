@@ -216,6 +216,25 @@ export class GlCode implements OnInit, OnDestroy {
       status: editingRecord?.status ?? 'ACTIVE',
     };
 
+    const accountTypeControl = this.glCodeForm.get('accountType');
+    const shouldValidateDuplicate = !editingRecord || editingRecord.accountType !== model.accountType;
+    if (shouldValidateDuplicate) {
+      const duplicateAccountType = this.isAccountTypeTaken(model.accountType, editingRecord?.id ?? null);
+      if (duplicateAccountType) {
+        const existingErrors = accountTypeControl?.errors ?? {};
+        accountTypeControl?.setErrors({ ...existingErrors, duplicate: true });
+        this.toastr.warning(
+          'Another GL code already uses this account type for the selected company.',
+          'Duplicate account type'
+        );
+        return;
+      }
+    }
+    if (accountTypeControl?.hasError('duplicate')) {
+      const { duplicate, ...rest } = accountTypeControl.errors ?? {};
+      accountTypeControl.setErrors(Object.keys(rest).length ? rest : null);
+    }
+
     if (this.editingRecordIndex !== null && editingRecord) {
       if (!this.canUpdateGlCode) {
         this.toastr.error('You do not have permission to update GL codes.', 'Permission denied');
@@ -300,6 +319,16 @@ export class GlCode implements OnInit, OnDestroy {
     return match ? match.label : value;
   }
 
+  isAccountTypeDisabled(value: string): boolean {
+    const editingRecord =
+      this.editingRecordIndex !== null ? this.records[this.editingRecordIndex] ?? null : null;
+    if (editingRecord && editingRecord.accountType === value) {
+      return false;
+    }
+    const ignoreRecordId = editingRecord?.id ?? null;
+    return this.isAccountTypeTaken(value, ignoreRecordId);
+  }
+
   getStatusLabel(status: GlCodeStatus): string {
     return status === 'ACTIVE' ? 'Active' : 'Inactive';
   }
@@ -326,6 +355,21 @@ export class GlCode implements OnInit, OnDestroy {
       accountType: entity.accountType,
       status: entity.active ? 'ACTIVE' : 'INACTIVE',
     };
+  }
+
+  private isAccountTypeTaken(value: string, ignoreRecordId: number | null): boolean {
+    if (!value) {
+      return false;
+    }
+    return this.records.some((record) => {
+      if (record.accountType !== value) {
+        return false;
+      }
+      if (ignoreRecordId !== null && record.id === ignoreRecordId) {
+        return false;
+      }
+      return true;
+    });
   }
 
   getPageNumbers(): number[] {

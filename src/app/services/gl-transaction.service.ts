@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { GlTransactionPage } from '../models/gl-transaction.model';
+import { GlTransaction, GlTransactionPage } from '../models/gl-transaction.model';
 import { getAuthHeadersWithNgrok } from './auth-headers.util';
 
 @Injectable({
@@ -20,6 +20,7 @@ export class GlTransactionService {
       months?: number;
       fromDate?: string;
       toDate?: string;
+      status?: string;
     } = {},
   ): Observable<GlTransactionPage> {
     const headers = getAuthHeadersWithNgrok();
@@ -37,11 +38,30 @@ export class GlTransactionService {
     if (params.toDate) {
       query.push(`toDate=${params.toDate}`);
     }
+    if (params.status) {
+      query.push(`status=${params.status}`);
+    }
 
     const queryString = query.join('&');
 
     return this.http.get<GlTransactionPage>(
       `${this.baseUrl}/api/gl/transactions/company/${companyId}?${queryString}`,
+      { headers },
+    );
+  }
+
+  getTransaction(transactionId: number): Observable<GlTransaction> {
+    const headers = getAuthHeadersWithNgrok();
+    return this.http.get<GlTransaction>(`${this.baseUrl}/api/gl/transactions/${transactionId}`, {
+      headers,
+    });
+  }
+
+  postTransaction(transactionId: number): Observable<GlTransaction> {
+    const headers = getAuthHeadersWithNgrok();
+    return this.http.post<GlTransaction>(
+      `${this.baseUrl}/api/gl/transactions/${transactionId}/post`,
+      {},
       { headers },
     );
   }

@@ -143,7 +143,11 @@
             <label>Account Type <span class="color">*</span></label>
             <select formControlName="accountType">
               <option value="">Select account type</option>
-              <option *ngFor="let option of accountTypeOptions" [value]="option.value">
+              <option
+                *ngFor="let option of accountTypeOptions"
+                [value]="option.value"
+                [disabled]="isAccountTypeDisabled(option.value)"
+              >
                 {{ option.label }}
               </option>
             </select>
@@ -152,6 +156,9 @@
               *ngIf="submitted && glCodeForm.controls['accountType'].hasError('required')"
             >
               Account type is required.
+            </p>
+            <p class="error" *ngIf="glCodeForm.controls['accountType'].hasError('duplicate')">
+              This account type already has a GL code for the selected company.
             </p>
           </div>
         </div>

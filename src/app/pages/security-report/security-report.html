@@ -203,7 +203,6 @@
         <table class="report-table">
           <thead>
             <tr>
-              <th>AR Company Code</th>
               <th>{{ primaryHeader() }}</th>
               <th>{{ secondaryHeader() }}</th>
               <th *ngFor="let perm of permissionColumns()">
@@ -214,9 +213,6 @@
 
           <tbody>
             <tr *ngFor="let row of paginatedRows()">
-              <td>
-                {{ getActiveCompanyCode() || 'N/A' }}
-              </td>
               <td class="strong">
                 {{
                   viewMode() === 'ROLE'

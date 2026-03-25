@@ -53,7 +53,7 @@ export class Integration implements OnInit, OnDestroy {
 
   openEobModal(): void {
     if (!this.canUploadEob) {
-      this.toastr.warning('You do not have permission to upload EOB files.', 'Permission Denied');
+      this.toastr.warning('You do not have permission to upload Source file.', 'Permission Denied');
       return;
     }
 
@@ -85,14 +85,14 @@ export class Integration implements OnInit, OnDestroy {
     }
 
     if (!this.canUploadEob) {
-      this.toastr.warning('You do not have permission to upload EOB files.', 'Permission Denied');
+      this.toastr.warning('You do not have permission to upload source files.', 'Permission Denied');
       input.value = '';
       return;
     }
 
     const isTxtFile = file.name.toLowerCase().endsWith('.txt');
     if (!isTxtFile) {
-      this.toastr.warning('Please upload a valid EOB file (.txt).', 'Invalid File');
+      this.toastr.warning('Please upload a valid source file (.txt).', 'Invalid File');
       input.value = '';
       return;
     }
@@ -116,9 +116,9 @@ export class Integration implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.uploadingEob = false;
-        console.error('Failed to upload EOB file:', error);
+        console.error('Failed to upload Source file:', error);
         const backendMessage = error?.error?.message;
-        this.toastr.error(backendMessage || 'Failed to upload EOB file.', 'Upload Failed');
+        this.toastr.error(backendMessage || 'Failed to upload Source file.', 'Upload Failed');
         input.value = '';
         this.cdr.detectChanges();
       },
