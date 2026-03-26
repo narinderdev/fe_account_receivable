@@ -204,14 +204,14 @@
     <form [formGroup]="agingCodeForm" (ngSubmit)="saveAgingCode()">
       <div class="modal-body">
         <div class="form-field">
-          <label>Bucket Name <span class="color">*</span></label>
+          <label>Aging Period <span class="color">*</span></label>
           <input type="text" formControlName="bucketName" placeholder="e.g. 31-60 Days" />
           <p class="hint-text">This name appears anywhere the bucket is referenced.</p>
           <p class="error" *ngIf="submitted && agingCodeForm.controls['bucketName'].hasError('required')">
-            Bucket name is required.
+            Aging Period is required.
           </p>
           <p class="error" *ngIf="submitted && agingCodeForm.controls['bucketName'].hasError('maxlength')">
-            Bucket name must be 50 characters or less.
+            Aging Period must be 50 characters or less.
           </p>
         </div>
 
