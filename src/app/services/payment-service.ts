@@ -175,6 +175,19 @@ export class PaymentService {
     );
   }
 
+  approveBankTransactionWithEra(
+    companyId: number,
+    bankTransactionId: number,
+  ): Observable<any> {
+    const headers = getAuthHeaders();
+
+    return this.http.post(
+      `${this.baseUrl}/api/bank-reconciliation/company/${companyId}/transaction/${bankTransactionId}/approve-with-era`,
+      null,
+      { headers },
+    );
+  }
+
   applyApprovedPayment(
     paymentId: number,
     payload: ApplyApprovedPaymentRequest,

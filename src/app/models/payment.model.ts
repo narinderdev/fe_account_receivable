@@ -61,7 +61,7 @@ export interface BankApproveApplyRequest {
 }
 
 export interface ApproveBankPaymentRequest {
-  customerId: number;
+  customerId?: number;
 }
 
 export interface ApplyApprovedPaymentRequest {

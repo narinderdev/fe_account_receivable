@@ -482,7 +482,11 @@
 
           <div *ngIf="customerMatchMessage && !customerOptionsLoading" class="match-hint">
             {{ customerMatchMessage }}
+           
           </div>
+           <div *ngIf="customerMatchMessage && !customerOptionsLoading"  class="match-hint-subtext">
+              If this payment is from a third-party payer, you can approve it without selecting a customer.
+            </div>
 
           <div *ngIf="customerOptionsError" class="modal-alert error">
             {{ customerOptionsError }}

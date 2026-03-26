@@ -11,10 +11,10 @@ import { PaymentService } from '../../services/payment-service';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Loader } from '../../shared/loader/loader';
 import { CompanySelectionService } from '../../services/company-selection.service';
-import { Subject, forkJoin, takeUntil } from 'rxjs';
+import { Observable, Subject, forkJoin, takeUntil } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
 import { FormsModule } from '@angular/forms';
-import { BankTransaction, Payment } from '../../models/payment.model';
+import { ApproveBankPaymentRequest, BankTransaction, Payment } from '../../models/payment.model';
 import { InvoiceWithItems } from '../../models/invoice.model';
 import { CustomerEntity } from '../../models/customer.model';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -1147,16 +1147,25 @@ export class Payments implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.selectedCustomer?.id) {
-      this.toastr.warning('Select a customer before approving this bank payment.', 'Customer Required');
+    if (!this.activeCompanyId) {
+      this.toastr.warning('Please select an AR company first.', 'Company Required');
       return;
     }
 
     this.approveModalSubmitting = true;
-    const payload = { customerId: this.selectedCustomer.id };
+    let approval$: Observable<any>;
 
-    this.paymentService
-      .approveBankTransaction(this.selectedBankTransaction.id, payload)
+    if (this.selectedCustomer?.id) {
+      const payload: ApproveBankPaymentRequest = { customerId: this.selectedCustomer.id };
+      approval$ = this.paymentService.approveBankTransaction(this.selectedBankTransaction.id, payload);
+    } else {
+      approval$ = this.paymentService.approveBankTransactionWithEra(
+        this.activeCompanyId,
+        this.selectedBankTransaction.id,
+      );
+    }
+
+    approval$
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {

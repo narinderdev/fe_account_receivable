@@ -212,7 +212,9 @@
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  transition: color 0.2s, border-bottom 0.2s;
+  transition:
+    color 0.2s,
+    border-bottom 0.2s;
   padding: 0;
 }
 
@@ -973,13 +975,23 @@
 }
 
 .match-hint {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 400;
   color: #6b7280;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.50rem;
   padding: 0.75rem;
   background: #f9fafb;
   border-radius: 6px;
+}
+
+.match-hint-subtext {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 0.50rem;
 }
 
 .customer-search {
