@@ -61,6 +61,28 @@ describe('Users', () => {
       expect(instance.getStatusClass(createUser({ status: 'ACTIVE' }))).toBe('status-open');
       expect(instance.getStatusClass(createUser({ status: 'UNKNOWN' }))).toBe('status-default');
     });
+
+    it('reads role and status from userCompanies for the selected company', () => {
+      const instance = createComponent();
+      instance.companyId = 222;
+
+      const user = createUser({
+        status: undefined,
+        userRoles: [],
+        userCompanies: [
+          {
+            id: 8,
+            company: { id: 222 } as any,
+            status: 'ACTIVE',
+            roles: [{ id: 3, role: { id: 7, name: 'Admin', description: 'Admin' } }],
+          },
+        ],
+      });
+
+      expect(instance.getUserRole(user)).toBe('Admin');
+      expect(instance.getUserStatus(user)).toBe('Active');
+      expect(instance.hasAssignedRole(user)).toBe(true);
+    });
   });
 });
 

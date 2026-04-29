@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { CompanySelectionService } from '../../services/company-selection.service';
 import { UserContextService } from '../../services/user-context.service';
 
 @Component({
@@ -51,10 +52,14 @@ export class Sidebar {
   constructor(
     private router: Router,
     private userContext: UserContextService,
+    private companySelection: CompanySelectionService,
   ) {
     this.refreshPermissions();
     this.updateArReportsState();
     this.updateSecurityState();
+    this.companySelection.selectedCompanyId$.subscribe(() => {
+      this.refreshPermissions();
+    });
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.updateArReportsState();

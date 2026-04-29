@@ -1,5 +1,11 @@
 import { Injectable } from '@angular/core';
 
+type StoredCompanyRoleContext = {
+  companyId: number | null;
+  status?: string | null;
+  roles: UserRoleEntry[];
+};
+
 type UserRoleEntry = {
   role?: {
     name?: string | null;
@@ -9,6 +15,13 @@ type UserRoleEntry = {
 
 type UserPayload = {
   id?: number | null;
+  userCompanies?: Array<{
+    company?: {
+      id?: number | null;
+    } | null;
+    status?: string | null;
+    roles?: UserRoleEntry[] | null;
+  }> | null;
   userRoles?: UserRoleEntry[] | null;
 };
 
@@ -20,6 +33,7 @@ export type UserContext = {
 };
 
 const STORAGE_KEY = 'userContext';
+const COMPANY_STORAGE_KEY = 'selectedCompanyId';
 
 const PERMISSION_ROUTE_ORDER: Array<{ permission: string; route: string }> = [
   { permission: 'VIEW_DASHBOARD', route: '/admin/dashboard' },
@@ -107,10 +121,13 @@ export class UserContextService {
 
   clear() {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(COMPANY_STORAGE_KEY);
   }
 
-  private buildContext(user: UserPayload): UserContext {
-    const roles = Array.isArray(user.userRoles) ? user.userRoles : [];
+  private buildContextFromRoles(
+    userId: number | null | undefined,
+    roles: UserRoleEntry[]
+  ): UserContext {
     const allPermissions = roles
       .flatMap((entry) => {
         const perms = entry?.role?.permissions;
@@ -133,15 +150,11 @@ export class UserContextService {
     const firstRoleName = roles[0]?.role?.name ?? '';
 
     return {
-      userId: typeof user.id === 'number' ? user.id : null,
+      userId: typeof userId === 'number' ? userId : null,
       roleName: firstRoleName,
       permissions: uniquePermissions,
       isAdmin: hasAdminRole,
     };
-  }
-
-  private save(context: UserContext) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(context));
   }
 
   private getContext(): UserContext {
@@ -152,6 +165,15 @@ export class UserContextService {
 
     try {
       const parsed = JSON.parse(raw);
+      const companyContexts = this.parseCompanyContexts(parsed?.companies);
+      if (companyContexts.length > 0) {
+        const selectedCompanyId = this.getSelectedCompanyId();
+        const selectedCompanyContext =
+          companyContexts.find((entry) => entry.companyId === selectedCompanyId) ??
+          companyContexts[0];
+        return this.buildContextFromRoles(parsed?.userId, selectedCompanyContext.roles);
+      }
+
       return {
         userId: typeof parsed?.userId === 'number' ? parsed.userId : null,
         roleName: typeof parsed?.roleName === 'string' ? parsed.roleName : '',
@@ -173,8 +195,91 @@ export class UserContextService {
       isAdmin: false,
     };
   }
+
+  private extractCompanyContexts(user: UserPayload): StoredCompanyRoleContext[] {
+    const companyLinks = Array.isArray(user.userCompanies) ? user.userCompanies : [];
+    return companyLinks
+      .map((entry) => {
+        const companyId = typeof entry?.company?.id === 'number' ? entry.company.id : null;
+        const roles = Array.isArray(entry?.roles) ? entry.roles : [];
+        return {
+          companyId,
+          status: typeof entry?.status === 'string' ? entry.status : null,
+          roles,
+        };
+      })
+      .filter((entry) => entry.companyId !== null || entry.roles.length > 0);
+  }
+
+  private parseCompanyContexts(value: unknown): StoredCompanyRoleContext[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value.map((entry) => {
+      const companyId =
+        typeof (entry as { companyId?: unknown })?.companyId === 'number'
+          ? ((entry as { companyId: number }).companyId ?? null)
+          : null;
+      const status =
+        typeof (entry as { status?: unknown })?.status === 'string'
+          ? ((entry as { status: string }).status ?? null)
+          : null;
+      const roles = Array.isArray((entry as { roles?: unknown[] })?.roles)
+        ? (entry as { roles: UserRoleEntry[] }).roles
+        : [];
+
+      return {
+        companyId,
+        status,
+        roles,
+      };
+    });
+  }
+
+  private getSelectedCompanyId(): number | null {
+    const raw =
+      typeof localStorage === 'undefined'
+        ? null
+        : localStorage.getItem(COMPANY_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private save(context: UserContext & { companies?: StoredCompanyRoleContext[] }) {
+    const payload = {
+      ...context,
+      companies: context.companies ?? [],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }
+
+  private buildContext(user: UserPayload): UserContext & { companies: StoredCompanyRoleContext[] } {
+    const companyContexts = this.extractCompanyContexts(user);
+    const selectedCompanyId = this.getSelectedCompanyId();
+    const selectedCompanyContext =
+      companyContexts.find((entry) => entry.companyId === selectedCompanyId) ?? companyContexts[0] ?? null;
+
+    const selectedCompanyExists = companyContexts.some((entry) => entry.companyId === selectedCompanyId);
+    if (
+      companyContexts.length > 0 &&
+      selectedCompanyContext?.companyId !== null &&
+      (!selectedCompanyExists || selectedCompanyId === null)
+    ) {
+      localStorage.setItem(COMPANY_STORAGE_KEY, String(selectedCompanyContext.companyId));
+    }
+
+    const roles =
+      selectedCompanyContext?.roles ??
+      (Array.isArray(user.userRoles) ? user.userRoles : []);
+
+    return {
+      ...this.buildContextFromRoles(user.id, roles),
+      companies: companyContexts,
+    };
+  }
 }
-
-
-
-

@@ -136,6 +136,21 @@
         </button>
       </div>
       <div class="modal-body">
+        <div class="template-section">
+          <p class="template-info">
+            Download the CSV template first to see the required format.
+          </p>
+          <button
+            type="button"
+            class="download-template-btn"
+            (click)="downloadUserCsvTemplate()"
+            [disabled]="downloadingTemplate || isImporting"
+          >
+            <app-spinner *ngIf="downloadingTemplate"></app-spinner>
+            <span *ngIf="!downloadingTemplate">Download CSV Template</span>
+          </button>
+        </div>
+
         <div class="modal-form-field file-field">
           <label for="userImportInput">CSV File</label>
           <input
@@ -144,7 +159,10 @@
             accept=".csv,text/csv"
             (change)="handleImportFile($event)"
           />
-          <p class="helper-text">Download template or drag-and-drop your CSV.</p>
+          <p class="helper-text">
+            Required columns: <strong>firstName</strong>, <strong>lastName</strong>,
+            <strong>email</strong>.
+          </p>
           <div class="error" *ngIf="importError">{{ importError }}</div>
           <div class="file-pill" *ngIf="selectedImportFile">
             {{ selectedImportFile.name }}

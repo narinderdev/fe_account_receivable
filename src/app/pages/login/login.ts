@@ -8,6 +8,7 @@ import { Spinner } from '../../shared/spinner/spinner';
 import { catchError, finalize, map, switchMap, throwError } from 'rxjs';
 import { UserContextService } from '../../services/user-context.service';
 import { AuthService } from '../../services/auth.service';
+import { CompanySelectionService } from '../../services/company-selection.service';
 import {
   extractAuthMetadata,
   storeAuthToken,
@@ -36,7 +37,8 @@ export class Login {
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
     private userContext: UserContextService,
-    private authService: AuthService
+    private authService: AuthService,
+    private companySelection: CompanySelectionService
   ) {
     this.form = this.fb.group({
       email: [
@@ -113,13 +115,16 @@ export class Login {
           }
 
           const user = response?.data?.user;
+          const userCompanies = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
+          const resolvedSelectedCompanyId = this.resolveSelectedCompanyId(userCompanies);
+          this.companySelection.setSelectedCompanyId(resolvedSelectedCompanyId);
+
           if (user?.id) {
             localStorage.setItem('signupUserId', String(user.id));
           }
 
           this.userContext.setFromLogin(user);
 
-          const userCompanies = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
           if (userCompanies.length > 0) {
             localStorage.setItem('hasCompanies', 'true');
           } else {
@@ -171,6 +176,25 @@ export class Login {
         typeof error === 'object' &&
         Boolean((error as Record<string, unknown>)['__handled'])
     );
+  }
+
+  private resolveSelectedCompanyId(
+    userCompanies: Array<{ company?: { id?: number | null } | null }>
+  ): string | null {
+    const currentSelectedCompanyId = this.companySelection.getSelectedCompanyId();
+    const availableCompanyIds = userCompanies
+      .map((entry) => entry?.company?.id)
+      .filter((id): id is number => typeof id === 'number')
+      .map((id) => String(id));
+
+    if (
+      currentSelectedCompanyId &&
+      availableCompanyIds.includes(currentSelectedCompanyId)
+    ) {
+      return currentSelectedCompanyId;
+    }
+
+    return availableCompanyIds[0] ?? null;
   }
 
 }

@@ -5,6 +5,7 @@ import { LoginService } from '../../services/login-service';
 import { ToastrService } from 'ngx-toastr';
 import { UserContextService } from '../../services/user-context.service';
 import { AuthService } from '../../services/auth.service';
+import { CompanySelectionService } from '../../services/company-selection.service';
 import { Login } from './login';
 import { createSpy, createSpyObj } from 'src/testing/spy-helpers';
 import { of } from 'rxjs';
@@ -27,6 +28,11 @@ describe('Login', () => {
     userContext.isAdmin.mockReturnValue(false);
     userContext.getPermissions.mockReturnValue(permissions);
     const authService = createSpyObj<AuthService>('AuthService', ['sendEmailMfaCode']);
+    const companySelection = createSpyObj<CompanySelectionService>('CompanySelectionService', [
+      'getSelectedCompanyId',
+      'setSelectedCompanyId',
+    ]);
+    companySelection.getSelectedCompanyId.mockReturnValue(null);
     return {
       instance: new Login(
         new FormBuilder(),
@@ -35,10 +41,12 @@ describe('Login', () => {
         toastr,
         cdr,
         userContext,
-        authService
+        authService,
+        companySelection
       ),
       loginService,
       authService,
+      companySelection,
       router,
       userContext,
       toastr,
@@ -65,7 +73,7 @@ describe('Login', () => {
     });
 
     it('normalizes email on submission and navigates to verify-account after login', () => {
-      const { instance, loginService, authService, router } = createComponent();
+      const { instance, loginService, authService, router, companySelection } = createComponent();
       loginService.login.mockReturnValue(
         of({
           status: 'success',
@@ -81,7 +89,7 @@ describe('Login', () => {
               email: 'user@example.com',
               status: 'ACTIVE',
               deleted: false,
-              userCompanies: [],
+              userCompanies: [{ company: { id: 99 } }],
               userRoles: [],
               createdAt: '2024-01-01T00:00:00.000Z',
               updatedAt: '2024-01-02T00:00:00.000Z',
@@ -101,6 +109,7 @@ describe('Login', () => {
         password: 'Secret123!',
       });
       expect(authService.sendEmailMfaCode).toHaveBeenCalled();
+      expect(companySelection.setSelectedCompanyId).toHaveBeenCalledWith('99');
       expect(router.navigate).toHaveBeenCalledWith(['/verify-account'], {
         queryParams: { email: 'user@example.com' },
       });

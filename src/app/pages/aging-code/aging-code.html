@@ -205,7 +205,6 @@
         <div class="form-field">
           <label>Aging Period <span class="color">*</span></label>
           <input type="text" formControlName="bucketName" placeholder="e.g. 31-60 Days" />
-          <p class="hint-text">This name appears anywhere the bucket is referenced.</p>
           <p class="error" *ngIf="submitted && agingCodeForm.controls['bucketName'].hasError('required')">
             Aging Period is required.
           </p>
@@ -218,7 +217,7 @@
           <div class="form-field">
             <label>Start Day <span class="color">*</span></label>
             <input type="number" min="0" [max]="maxRangeDays" formControlName="startDay" placeholder="e.g. 31" />
-            <p class="hint-text">First day overdue that belongs to this bucket.</p>
+            <!-- <p class="hint-text">First day overdue that belongs to this bucket.</p> -->
             <p class="error" *ngIf="submitted && agingCodeForm.controls['startDay'].hasError('required')">
               Start day is required.
             </p>
@@ -233,7 +232,7 @@
           <div class="form-field">
             <label>End Day <span class="color">*</span></label>
             <input type="number" min="0" [max]="maxRangeDays" formControlName="endDay" placeholder="e.g. 60" />
-            <p class="hint-text">Last day included before moving to the next bucket.</p>
+            <!-- <p class="hint-text">Last day included before moving to the next bucket.</p> -->
             <p class="error" *ngIf="submitted && agingCodeForm.controls['endDay'].hasError('required')">
               End day is required.
             </p>
@@ -252,7 +251,7 @@
         <div class="form-field">
           <label>Display Order <span class="color">*</span></label>
           <input type="number" min="0" [max]="maxDisplayOrder" formControlName="displayOrder" placeholder="e.g. 3" />
-          <p class="hint-text">Controls how the bucket is sorted in lists.</p>
+          <!-- <p class="hint-text">Controls how the bucket is sorted in lists.</p> -->
           <p class="error" *ngIf="submitted && agingCodeForm.controls['displayOrder'].hasError('required')">
             Display order is required.
           </p>

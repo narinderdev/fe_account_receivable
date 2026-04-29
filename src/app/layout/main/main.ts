@@ -29,11 +29,10 @@ export class Main {
 
   private updateSidebarVisibility(url: string) {
     const isAddCompany = url.startsWith('/admin/ar-company/add');
-    const isOnboardingComplete = url.startsWith('/admin/ar-company/onboarding-complete');
     const hasCompanies = this.userHasCompanies();
 
-    this.hideSidebar = (isAddCompany && !hasCompanies) || isOnboardingComplete;
-    this.showNavbar = !isOnboardingComplete;
+    this.hideSidebar = isAddCompany && !hasCompanies;
+    this.showNavbar = true;
     this.showSignoutBar = isAddCompany && !hasCompanies;
   }
 

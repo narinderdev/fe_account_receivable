@@ -12,6 +12,8 @@ export interface UserCompanyLink {
   company: CompanyEntity & {
     hibernateLazyInitializer?: Record<string, unknown>;
   };
+  status?: string;
+  roles?: CompanyUserRoleAssignment[];
 }
 
 export interface AuthenticatedUser {
@@ -22,7 +24,7 @@ export interface AuthenticatedUser {
   status: string;
   deleted: boolean;
   userCompanies: UserCompanyLink[];
-  userRoles: CompanyUserRoleAssignment[];
+  userRoles?: CompanyUserRoleAssignment[];
   createdAt: string;
   updatedAt: string;
 }

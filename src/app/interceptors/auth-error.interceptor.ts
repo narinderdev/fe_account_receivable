@@ -8,8 +8,16 @@ import { AuthSessionService } from '../services/auth-session.service';
 const shouldForceLogout = (error: unknown): error is HttpErrorResponse =>
   error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403);
 
+const SUPPRESSED_AUTH_401_PATHS = [
+  '/auth',
+  '/auth/email/send',
+  '/auth/mfa/email/verify',
+  '/auth/login/mfa',
+];
+
 const shouldSuppressSessionExpiredMessage = (reqUrl: string, error: HttpErrorResponse) =>
-  error.status === 401 && reqUrl.includes('/auth/login/mfa');
+  error.status === 401 &&
+  SUPPRESSED_AUTH_401_PATHS.some((path) => reqUrl.includes(path));
 
 const SESSION_EXPIRED_MESSAGE = 'Session expired. Please log in again.';
 

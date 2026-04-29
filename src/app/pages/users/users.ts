@@ -27,6 +27,7 @@ import { Loader } from '../../shared/loader/loader';
 export class Users implements OnInit, OnDestroy {
   isModalOpen = false;
   isImportModalOpen = false;
+  downloadingTemplate = false;
   inviteForm!: FormGroup;
   assignRoleForm!: FormGroup;
   submitted = false;
@@ -267,6 +268,43 @@ export class Users implements OnInit, OnDestroy {
     });
   }
 
+  downloadUserCsvTemplate() {
+    if (!this.canInviteUser) {
+      return;
+    }
+
+    this.downloadingTemplate = true;
+    this.cdr.detectChanges();
+
+    try {
+      const headers = ['firstName', 'lastName', 'email'];
+      const sampleRow = ['John', 'Doe', 'johndoe@yopmail.com'];
+      const csvContent = [
+        this.toCsvRow(headers),
+        this.toCsvRow(sampleRow),
+      ].join('\n');
+
+      const blob = new Blob(['\uFEFF' + csvContent], {
+        type: 'text/csv;charset=utf-8;',
+      });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      link.href = url;
+      link.download = 'user_import_template.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+
+      this.toastr.success('CSV template downloaded successfully.', 'Success');
+    } catch (error) {
+      console.error('User template download failed:', error);
+      this.toastr.error('Failed to download template.', 'Error');
+    } finally {
+      this.downloadingTemplate = false;
+      this.cdr.detectChanges();
+    }
+  }
+
   sendInvite() {
     this.submitted = true;
     if (this.inviteForm.invalid || this.isSavingInvite) return;
@@ -318,7 +356,7 @@ export class Users implements OnInit, OnDestroy {
   }
 
   getUserRole(user: CompanyUser): string {
-    const assignments = user?.userRoles
+    const assignments = this.getCompanyRoleAssignments(user)
       ?.map((entry) => entry?.role?.name)
       .filter((name): name is string => !!name);
     if (assignments && assignments.length) {
@@ -329,7 +367,7 @@ export class Users implements OnInit, OnDestroy {
   }
 
   getUserStatus(user: CompanyUser): string {
-    const status = user?.status;
+    const status = this.getResolvedStatus(user);
     if (!status) {
       return '--';
     }
@@ -349,20 +387,20 @@ export class Users implements OnInit, OnDestroy {
   }
 
   isUserPending(user: CompanyUser): boolean {
-    const status = (user?.status || '').toUpperCase();
+    const status = (this.getResolvedStatus(user) || '').toUpperCase();
     return status.includes('PENDING');
   }
 
   isUserActive(user: CompanyUser): boolean {
-    return (user?.status || '').toUpperCase() === 'ACTIVE';
+    return (this.getResolvedStatus(user) || '').toUpperCase() === 'ACTIVE';
   }
 
   isUserInactive(user: CompanyUser): boolean {
-    return (user?.status || '').toUpperCase() === 'INACTIVE';
+    return (this.getResolvedStatus(user) || '').toUpperCase() === 'INACTIVE';
   }
 
   isUserInvited(user: CompanyUser): boolean {
-    return (user?.status || '').toUpperCase() === 'INVITED';
+    return (this.getResolvedStatus(user) || '').toUpperCase() === 'INVITED';
   }
 
   approvePendingUser(user: CompanyUser): void {
@@ -400,7 +438,7 @@ export class Users implements OnInit, OnDestroy {
   }
 
   hasAssignedRole(user: CompanyUser): boolean {
-    const assignedFromUserRoles = user?.userRoles?.some((entry) => !!entry?.role?.id);
+    const assignedFromUserRoles = this.getCompanyRoleAssignments(user)?.some((entry) => !!entry?.role?.id);
     if (assignedFromUserRoles) {
       return true;
     }
@@ -440,14 +478,19 @@ export class Users implements OnInit, OnDestroy {
 
   submitAssignRole(): void {
     this.assignRoleSubmitted = true;
-    if (this.assignRoleForm.invalid || !this.userPendingRole?.id) {
+    if (this.assignRoleForm.invalid || !this.userPendingRole?.id || !this.companyId) {
+      if (!this.companyId) {
+        this.assignRoleError = 'Please select a company first.';
+      }
       this.cdr.detectChanges();
       return;
     }
 
+    const companyId = this.companyId;
     const payload = {
       userId: this.userPendingRole.id,
       roleId: Number(this.assignRoleForm.value.roleId),
+      companyId,
     };
 
     this.isAssigningRole = true;
@@ -475,11 +518,40 @@ export class Users implements OnInit, OnDestroy {
   }
 
   private getPrimaryRoleId(user: CompanyUser): number | null {
-    const fromAssignments = user?.userRoles?.find((entry) => entry?.role?.id)?.role?.id;
+    const fromAssignments = this.getCompanyRoleAssignments(user)?.find((entry) => entry?.role?.id)?.role?.id;
     if (fromAssignments) {
       return fromAssignments;
     }
     return user?.role?.id ?? null;
+  }
+
+  private getCompanyRoleAssignments(user: CompanyUser): CompanyUser['userRoles'] {
+    const matchingAssignment = this.getActiveCompanyAssignment(user);
+    if (matchingAssignment?.roles?.length) {
+      return matchingAssignment.roles;
+    }
+    return user?.userRoles;
+  }
+
+  private getResolvedStatus(user: CompanyUser): string | undefined {
+    const matchingAssignment = this.getActiveCompanyAssignment(user);
+    return matchingAssignment?.status || user?.status || user?.userStatus || undefined;
+  }
+
+  private getActiveCompanyAssignment(user: CompanyUser) {
+    const companyAssignments = Array.isArray(user?.userCompanies) ? user.userCompanies : [];
+    if (!companyAssignments.length) {
+      return null;
+    }
+
+    if (this.companyId) {
+      const currentCompany = companyAssignments.find((entry) => entry?.company?.id === this.companyId);
+      if (currentCompany) {
+        return currentCompany;
+      }
+    }
+
+    return companyAssignments[0] ?? null;
   }
 
   private filterAssignableRoles(source: Role[]): Role[] {
@@ -593,5 +665,11 @@ export class Users implements OnInit, OnDestroy {
 
     const start = this.pagination.currentPage * this.pagination.pageSize;
     return source.slice(start, start + this.pagination.pageSize);
+  }
+
+  private toCsvRow(values: string[]): string {
+    return values
+      .map((value) => `"${value.replace(/"/g, '""')}"`)
+      .join(',');
   }
 }
