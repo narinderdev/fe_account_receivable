@@ -7,6 +7,7 @@ import { CompanyService } from '../../../services/company-service';
 import { createSpyObj } from 'src/testing/spy-helpers';
 import { CompanyResponse } from '../../../models/company.model';
 import { CompanySelectionService } from '../../../services/company-selection.service';
+import { UserContextService } from '../../../services/user-context.service';
 
 describe('OnboardingComplete', () => {
   const createComponent = () => {
@@ -35,10 +36,21 @@ describe('OnboardingComplete', () => {
     ]);
     companySelection.getSelectedCompanyId.mockReturnValue(null);
 
+    const userContext = createSpyObj<UserContextService>('UserContextService', [
+      'getPermissions',
+      'isAdmin',
+      'getUserId',
+      'setAdminDefaults',
+    ]);
+    userContext.getPermissions.mockReturnValue([]);
+    userContext.isAdmin.mockReturnValue(false);
+    userContext.getUserId.mockReturnValue(42);
+
     return {
-      instance: new OnboardingComplete(router, route, companyService, companySelection),
+      instance: new OnboardingComplete(router, route, companyService, companySelection, userContext),
       companyService,
       companySelection,
+      userContext,
       router,
     };
   };
@@ -110,13 +122,24 @@ describe('OnboardingComplete', () => {
   });
 
   it('marks company availability and selection', () => {
-    const { instance, companySelection } = createComponent();
+    const { instance, companySelection, userContext } = createComponent();
+    const mark = (instance as unknown as { markCompanyAvailability(): void }).markCompanyAvailability;
+    (instance as unknown as { companyId: number | null }).companyId = 10;
+    instance.isEditMode = false;
+    companySelection.getSelectedCompanyId.mockReturnValue(null);
+    mark.call(instance);
+    expect(localStorage.getItem('hasCompanies')).toBe('true');
+    expect(companySelection.setSelectedCompanyId).toHaveBeenCalledWith('10');
+    expect(userContext.setAdminDefaults).toHaveBeenCalledWith(42);
+  });
+
+  it('does not override permissions for edit mode', () => {
+    const { instance, companySelection, userContext } = createComponent();
     const mark = (instance as unknown as { markCompanyAvailability(): void }).markCompanyAvailability;
     (instance as unknown as { companyId: number | null }).companyId = 10;
     instance.isEditMode = true;
     companySelection.getSelectedCompanyId.mockReturnValue(null);
     mark.call(instance);
-    expect(localStorage.getItem('hasCompanies')).toBe('true');
-    expect(companySelection.setSelectedCompanyId).toHaveBeenCalledWith('10');
+    expect(userContext.setAdminDefaults).not.toHaveBeenCalled();
   });
 });

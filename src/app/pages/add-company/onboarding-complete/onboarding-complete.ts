@@ -3,6 +3,7 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CompanyService } from '../../../services/company-service';
 import { CompanySelectionService } from '../../../services/company-selection.service';
+import { UserContextService } from '../../../services/user-context.service';
 
 @Component({
   selector: 'app-onboarding-complete',
@@ -22,7 +23,8 @@ export class OnboardingComplete implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private companyService: CompanyService,
-    private companySelection: CompanySelectionService
+    private companySelection: CompanySelectionService,
+    private userContext: UserContextService,
   ) {}
 
   ngOnInit() {
@@ -98,10 +100,35 @@ export class OnboardingComplete implements OnInit {
     }
 
     localStorage.setItem('hasCompanies', 'true');
+    this.ensureOnboardingPermissions();
 
     const selectedCompanyId = this.companySelection.getSelectedCompanyId();
     if (!this.isEditMode || !selectedCompanyId) {
       this.companySelection.setSelectedCompanyId(String(this.companyId));
     }
+  }
+
+  private ensureOnboardingPermissions() {
+    if (this.isEditMode) {
+      return;
+    }
+
+    const permissions = this.userContext.getPermissions();
+    if (permissions.length > 0 || this.userContext.isAdmin()) {
+      return;
+    }
+
+    const userId = this.userContext.getUserId() ?? this.getStoredSignupUserId();
+    this.userContext.setAdminDefaults(userId);
+  }
+
+  private getStoredSignupUserId(): number | null {
+    const raw = localStorage.getItem('signupUserId');
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 }
